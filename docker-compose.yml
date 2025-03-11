@@ -1,0 +1,29 @@
+version: "3.1"
+
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    ports:
+      - target: 5432
+        published: ${POSTGRES_PORT:-5432}
+        protocol: tcp
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-homeService}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:rw
+
+  backend:
+    build:
+      context: backend/
+    ports:
+      - "8000:3000"
+      - "5555:5555"
+    depends_on:
+      - postgres
+    volumes:
+      - ./backend:/app/backend
+
+volumes:
+    postgres_data: {}
