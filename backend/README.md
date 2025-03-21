@@ -1,20 +1,41 @@
-Accès au frontend : 
-- 
+## **Accès aux services**
 
-Accès au backend : 
-- localhost:8000/
+- **Backend** : [http://localhost:8000/](http://localhost:8000/)
+- **Swagger** : [http://localhost:8000/doc](http://localhost:8000/doc)
+- **Prisma Studio** : [http://localhost:5555/](http://localhost:5555/)
 
-Accès à swagger : 
-- localhost:8000/doc
+---
 
-Accès à prisma studio :
-- localhost:5555/
+## **Pré-requis**
 
+➡️ **Se placer à la racine du projet** avant toute commande :
 
-Ajout ou modification d'un modèle dans le fichier schema.prisma
- - migration : npx prisma migrate dev --name init
- - npx prisma generate
+```bash
+cd chemin/vers/le/projet
+```
 
+---
 
-Créer un nouveau module (avec controller, service, test, dto, entities) : 
-- nest g resource ${nom}
+## **Commandes utiles**
+
+### Ajout ou modification d’un modèle Prisma
+
+- Générer une migration :
+  ```bash
+  make migrate
+  ```
+  *Exemple de nom de migration :* `createUser`
+
+- Générer le client Prisma :
+  ```bash
+  make generate 
+  ```
+---
+
+### Création d’un nouveau module NestJS
+
+- Générer un module avec controller, service, DTOs, entity et tests :
+  ```bash
+  make module
+  ```
+> *Le nom du module sera demandé lors de l’exécution.*

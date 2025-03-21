@@ -1,43 +1,48 @@
-MIGRATION_NAME ?= $(shell read -p "Nom de la migration : " name; echo $$name)
-MODULE_NAME ?= $(shell read -p "Nom du module : " name; echo $$name)
+DOCKER_COMPOSE = docker-compose
 
 # Prisma : Migration et génération de types
 migrate:
-	docker-compose exec backend npx prisma migrate dev --name $(MIGRATION_NAME)
+	@read -p "Nom de la migration : " name; \
+	$(DOCKER_COMPOSE) exec backend npx prisma migrate dev --name $$name
 
 generate:
-	docker-compose exec backend npx prisma generate
+	$(DOCKER_COMPOSE) exec backend npx prisma generate
 
 # Création d'un module NestJS avec toutes les ressources
 module:
-	docker-compose exec backend nest g resource $(MODULE_NAME)
+	@read -p "Nom du module : " name; \
+	cd backend && nest g resource modules/$$name
 
 # Lancer l'application avec Docker Compose
 start:
-	docker-compose up
+	$(DOCKER_COMPOSE) up
 
 stop:
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 
 restart:
-	docker-compose down && docker-compose up
+	$(DOCKER_COMPOSE) down && $(DOCKER_COMPOSE) up
 
 # Exécuter les tests
 test:
-	docker-compose exec backend npm run test
+	$(DOCKER_COMPOSE) exec backend npm run test
 
 test-watch:
-	docker-compose exec backend npm run test:watch
+	$(DOCKER_COMPOSE) exec backend npm run test:watch
 
 test-e2e:
-	docker-compose exec backend npm run test:e2e
+	$(DOCKER_COMPOSE) exec backend npm run test:e2e
 
 test-cov:
-	docker-compose exec backend npm run test:cov
+	$(DOCKER_COMPOSE) exec backend npm run test:cov
+
+# Voir les logs du backend
+logs:
+	$(DOCKER_COMPOSE) logs -f backend
 
 # Nettoyage de Docker (ATTENTION : Supprime aussi les volumes !)
 clean:
-	docker-compose down -v
+	$(DOCKER_COMPOSE) down -v
 
 # Afficher l'aide
 help:
