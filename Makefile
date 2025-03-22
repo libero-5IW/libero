@@ -1,5 +1,10 @@
 DOCKER_COMPOSE = docker-compose
 
+init:
+	cd backend && npm install
+	cd frontend && npm install
+	$(DOCKER_COMPOSE) up
+
 # Prisma : Migration et génération de types
 migrate:
 	@read -p "Nom de la migration : " name; \

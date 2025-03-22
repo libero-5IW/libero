@@ -25,5 +25,15 @@ services:
     volumes:
       - ./backend:/app/backend
 
+  frontend:
+    build:
+      context: frontend/
+    ports:
+      - "80:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app/frontend
+
 volumes:
     postgres_data: {}
