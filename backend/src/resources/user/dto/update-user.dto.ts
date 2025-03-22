@@ -1,7 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateUserDto } from './create-user.dto';
 import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
-import { Role } from '../entities/role.enum';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
@@ -17,12 +16,40 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
 
   @ApiPropertyOptional({ example: 'johndoe@example.com' })
   @IsOptional()
-  @IsEmail({}, { message: 'Le prénom ne peut pas être vide.' })
+  @IsEmail({}, { message: 'Le mail doit être valide.' })
   email?: string;
 
-  @ApiPropertyOptional({ example: 'USER', enum: Role })
+  @ApiPropertyOptional({ example: 'Bluz' })
   @IsOptional()
-  role: Role;
+  companyName?: string;
+
+  @ApiPropertyOptional({ example: '14 avenue du moulin rouge' })
+  @IsOptional()
+  addressLine?: string;
+
+  @ApiPropertyOptional({ example: '93420' })
+  @IsOptional()
+  postalCode?: string;
+
+  @ApiPropertyOptional({ example: 'Villepinte' })
+  @IsOptional()
+  city?: string;
+
+  @ApiPropertyOptional({ example: 'France' })
+  @IsOptional()
+  country?: string;
+
+  @ApiPropertyOptional({ example: 'SASU' })
+  @IsOptional()
+  legalStatus?: string;
+
+  @ApiPropertyOptional({ example: '12345678901234' })
+  @IsOptional()
+  siret?: string;
+
+  @ApiPropertyOptional({ example: 'FR12345678901' })
+  @IsOptional()
+  tvaNumber?: string;
 
   @ApiPropertyOptional({ example: 'StrongPassword123!' })
   @IsOptional()

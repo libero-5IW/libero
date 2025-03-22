@@ -2,7 +2,8 @@
 
 - **Backend** : [http://localhost:8000/](http://localhost:8000/)
 - **Swagger** : [http://localhost:8000/doc](http://localhost:8000/doc)
-- **Prisma Studio** : [http://localhost:5555/](http://localhost:5555/)
+
+- **Prisma Studio** *(Il faut le lancer avant)* : [http://localhost:5555/](http://localhost:5555/)
 
 ---
 

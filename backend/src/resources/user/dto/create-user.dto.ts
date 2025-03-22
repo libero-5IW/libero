@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, MinLength } from 'class-validator';
-import { Role } from '../entities/role.enum';
+import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'John' })
@@ -12,11 +11,40 @@ export class CreateUserDto {
   lastName: string;
 
   @ApiProperty({ example: 'johndoe@example.com' })
-  @IsEmail({}, { message: 'Le prénom ne peut pas être vide.' })
+  @IsEmail({}, { message: 'Le mail doit être valide.' })
   email: string;
 
-  @ApiProperty({ example: 'USER', enum: Role })
-  role: Role;
+  @ApiProperty({ example: 'Bluz', required: false })
+  @IsOptional()
+  companyName?: string;
+
+  @ApiProperty({ example: '14 avenue du moulin rouge' })
+  @IsNotEmpty()
+  addressLine: string;
+
+  @ApiProperty({ example: '93420' })
+  @IsNotEmpty()
+  postalCode: string;
+
+  @ApiProperty({ example: 'Villepinte' })
+  @IsNotEmpty()
+  city: string;
+
+  @ApiProperty({ example: 'France' })
+  @IsNotEmpty()
+  country: string;
+
+  @ApiProperty({ example: 'SASU' })
+  @IsNotEmpty()
+  legalStatus: string;
+
+  @ApiProperty({ example: '12345678901234' })
+  @IsNotEmpty()
+  siret: string;
+
+  @ApiProperty({ example: 'FR12345678901', required: false })
+  @IsOptional()
+  tvaNumber?: string;
 
   @ApiProperty({ example: 'StrongPassword123!' })
   @MinLength(6, {
