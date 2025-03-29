@@ -3,7 +3,7 @@
 - **Backend** : [http://localhost:8000/](http://localhost:8000/)
 - **Swagger** : [http://localhost:8000/doc](http://localhost:8000/doc)
 
-- **Prisma Studio** *(Il faut le lancer avant)* : [http://localhost:5555/](http://localhost:5555/)
+- **Prisma Studio** : [http://localhost:5555/](http://localhost:5555/)
 
 ---
 
@@ -37,6 +37,6 @@ cd chemin/vers/le/projet
 
 - Générer un module avec controller, service, DTOs, entity et tests :
   ```bash
-  make module
+  make resource
   ```
 > *Le nom du module sera demandé lors de l’exécution.*

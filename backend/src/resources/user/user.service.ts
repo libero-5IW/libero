@@ -1,5 +1,8 @@
-// eslint-disable-next-line prettier/prettier
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -16,7 +19,9 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException(
+        'Un utilisateur avec cet e-mail existe déjà.',
+      );
     }
 
     const user = await this.prisma.user.create({
@@ -39,12 +44,14 @@ export class UserService {
   async update(id: string, updateUserDto: UpdateUserDto): Promise<UserEntity> {
     await this.getUserOrThrow(id);
 
-    const userWithSameEmail = await this.prisma.user.findUnique({
-      where: { email: updateUserDto.email },
-    });
+    if (updateUserDto.email) {
+      const userWithSameEmail = await this.prisma.user.findUnique({
+        where: { email: updateUserDto.email },
+      });
 
-    if (userWithSameEmail?.email && userWithSameEmail.id !== id) {
-      throw new ConflictException('This email is already in use.');
+      if (userWithSameEmail && userWithSameEmail.id !== id) {
+        throw new ConflictException('Cet e-mail est déjà utilisé.');
+      }
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -65,10 +72,10 @@ export class UserService {
     return plainToInstance(UserEntity, deletedUser);
   }
 
-  private async getUserOrThrow(id: string) {
+  async getUserOrThrow(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Utilisateur introuvable.');
     }
     return user;
   }
