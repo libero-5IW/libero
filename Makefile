@@ -1,24 +1,25 @@
 DOCKER_COMPOSE = docker-compose
 
+# Initialize project: install dependencies and start Docker
 init:
 	cd backend && npm install
 	cd frontend && npm install
 	$(DOCKER_COMPOSE) up
 
-# Prisma : Migration et génération de types
+# Prisma: run migration and generate types
 migrate:
-	@read -p "Nom de la migration : " name; \
+	@read -p "Migration name: " name; \
 	$(DOCKER_COMPOSE) exec backend npx prisma migrate dev --name $$name
 
 generate:
 	$(DOCKER_COMPOSE) exec backend npx prisma generate
 
-# Création d'un module NestJS avec toutes les ressources
+# Create a full NestJS resource module
 resource:
-	@read -p "Nom du module : " name; \
+	@read -p "Module name: " name; \
 	cd backend && nest g resource resources/$$name
 
-# Lancer l'application avec Docker Compose
+# Start the application with Docker Compose
 start:
 	$(DOCKER_COMPOSE) up
 
@@ -28,7 +29,7 @@ stop:
 restart:
 	$(DOCKER_COMPOSE) down && $(DOCKER_COMPOSE) up
 
-# Exécuter les tests
+# Run tests
 test:
 	$(DOCKER_COMPOSE) exec backend npm run test
 
@@ -41,15 +42,15 @@ test-e2e:
 test-cov:
 	$(DOCKER_COMPOSE) exec backend npm run test:cov
 
-# Voir les logs du backend
+# View backend logs
 logs:
 	$(DOCKER_COMPOSE) logs -f backend
 
-# Nettoyage de Docker (ATTENTION : Supprime aussi les volumes !)
+# Cleanup Docker (WARNING: also removes volumes)
 clean:
 	$(DOCKER_COMPOSE) down -v
 
-# Afficher l'aide
+# Show available commands
 help:
 	@echo "Commandes disponibles :"
 	@echo "  make migrate           - Exécuter une migration Prisma (nom demandé)"
