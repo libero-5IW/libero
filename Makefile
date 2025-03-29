@@ -14,9 +14,9 @@ generate:
 	$(DOCKER_COMPOSE) exec backend npx prisma generate
 
 # Création d'un module NestJS avec toutes les ressources
-module:
+resource:
 	@read -p "Nom du module : " name; \
-	cd backend && nest g resource modules/$$name
+	cd backend && nest g resource resources/$$name
 
 # Lancer l'application avec Docker Compose
 start:

@@ -15,19 +15,108 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  firstName     String
-  lastName      String
-  email         String   @unique
-  password      String
-  companyName   String?
-  addressLine   String
-  postalCode    String
-  city          String
-  country       String   @default("France")
-  legalStatus   String
-  siret         String
-  tvaNumber     String?
+  id                String   @id @default(uuid())
+  firstName         String
+  lastName          String
+  email             String   @unique
+  password          String
+  companyName       String?
+  addressLine       String
+  postalCode        String
+  city              String
+  country           String   @default("France")
+  legalStatus       String
+  siret             String
+  tvaNumber         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  quoteTemplates    QuoteTemplate[]
+  quotes            Quote[]
+  clients           Client[]    
+}
+
+model Client {
+  id          String   @id @default(uuid())
+  userId      String
+  firstName   String
+  lastName    String
+  email       String 
+  phoneNumber String
+  addressLine String
+  postalCode  String
+  city        String
+  country     String   @default("France")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+  quotes      Quote[] 
+
+  @@unique([userId, email])
+}
+
+model QuoteTemplate {
+  id            String    @id @default(uuid())
+  name          String
+  contentHtml   String
+  userId        String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id])
+  variables     QuoteTemplateVariable[]
+  quotes        Quote[]
+}
+
+model QuoteTemplateVariable {
+  id            String  @id @default(uuid())
+  templateId    String
+  variableName  String  
+  label         String
+  type          String
+  required      Boolean @default(false)
+
+  template      QuoteTemplate @relation(fields: [templateId], references: [id])
+  
+  @@unique([templateId, variableName])
+}
+
+model Quote {
+  id              String   @id @default(uuid())
+  number          Int   
+  templateId      String?  
+  userId          String
+  clientId        String
+  status          QuoteStatus @default(draft)
+  generatedHtml   String
+  issuedAt        DateTime
+  validUntil      DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id])
+  client          Client   @relation(fields: [clientId], references: [id])
+  template        QuoteTemplate? @relation(fields: [templateId], references: [id])
+  variableValues  QuoteVariableValue[] 
+
+  @@unique([userId, number]) 
+}
+
+enum QuoteStatus {
+  draft
+  sent
+  accepted
+  refused
+}
+
+model QuoteVariableValue {
+  id              String @id @default(uuid())
+  quoteId         String
+  variableName    String
+  value           String
+
+  quote           Quote  @relation(fields: [quoteId], references: [id])
+  
+  @@unique([quoteId, variableName])
 }
