@@ -14,6 +14,9 @@ migrate:
 generate:
 	$(DOCKER_COMPOSE) exec backend npx prisma generate
 
+reset-db:
+	$(DOCKER_COMPOSE) exec backend npx prisma migrate reset
+
 # Create a full NestJS resource module
 resource:
 	@read -p "Module name: " name; \
@@ -55,7 +58,8 @@ help:
 	@echo "Commandes disponibles :"
 	@echo "  make migrate           - Exécuter une migration Prisma (nom demandé)"
 	@echo "  make generate          - Générer Prisma Client"
-	@echo "  make module            - Créer un module NestJS (nom demandé)"
+	@echo "  make reset-db          - Réinitialise la base de données et relance toutes les migration"
+	@echo "  make resource          - Créer une ressource NestJS (nom demandé)"
 	@echo "  make start             - Démarrer l'application avec Docker Compose"
 	@echo "  make stop              - Arrêter les conteneurs Docker"
 	@echo "  make restart           - Redémarrer les conteneurs Docker"
