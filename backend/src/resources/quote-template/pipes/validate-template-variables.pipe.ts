@@ -12,6 +12,7 @@ export class ValidateTemplateVariablesPipe<
 
     this.ensureUniqueAndNonSystemVariables(variables);
     this.ensureRequiredVariablesInHtml(variables, contentHtml);
+    this.ensureRequiredVariablesInHtml(QUOTE_VARIABLES_SYSTEM, contentHtml);
 
     return value;
   }
@@ -29,7 +30,7 @@ export class ValidateTemplateVariablesPipe<
 
       if (seen.has(variableName) || isSystemQuoteVariable) {
         throw new BadRequestException(
-          `La variable "${variableName}" est définie plusieurs fois ou réservée.`,
+          `La variable "${variableName}" est définie plusieurs fois.`,
         );
       }
 
@@ -39,19 +40,19 @@ export class ValidateTemplateVariablesPipe<
 
   private ensureRequiredVariablesInHtml(
     variables: QuoteTemplateVariableDto[],
-    html: string,
+    contentHtml: string,
   ) {
-    const required = variables
+    const requiredVariables = variables
       .filter((v) => v.required)
       .map((v) => v.variableName);
 
-    const missing = required.filter(
-      (name) => !new RegExp(`{{\\s*${name}\\s*}}`).test(html),
+    const missingVariables = requiredVariables.filter(
+      (name) => !new RegExp(`{{\\s*${name}\\s*}}`).test(contentHtml),
     );
 
-    if (missing.length) {
+    if (missingVariables.length) {
       throw new BadRequestException(
-        `Le contenu HTML ne contient pas les variables requises suivantes : ${missing.join(', ')}`,
+        `Le contenu HTML ne contient pas les variables requises suivantes : ${missingVariables.join(', ')}`,
       );
     }
   }

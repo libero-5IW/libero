@@ -11,6 +11,7 @@ import { QuoteTemplateService } from './quote-template.service';
 import { CreateQuoteTemplateDto } from './dto/create-quote-template.dto';
 import { UpdateQuoteTemplateDto } from './dto/update-quote-template.dto';
 import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe';
+import { DEFAULT_QUOTE_TEMPLATE } from 'src/common/constants/system-templates/defaultQuoteTemplate';
 
 @Controller('quote-templates')
 export class QuoteTemplateController {
@@ -51,5 +52,10 @@ export class QuoteTemplateController {
   @Post(':id/duplicate')
   duplicate(@Param('id') id: string) {
     return this.quoteTemplateService.duplicate(id);
+  }
+
+  @Get('default-template')
+  getDefaultTemplate() {
+    return DEFAULT_QUOTE_TEMPLATE;
   }
 }
