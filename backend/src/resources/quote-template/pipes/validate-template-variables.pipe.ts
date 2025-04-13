@@ -42,9 +42,14 @@ export class ValidateTemplateVariablesPipe<
     variables: QuoteTemplateVariableDto[],
     contentHtml: string,
   ) {
-    const requiredVariables = variables
-      .filter((v) => v.required)
-      .map((v) => v.variableName);
+    const systemRequiredVariables = QUOTE_VARIABLES_SYSTEM.filter(
+      (v) => v.required,
+    ).map((v) => v.variableName);
+
+    const requiredVariables = [
+      ...variables.filter((v) => v.required).map((v) => v.variableName),
+      ...systemRequiredVariables,
+    ];
 
     const missingVariables = requiredVariables.filter(
       (name) => !new RegExp(`{{\\s*${name}\\s*}}`).test(contentHtml),

@@ -9,14 +9,16 @@ import { QuoteTemplateEntity } from './entities/quote-template.entity';
 import { plainToInstance } from 'class-transformer';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { generateCopyName } from 'src/common/utils/generate-copy-name.util';
+import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.util';
 import { QuoteTemplateVariableDto } from './dto/quote-template-variable.dto';
 import { UserService } from '../user/user.service';
+import { QUOTE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
 
 @Injectable()
 export class QuoteTemplateService {
   //variable temporaire pour simuler un vrai user
   //changer l'id selon le user existant
-  DEFAULT_USER_ID = '52760094-6a72-45d9-9169-c77c50e70f43';
+  DEFAULT_USER_ID = '05f38b82-d4df-4e4b-ba24-6b5a05039292';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -55,20 +57,26 @@ export class QuoteTemplateService {
       },
     });
 
-    return plainToInstance(QuoteTemplateEntity, template);
+    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
+
+    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
   }
 
   async findAll(): Promise<QuoteTemplateEntity[]> {
-    const template = await this.prisma.quoteTemplate.findMany({
+    const templates = await this.prisma.quoteTemplate.findMany({
       include: { variables: true },
     });
+    const templatesWithSystemVariables = templates.map(
+      this.mergeWithSystemVariables,
+    );
 
-    return plainToInstance(QuoteTemplateEntity, template);
+    return plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables);
   }
 
   async findOne(id: string): Promise<QuoteTemplateEntity> {
     const template = await this.getTemplateOrThrow(id);
-    return plainToInstance(QuoteTemplateEntity, template);
+    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
+    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
   }
 
   async update(
@@ -105,7 +113,10 @@ export class QuoteTemplateService {
       });
     });
 
-    return plainToInstance(QuoteTemplateEntity, updatedTemplate);
+    const templateWithSystemVariables =
+      this.mergeWithSystemVariables(updatedTemplate);
+
+    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
   }
 
   async remove(id: string): Promise<QuoteTemplateEntity> {
@@ -127,7 +138,7 @@ export class QuoteTemplateService {
       baseName: template.name,
     });
 
-    const duplicated = await this.prisma.quoteTemplate.create({
+    const duplicatedTemplate = await this.prisma.quoteTemplate.create({
       data: {
         name,
         contentHtml: template.contentHtml,
@@ -139,7 +150,10 @@ export class QuoteTemplateService {
       },
     });
 
-    return plainToInstance(QuoteTemplateEntity, duplicated);
+    const templateWithSystemVariables =
+      this.mergeWithSystemVariables(duplicatedTemplate);
+
+    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
   }
 
   private async getTemplateOrThrow(id: string) {
@@ -162,5 +176,9 @@ export class QuoteTemplateService {
       type: v.type,
       required: v.required,
     }));
+  }
+
+  private mergeWithSystemVariables(template: QuoteTemplateEntity) {
+    return mergeSystemVariables(template, QUOTE_VARIABLES_SYSTEM);
   }
 }

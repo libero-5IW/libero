@@ -2,9 +2,9 @@
     <component :is="tag" :class="computedClasses">
       <slot></slot>
     </component>
-  </template>
+</template>
   
-  <script lang="ts">
+<script lang="ts">
   import { defineComponent, computed } from 'vue';
   
   type Tag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span' | 'small' | 'strong' | 'i' | 'b';
@@ -49,4 +49,4 @@
       };
     },
   });
-  </script>
+</script>

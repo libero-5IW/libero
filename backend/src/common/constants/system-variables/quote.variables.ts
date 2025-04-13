@@ -16,7 +16,7 @@ export const QUOTE_VARIABLES = [
   {
     variableName: 'total_amount',
     label: 'Montant total HT',
-    type: 'currency',
+    type: 'number',
     required: true,
   },
   {
@@ -27,4 +27,10 @@ export const QUOTE_VARIABLES = [
   },
 ];
 
-export const QUOTE_VARIABLES_SYSTEM = [...SHARED_VARIABLES, ...QUOTE_VARIABLES];
+export const QUOTE_VARIABLES_SYSTEM = [
+  ...SHARED_VARIABLES,
+  ...QUOTE_VARIABLES,
+].map((v) => ({
+  ...v,
+  id: 'systemVariable',
+}));

@@ -4,7 +4,7 @@ import router from '@/routes';
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
-    withCredentials: true
+    withCredentials: false
 })
 
 // apiClient.interceptors.response.use(

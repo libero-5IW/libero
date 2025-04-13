@@ -1,0 +1,57 @@
+<template>
+    <div v-if="editor" class="flex flex-wrap items-center gap-2 border border-b-0 border-gray-300 p-2 rounded-t-md">
+      <v-btn
+        @click="editor.chain().focus().toggleBold().run()"
+        size="small"
+        :variant="editor.isActive('bold') ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().toggleBold().run()"
+      >Bold</v-btn>
+  
+      <v-btn
+        @click="editor.chain().focus().toggleItalic().run()"
+        size="small"
+        :variant="editor.isActive('italic') ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().toggleItalic().run()"
+      >Italic</v-btn>
+
+      <v-btn
+        @click="editor.chain().focus().toggleHeading({level: 1}).run()"
+        size="small"
+        :variant="editor.isActive('heading', { level: 1 }) ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().toggleHeading({level: 1}).run()"
+      >H1</v-btn>
+
+      <v-btn
+        @click="editor.chain().focus().toggleHeading({level: 2}).run()"
+        size="small"
+        :variant="editor.isActive('heading', { level: 2 }) ? 'text' : 'plain'"
+      >H2</v-btn>
+  
+      <v-btn
+        @click="editor.chain().focus().toggleUnderline().run()"
+        size="small"
+        :variant="editor.isActive('underline') ? 'text' : 'plain'"
+      >Underline</v-btn>
+  
+      <v-btn
+        @click="editor.chain().focus().undo().run()"
+        size="small"
+        :variant="editor.isActive('redo') ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().undo().run()"
+      >Undo</v-btn>
+  
+      <v-btn
+        @click="editor.chain().focus().redo().run()"
+        size="small"
+        :variant="editor.isActive('redo') ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().redo().run()"
+      >Redo</v-btn>
+    </div>
+  </template>
+  
+  <script setup lang="ts">
+  import type { Editor } from '@tiptap/vue-3'
+  
+  const props = defineProps<{ editor: Editor }>()
+</script>
+  

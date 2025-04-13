@@ -8,13 +8,13 @@ export function useToastHandler() {
         error: toast.error,
         info: toast.info,
         warning: toast.warning
-    };
+    }
 
     const showToast = (status: ToastStatus, message: string) => {
-        if (!message) return;
-        toastTypes[status](message);
-        window.history.replaceState({}, '', router.currentRoute.value.path);
+        if (!message) return
+        toastTypes[status](message)
+        window.history.replaceState({}, '', router.currentRoute.value.path)
     }
     
-    return { showToast };
+    return { showToast }
 }

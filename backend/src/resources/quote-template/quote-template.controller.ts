@@ -17,6 +17,11 @@ import { DEFAULT_QUOTE_TEMPLATE } from 'src/common/constants/system-templates/de
 export class QuoteTemplateController {
   constructor(private readonly quoteTemplateService: QuoteTemplateService) {}
 
+  @Get('default-template')
+  getDefaultTemplate() {
+    return DEFAULT_QUOTE_TEMPLATE;
+  }
+
   @Post()
   create(
     @Body(new ValidateTemplateVariablesPipe())
@@ -52,10 +57,5 @@ export class QuoteTemplateController {
   @Post(':id/duplicate')
   duplicate(@Param('id') id: string) {
     return this.quoteTemplateService.duplicate(id);
-  }
-
-  @Get('default-template')
-  getDefaultTemplate() {
-    return DEFAULT_QUOTE_TEMPLATE;
   }
 }
