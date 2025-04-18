@@ -18,7 +18,7 @@ import { QUOTE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
 export class QuoteTemplateService {
   //variable temporaire pour simuler un vrai user
   //changer l'id selon le user existant
-  DEFAULT_USER_ID = '05f38b82-d4df-4e4b-ba24-6b5a05039292';
+  DEFAULT_USER_ID = 'b17336a6-53be-489f-a85b-820a1eef90aa';
 
   constructor(
     private readonly prisma: PrismaService,

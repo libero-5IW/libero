@@ -28,6 +28,7 @@ services:
   frontend:
     build:
       context: frontend/
+    platform: linux/amd64
     ports:
       - "80:5173"
     depends_on:
