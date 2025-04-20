@@ -1,14 +1,32 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { ContractTemplateService } from './contract-template.service';
 import { CreateContractTemplateDto } from './dto/create-contract-template.dto';
 import { UpdateContractTemplateDto } from './dto/update-contract-template.dto';
+import { ValidateTemplateVariablesPipe } from '../quote-template/pipes/validate-template-variables.pipe'; // Réutilisation du même pipe
+import { DEFAULT_CONTRACT_TEMPLATE } from 'src/common/constants/system-templates/defaultContractTemplate';
 
-@Controller('contract-template')
+@Controller('contract-templates')
 export class ContractTemplateController {
   constructor(private readonly contractTemplateService: ContractTemplateService) {}
 
+  @Get('default-template')
+  getDefaultTemplate() {
+    return DEFAULT_CONTRACT_TEMPLATE;
+  }
+
   @Post()
-  create(@Body() createContractTemplateDto: CreateContractTemplateDto) {
+  create(
+    @Body(new ValidateTemplateVariablesPipe())
+    createContractTemplateDto: CreateContractTemplateDto,
+  ) {
     return this.contractTemplateService.create(createContractTemplateDto);
   }
 
@@ -19,16 +37,25 @@ export class ContractTemplateController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.contractTemplateService.findOne(+id);
+    return this.contractTemplateService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateContractTemplateDto: UpdateContractTemplateDto) {
-    return this.contractTemplateService.update(+id, updateContractTemplateDto);
+  update(
+    @Param('id') id: string,
+    @Body(new ValidateTemplateVariablesPipe())
+    updateContractTemplateDto: UpdateContractTemplateDto,
+  ) {
+    return this.contractTemplateService.update(id, updateContractTemplateDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.contractTemplateService.remove(+id);
+    return this.contractTemplateService.remove(id);
+  }
+
+  @Post(':id/duplicate')
+  duplicate(@Param('id') id: string) {
+    return this.contractTemplateService.duplicate(id);
   }
 }
