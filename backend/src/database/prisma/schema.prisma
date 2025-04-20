@@ -34,7 +34,11 @@ model User {
 
   quoteTemplates    QuoteTemplate[]
   quotes            Quote[]
-  clients           Client[]    
+  clients           Client[] 
+
+  contractTemplates  ContractTemplate[]
+  contracts          Contract[]
+   
 }
 
 model Client {
@@ -52,7 +56,9 @@ model Client {
   updatedAt   DateTime @updatedAt
 
   user        User     @relation(fields: [userId], references: [id])
-  quotes      Quote[] 
+  quotes      Quote[]
+  contracts Contract[]
+
 
   @@unique([userId, email])
 }
@@ -121,3 +127,71 @@ model QuoteVariableValue {
   
   @@unique([quoteId, variableName])
 }
+
+model Contract {
+  id              String   @id @default(uuid())
+  number          Int
+  templateId      String?
+  userId          String
+  clientId        String
+  status          ContractStatus @default(draft)
+  generatedHtml   String
+  issuedAt        DateTime
+  validUntil      DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id])
+  client          Client   @relation(fields: [clientId], references: [id])
+  template        ContractTemplate? @relation(fields: [templateId], references: [id])
+  variableValues  ContractVariableValue[]
+
+  @@unique([userId, number])
+}
+
+
+model ContractTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  contentHtml String
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User     @relation(fields: [userId], references: [id])
+  variables   ContractTemplateVariable[]
+  contracts   Contract[]
+}
+
+
+model ContractTemplateVariable {
+  id           String  @id @default(uuid())
+  templateId   String
+  variableName String
+  label        String
+  type         String
+  required     Boolean @default(false)
+
+  template     ContractTemplate @relation(fields: [templateId], references: [id])
+
+  @@unique([templateId, variableName])
+}
+
+model ContractVariableValue {
+  id            String @id @default(uuid())
+  contractId    String
+  variableName  String
+  value         String
+
+  contract      Contract @relation(fields: [contractId], references: [id])
+
+  @@unique([contractId, variableName])
+}
+
+enum ContractStatus {
+  draft
+  sent
+  accepted
+  refused
+}
+
