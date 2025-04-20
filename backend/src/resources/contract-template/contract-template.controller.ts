@@ -10,7 +10,7 @@ import {
 import { ContractTemplateService } from './contract-template.service';
 import { CreateContractTemplateDto } from './dto/create-contract-template.dto';
 import { UpdateContractTemplateDto } from './dto/update-contract-template.dto';
-import { ValidateTemplateVariablesPipe } from '../quote-template/pipes/validate-template-variables.pipe'; // Réutilisation du même pipe
+import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe'; 
 import { DEFAULT_CONTRACT_TEMPLATE } from 'src/common/constants/system-templates/defaultContractTemplate';
 
 @Controller('contract-templates')
