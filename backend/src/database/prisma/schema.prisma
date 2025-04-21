@@ -33,6 +33,10 @@ model User {
 
   quoteTemplates    QuoteTemplate[]
   quotes            Quote[]
+
+  invoiceTemplates InvoiceTemplate[]
+  invoices         Invoice[]
+
   clients           Client[]    
 }
 
@@ -52,6 +56,7 @@ model Client {
 
   user        User     @relation(fields: [userId], references: [id])
   quotes      Quote[] 
+  invoices    Invoice[]
 
   @@unique([userId, email])
 }
@@ -119,4 +124,70 @@ model QuoteVariableValue {
   quote           Quote  @relation(fields: [quoteId], references: [id])
   
   @@unique([quoteId, variableName])
+}
+
+model InvoiceTemplate {
+  id            String    @id @default(uuid())
+  name          String
+  contentHtml   String
+  userId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id])
+  variables     InvoiceTemplateVariable[]
+  invoices      Invoice[]
+}
+
+model InvoiceTemplateVariable {
+  id            String  @id @default(uuid())
+  templateId    String
+  variableName  String  
+  label         String
+  type          String
+  required      Boolean @default(false)
+
+  template      InvoiceTemplate @relation(fields: [templateId], references: [id])
+  
+  @@unique([templateId, variableName])
+}
+
+model Invoice {
+  id              String   @id @default(uuid())
+  number          Int
+  templateId      String?
+  userId          String
+  clientId        String
+  status          InvoiceStatus @default(draft)
+  generatedHtml   String
+  issuedAt        DateTime
+  dueDate         DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id])
+  client          Client   @relation(fields: [clientId], references: [id])
+  template        InvoiceTemplate? @relation(fields: [templateId], references: [id])
+  variableValues  InvoiceVariableValue[]
+
+  @@unique([userId, number])
+}
+
+model InvoiceVariableValue {
+  id              String @id @default(uuid())
+  invoiceId       String
+  variableName    String
+  value           String
+
+  invoice         Invoice @relation(fields: [invoiceId], references: [id])
+  
+  @@unique([invoiceId, variableName])
+}
+
+enum InvoiceStatus {
+  draft
+  sent
+  paid
+  overdue
+  cancelled
 }
