@@ -16,7 +16,7 @@ import { INVOICE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables'
 
 @Injectable()
 export class InvoiceTemplateService {
-  DEFAULT_USER_ID = '05f38b82-d4df-4e4b-ba24-6b5a05039292';
+  DEFAULT_USER_ID = 'e0f77fd1-d9ff-4875-ad81-ebd3338f1a4c';
 
   constructor(
     private readonly prisma: PrismaService,
