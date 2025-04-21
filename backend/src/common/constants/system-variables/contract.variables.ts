@@ -1,41 +1,53 @@
 import { SHARED_VARIABLES } from './shared.variables';
 
-export const CONTRACT_VARIABLES = [
+const CONTRACT_ONLY_VARIABLES = [
   {
-    variableName: 'contract_date',
-    label: 'Date du contrat',
-    type: 'date',
+    variableName: 'freelancer_address',
+    label: 'Adresse du freelance',
+    type: 'string',
     required: true,
   },
   {
-    variableName: 'contract_number',
-    label: 'Numéro du contrat',
+    variableName: 'client_address',
+    label: 'Adresse du client',
+    type: 'string',
+    required: true,
+  },
+  {
+    variableName: 'prestation_description',
+    label: 'Description de la prestation',
+    type: 'string',
+    required: true,
+  },
+  {
+    variableName: 'total_amount',
+    label: 'Montant total (HT)',
     type: 'number',
     required: true,
-  },
-  {
-    variableName: 'start_date',
-    label: 'Date de début',
-    type: 'date',
-    required: true,
-  },
-  {
-    variableName: 'end_date',
-    label: 'Date de fin',
-    type: 'date',
-    required: false,
   },
   {
     variableName: 'payment_terms',
     label: 'Modalités de paiement',
     type: 'string',
-    required: false,
+    required: true,
+  },
+  {
+    variableName: 'freelancer_signature',
+    label: 'Signature du freelance',
+    type: 'string',
+    required: true,
+  },
+  {
+    variableName: 'client_signature',
+    label: 'Signature du client',
+    type: 'string',
+    required: true,
   },
 ];
 
 export const CONTRACT_VARIABLES_SYSTEM = [
   ...SHARED_VARIABLES,
-  ...CONTRACT_VARIABLES,
+  ...CONTRACT_ONLY_VARIABLES,
 ].map((v) => ({
   ...v,
   id: 'systemVariable',

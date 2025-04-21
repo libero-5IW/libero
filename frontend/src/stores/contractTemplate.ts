@@ -45,7 +45,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
 
   async function createTemplate(payload: ContractTemplate) {
     try {
-      const cleanedPayload = removeSystemVariables(payload)
+      const cleanedPayload = { ...payload }
       const { data } = await apiClient.post('/contract-templates', cleanedPayload)
       return ContractTemplateSchema.parse(data)
     } catch (error) {
