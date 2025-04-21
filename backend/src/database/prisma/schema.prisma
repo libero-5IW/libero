@@ -191,7 +191,9 @@ model ContractVariableValue {
 enum ContractStatus {
   draft
   sent
-  accepted
-  refused
+  signed
+  declined
+  expired
+  cancelled
 }
 
