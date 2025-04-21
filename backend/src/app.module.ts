@@ -4,6 +4,7 @@ import { UserModule } from './resources/user/user.module';
 // import { QuoteModule } from './resources/quote/quote.module';
 import { QuoteTemplateModule } from './resources/quote-template/quote-template.module';
 import { PrismaModule } from './database/prisma/prisma.module';
+import { InvoiceTemplateModule } from './resources/invoice-template/invoice-template.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { PrismaModule } from './database/prisma/prisma.module';
     UserModule,
     // QuoteModule,
     QuoteTemplateModule,
+    InvoiceTemplateModule,
   ],
 })
 export class AppModule {}
