@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { QuoteTemplateController } from './quote-template.controller';
-import { QuoteTemplateService } from './quote-template.service';
+import { QuoteTemplateController } from '../../src/resources/quote-template/quote-template.controller';
+import { QuoteTemplateService } from '../../src/resources/quote-template/quote-template.service';
 
 describe('QuoteTemplateController', () => {
   let controller: QuoteTemplateController;
