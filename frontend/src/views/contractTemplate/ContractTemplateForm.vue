@@ -56,8 +56,8 @@ import type { Editor } from '@tiptap/vue-3'
 import { useRoute } from 'vue-router'
 
 import ContractTemplateFormMain from '@/components/ContractTemplate/ContractTemplateFormMain.vue'
-import ContractTemplateSidebar from '@/components/TemplateEditor/Sidebar.vue' // ✅ mis à jour ici
-import ContractTemplatePreview from '@/components/ui/PreviewPdf.vue' // ✅ mis à jour ici
+import ContractTemplateSidebar from '@/components/TemplateEditor/Sidebar.vue' 
+import ContractTemplatePreview from '@/components/ui/PreviewPdf.vue' 
 import ImportVariableModal from '@/components/TemplateEditor/variable/VariableImportModal.vue'
 import VariableFormModal from '@/components/TemplateEditor/variable/VariableFormModal.vue'
 import TemplateEditor from '@/components/TemplateEditor/Editor.vue'
