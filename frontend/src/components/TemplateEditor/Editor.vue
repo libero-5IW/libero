@@ -19,7 +19,7 @@
   import EditorToolbar from '@/components/TemplateEditor/EditorToolbar.vue'
   
   const props = defineProps<{ modelValue: string }>()
-  const emit = defineEmits(['update:modelValue'])
+  const emit = defineEmits(['update:modelValue', 'editor-ready'])
   const editor = ref<Editor>()
   
   const CustomHardBreak = HardBreak.extend({
@@ -68,6 +68,10 @@
         emit('update:modelValue', editor.getHTML())
       },
     })
+
+    if(editor.value) {
+      emit('editor-ready', editor.value)
+    }
   })
   
   onBeforeUnmount(() => {
