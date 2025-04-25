@@ -3,22 +3,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateQuoteTemplateDto } from './dto/create-quote-template.dto';
-import { UpdateQuoteTemplateDto } from './dto/update-quote-template.dto';
-import { QuoteTemplateEntity } from './entities/quote-template.entity';
+import { CreateContractTemplateDto } from './dto/create-contract-template.dto';
+import { UpdateContractTemplateDto } from './dto/update-contract-template.dto';
+import { ContractTemplateEntity } from './entities/contract-template.entity';
 import { plainToInstance } from 'class-transformer';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { generateCopyName } from 'src/common/utils/generate-copy-name.util';
 import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.util';
-import { QuoteTemplateVariableDto } from './dto/quote-template-variable.dto';
+import { ContractTemplateVariableDto } from './dto/contract-template-variable.dto';
 import { UserService } from '../user/user.service';
-import { QUOTE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
+import { CONTRACT_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
 
 @Injectable()
-export class QuoteTemplateService {
-  //variable temporaire pour simuler un vrai user
-  //changer l'id selon le user existant
-  DEFAULT_USER_ID = 'e0f77fd1-d9ff-4875-ad81-ebd3338f1a4c';
+export class ContractTemplateService {
+  DEFAULT_USER_ID = 'b17336a6-53be-489f-a85b-820a1eef90aa';
 
   constructor(
     private readonly prisma: PrismaService,
@@ -26,18 +24,18 @@ export class QuoteTemplateService {
   ) {}
 
   async create(
-    createQuoteTemplateDto: CreateQuoteTemplateDto,
-  ): Promise<QuoteTemplateEntity> {
+    createContractTemplateDto: CreateContractTemplateDto,
+  ): Promise<ContractTemplateEntity> {
     const {
       name,
       contentHtml,
       userId = this.DEFAULT_USER_ID,
       variables = [],
-    } = createQuoteTemplateDto;
+    } = createContractTemplateDto;
 
     await this.userService.getUserOrThrow(userId);
 
-    const existingTemplate = await this.prisma.quoteTemplate.findFirst({
+    const existingTemplate = await this.prisma.contractTemplate.findFirst({
       where: { userId, name },
     });
 
@@ -45,7 +43,7 @@ export class QuoteTemplateService {
       throw new BadRequestException('Un template avec ce nom existe déjà.');
     }
 
-    const template = await this.prisma.quoteTemplate.create({
+    const template = await this.prisma.contractTemplate.create({
       data: {
         name,
         contentHtml,
@@ -57,43 +55,45 @@ export class QuoteTemplateService {
       },
     });
 
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
+    const templateWithSystemVariables =
+      this.mergeWithSystemVariables(template);
 
-    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
+    return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
-  async findAll(): Promise<QuoteTemplateEntity[]> {
-    const templates = await this.prisma.quoteTemplate.findMany({
+  async findAll(): Promise<ContractTemplateEntity[]> {
+    const templates = await this.prisma.contractTemplate.findMany({
       include: { variables: true },
     });
     const templatesWithSystemVariables = templates.map(
       this.mergeWithSystemVariables,
     );
 
-    return plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables);
+    return plainToInstance(ContractTemplateEntity, templatesWithSystemVariables);
   }
 
-  async findOne(id: string): Promise<QuoteTemplateEntity> {
+  async findOne(id: string): Promise<ContractTemplateEntity> {
     const template = await this.getTemplateOrThrow(id);
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
-    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
+    const templateWithSystemVariables =
+      this.mergeWithSystemVariables(template);
+    return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
   async update(
     id: string,
-    updateQuoteTemplateDto: UpdateQuoteTemplateDto,
-  ): Promise<QuoteTemplateEntity> {
-    const { name, contentHtml, variables } = updateQuoteTemplateDto;
+    updateContractTemplateDto: UpdateContractTemplateDto,
+  ): Promise<ContractTemplateEntity> {
+    const { name, contentHtml, variables } = updateContractTemplateDto;
 
-    await this.prisma.quoteTemplate.findUniqueOrThrow({ where: { id } });
+    await this.prisma.contractTemplate.findUniqueOrThrow({ where: { id } });
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
       if (variables?.length) {
-        await tx.quoteTemplateVariable.deleteMany({
+        await tx.contractTemplateVariable.deleteMany({
           where: { templateId: id },
         });
 
-        await tx.quoteTemplateVariable.createMany({
+        await tx.contractTemplateVariable.createMany({
           data: this.mapVariableData(variables).map((variable) => ({
             templateId: id,
             ...variable,
@@ -101,7 +101,7 @@ export class QuoteTemplateService {
         });
       }
 
-      return tx.quoteTemplate.update({
+      return tx.contractTemplate.update({
         where: { id },
         data: {
           name,
@@ -116,29 +116,29 @@ export class QuoteTemplateService {
     const templateWithSystemVariables =
       this.mergeWithSystemVariables(updatedTemplate);
 
-    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
+    return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
-  async remove(id: string): Promise<QuoteTemplateEntity> {
+  async remove(id: string): Promise<ContractTemplateEntity> {
     await this.getTemplateOrThrow(id);
 
-    const deletedQuoteTemplate = await this.prisma.quoteTemplate.delete({
+    const deletedContractTemplate = await this.prisma.contractTemplate.delete({
       where: { id },
     });
 
-    return plainToInstance(QuoteTemplateEntity, deletedQuoteTemplate);
+    return plainToInstance(ContractTemplateEntity, deletedContractTemplate);
   }
 
-  async duplicate(id: string): Promise<QuoteTemplateEntity> {
+  async duplicate(id: string): Promise<ContractTemplateEntity> {
     const template = await this.getTemplateOrThrow(id);
 
     const name = await generateCopyName({
-      table: 'quoteTemplate',
+      table: 'contractTemplate',
       nameField: 'name',
       baseName: template.name,
     });
 
-    const duplicatedTemplate = await this.prisma.quoteTemplate.create({
+    const duplicatedTemplate = await this.prisma.contractTemplate.create({
       data: {
         name,
         contentHtml: template.contentHtml,
@@ -153,23 +153,23 @@ export class QuoteTemplateService {
     const templateWithSystemVariables =
       this.mergeWithSystemVariables(duplicatedTemplate);
 
-    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
+    return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
   private async getTemplateOrThrow(id: string) {
-    const template = await this.prisma.quoteTemplate.findUnique({
+    const template = await this.prisma.contractTemplate.findUnique({
       where: { id },
       include: { variables: true },
     });
 
     if (!template) {
-      throw new NotFoundException("Le template du devis n'a pas été trouvé.");
+      throw new NotFoundException("Le template du contrat n'a pas été trouvé.");
     }
 
     return template;
   }
 
-  private mapVariableData(variables: QuoteTemplateVariableDto[]) {
+  private mapVariableData(variables: ContractTemplateVariableDto[]) {
     return variables.map((v) => ({
       variableName: v.variableName,
       label: v.label,
@@ -178,7 +178,7 @@ export class QuoteTemplateService {
     }));
   }
 
-  private mergeWithSystemVariables(template: QuoteTemplateEntity) {
-    return mergeSystemVariables(template, QUOTE_VARIABLES_SYSTEM);
+  private mergeWithSystemVariables(template: ContractTemplateEntity) {
+    return mergeSystemVariables(template, CONTRACT_VARIABLES_SYSTEM);
   }
 }
