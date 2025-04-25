@@ -9,7 +9,6 @@ generator client {
   binaryTargets = ["native", "darwin-arm64", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x", "debian-openssl-3.0.x"]
 }
 
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -34,15 +33,11 @@ model User {
 
   quoteTemplates    QuoteTemplate[]
   quotes            Quote[]
-
-  invoiceTemplates InvoiceTemplate[]
-  invoices         Invoice[]
-
+  invoiceTemplates  InvoiceTemplate[]
+  invoices          Invoice[]
   clients           Client[] 
-
-  contractTemplates  ContractTemplate[]
-  contracts          Contract[]
-   
+  contractTemplates ContractTemplate[]
+  contracts         Contract[]
 }
 
 model Client {
@@ -62,14 +57,13 @@ model Client {
   user        User     @relation(fields: [userId], references: [id])
   quotes      Quote[] 
   invoices    Invoice[]
-  contracts Contract[]
-
+  contracts   Contract[]
 
   @@unique([userId, email])
 }
 
 model QuoteTemplate {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   name          String
   contentHtml   String
   userId        String
@@ -94,9 +88,11 @@ model QuoteTemplateVariable {
   @@unique([templateId, variableName])
 }
 
+
+
 model Quote {
   id              String   @id @default(uuid())
-  number          Int   
+  number          Int
   templateId      String?  
   userId          String
   clientId        String
@@ -110,9 +106,10 @@ model Quote {
   user            User     @relation(fields: [userId], references: [id])
   client          Client   @relation(fields: [clientId], references: [id])
   template        QuoteTemplate? @relation(fields: [templateId], references: [id])
-  variableValues  QuoteVariableValue[] 
-  contracts   Contract[] 
-  invoices    Invoice[] 
+  variableValues  QuoteVariableValue[]
+
+  invoice         Invoice? @relation("QuoteToInvoice")
+  contract        Contract?
 
   @@unique([userId, number]) 
 }
@@ -136,7 +133,7 @@ model QuoteVariableValue {
 }
 
 model InvoiceTemplate {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   name          String
   contentHtml   String
   userId        String
@@ -167,8 +164,7 @@ model Invoice {
   templateId      String?
   userId          String
   clientId        String
-  contractId      String
-  quoteId         String
+  quoteId         String?   @unique
   status          InvoiceStatus @default(draft)
   generatedHtml   String
   issuedAt        DateTime
@@ -180,8 +176,9 @@ model Invoice {
   client          Client   @relation(fields: [clientId], references: [id])
   template        InvoiceTemplate? @relation(fields: [templateId], references: [id])
   variableValues  InvoiceVariableValue[]
-  contracts       Contract[] 
-  quote    Quote   @relation(fields: [quoteId], references: [id])
+
+  quote           Quote?   @relation("QuoteToInvoice", fields: [quoteId], references: [id])
+  contract        Contract?
 
   @@unique([userId, number])
 }
@@ -190,10 +187,10 @@ model Contract {
   id              String   @id @default(uuid())
   number          Int
   templateId      String?     
-  quoteId         String?      
-  invoiceId       String?    
   userId          String
   clientId        String
+  quoteId         String?   @unique
+  invoiceId       String?   @unique
   status          ContractStatus @default(draft)
   generatedHtml   String
   issuedAt        DateTime
@@ -203,14 +200,14 @@ model Contract {
 
   user            User     @relation(fields: [userId], references: [id])
   client          Client   @relation(fields: [clientId], references: [id])
-  quote           Quote?    @relation(fields: [quoteId], references: [id])
-  invoice         Invoice?  @relation(fields: [invoiceId], references: [id])
   template        ContractTemplate? @relation(fields: [templateId], references: [id])
   variableValues  ContractVariableValue[]
 
+  quote           Quote?   @relation(fields: [quoteId], references: [id])
+  invoice         Invoice? @relation(fields: [invoiceId], references: [id])
+
   @@unique([userId, number])
 }
-
 
 
 model InvoiceVariableValue {
@@ -245,7 +242,6 @@ model ContractTemplate {
   contracts   Contract[]
 }
 
-
 model ContractTemplateVariable {
   id           String  @id @default(uuid())
   templateId   String
@@ -278,4 +274,3 @@ enum ContractStatus {
   expired
   cancelled
 }
-
