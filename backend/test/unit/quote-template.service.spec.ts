@@ -5,7 +5,9 @@ import { UserService } from '../../src/resources/user/user.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import * as generateCopyNameUtil from '../../src/common/utils/generate-copy-name.util';
 
-jest.spyOn(generateCopyNameUtil, 'generateCopyName').mockResolvedValue('Template Copy');
+jest
+  .spyOn(generateCopyNameUtil, 'generateCopyName')
+  .mockResolvedValue('Template Copy');
 
 const mockPrismaService = {
   quoteTemplate: {
@@ -53,7 +55,10 @@ describe('QuoteTemplateService', () => {
     it('should create a new template', async () => {
       mockUserService.getUserOrThrow.mockResolvedValue(true);
       mockPrismaService.quoteTemplate.findFirst.mockResolvedValue(null);
-      mockPrismaService.quoteTemplate.create.mockResolvedValue({ id: '1', variables: [] });
+      mockPrismaService.quoteTemplate.create.mockResolvedValue({
+        id: '1',
+        variables: [],
+      });
 
       const dto = { name: 'Test', contentHtml: '<p>Test</p>', variables: [] };
 
@@ -66,15 +71,21 @@ describe('QuoteTemplateService', () => {
 
     it('should throw if template name exists', async () => {
       mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.quoteTemplate.findFirst.mockResolvedValue({ id: 'exists' });
+      mockPrismaService.quoteTemplate.findFirst.mockResolvedValue({
+        id: 'exists',
+      });
 
-      await expect(service.create({ name: 'Test', contentHtml: '' } as any)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.create({ name: 'Test', contentHtml: '' } as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('findAll', () => {
     it('should return all templates', async () => {
-      mockPrismaService.quoteTemplate.findMany.mockResolvedValue([{ id: '1', variables: [] }]);
+      mockPrismaService.quoteTemplate.findMany.mockResolvedValue([
+        { id: '1', variables: [] },
+      ]);
       const result = await service.findAll();
       expect(result.length).toBe(1);
     });
@@ -82,7 +93,10 @@ describe('QuoteTemplateService', () => {
 
   describe('findOne', () => {
     it('should return a template by id', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({ id: '1', variables: [] });
+      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
+        id: '1',
+        variables: [],
+      });
       const result = await service.findOne('1');
       expect(result).toHaveProperty('id', '1');
     });
@@ -95,10 +109,18 @@ describe('QuoteTemplateService', () => {
 
   describe('update', () => {
     it('should update a template', async () => {
-      mockPrismaService.quoteTemplate.findUniqueOrThrow.mockResolvedValue({ id: '1' });
-      mockPrismaService.quoteTemplate.update.mockResolvedValue({ id: '1', variables: [] });
+      mockPrismaService.quoteTemplate.findUniqueOrThrow.mockResolvedValue({
+        id: '1',
+      });
+      mockPrismaService.quoteTemplate.update.mockResolvedValue({
+        id: '1',
+        variables: [],
+      });
 
-      const result = await service.update('1', { name: 'Updated', contentHtml: '<p>Updated</p>' } as any);
+      const result = await service.update('1', {
+        name: 'Updated',
+        contentHtml: '<p>Updated</p>',
+      } as any);
 
       expect(result).toHaveProperty('id', '1');
     });
@@ -106,7 +128,10 @@ describe('QuoteTemplateService', () => {
 
   describe('remove', () => {
     it('should delete a template', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({ id: '1', variables: [] });
+      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
+        id: '1',
+        variables: [],
+      });
       mockPrismaService.quoteTemplate.delete.mockResolvedValue({ id: '1' });
 
       const result = await service.remove('1');
@@ -117,8 +142,16 @@ describe('QuoteTemplateService', () => {
 
   describe('duplicate', () => {
     it('should duplicate a template', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({ id: '1', name: 'Template', userId: '123', variables: [] });
-      mockPrismaService.quoteTemplate.create.mockResolvedValue({ id: '2', variables: [] });
+      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
+        id: '1',
+        name: 'Template',
+        userId: '123',
+        variables: [],
+      });
+      mockPrismaService.quoteTemplate.create.mockResolvedValue({
+        id: '2',
+        variables: [],
+      });
 
       const result = await service.duplicate('1');
 

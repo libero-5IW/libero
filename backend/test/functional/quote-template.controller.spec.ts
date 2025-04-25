@@ -7,7 +7,7 @@ import { DEFAULT_QUOTE_TEMPLATE } from '../../src/common/constants/system-templa
 
 describe('QuoteTemplateController (Functional)', () => {
   let app: INestApplication;
-  
+
   const requiredContentHtml = `
   <p>Hello {{client_name}}, here is your quote for {{prestation}}.</p>
   <p>Freelancer: {{freelancer_name}}</p>
@@ -16,7 +16,6 @@ describe('QuoteTemplateController (Functional)', () => {
   <p>Total (HT): {{total_amount}}</p>
   <p>Valid Until: {{valid_until}}</p>
 `.trim();
-
 
   const mockTemplate = {
     id: '1',
@@ -87,14 +86,14 @@ describe('QuoteTemplateController (Functional)', () => {
   it('/POST quote-templates', () => {
     return request(app.getHttpServer())
       .post('/quote-templates')
-      .send({ 
-        name: 'New Template', 
-        contentHtml: requiredContentHtml, 
+      .send({
+        name: 'New Template',
+        contentHtml: requiredContentHtml,
         userId: '123',
-        variables: []
+        variables: [],
       })
       .expect(201)
-      .expect(res => {
+      .expect((res) => {
         expect(res.body).toMatchObject({
           id: '2',
           name: 'New Template',
@@ -111,7 +110,7 @@ describe('QuoteTemplateController (Functional)', () => {
     return request(app.getHttpServer())
       .get('/quote-templates')
       .expect(200)
-      .expect(res => {
+      .expect((res) => {
         expect(res.body[0]).toMatchObject({
           id: '1',
           name: 'Test Template',
@@ -128,7 +127,7 @@ describe('QuoteTemplateController (Functional)', () => {
     return request(app.getHttpServer())
       .get('/quote-templates/1')
       .expect(200)
-      .expect(res => {
+      .expect((res) => {
         expect(res.body).toMatchObject({
           id: '1',
           name: 'Test Template',
@@ -146,7 +145,7 @@ describe('QuoteTemplateController (Functional)', () => {
       .patch('/quote-templates/1')
       .send({ name: 'Updated Template', contentHtml: requiredContentHtml })
       .expect(200)
-      .expect(res => {
+      .expect((res) => {
         expect(res.body).toMatchObject({
           id: '1',
           name: 'Updated Template',
@@ -170,7 +169,7 @@ describe('QuoteTemplateController (Functional)', () => {
     return request(app.getHttpServer())
       .post('/quote-templates/1/duplicate')
       .expect(201)
-      .expect(res => {
+      .expect((res) => {
         expect(res.body).toMatchObject({
           id: '3',
           name: 'Test Template Copy',
