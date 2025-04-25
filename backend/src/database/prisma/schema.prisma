@@ -112,6 +112,7 @@ model Quote {
   template        QuoteTemplate? @relation(fields: [templateId], references: [id])
   variableValues  QuoteVariableValue[] 
   contracts   Contract[] 
+  invoices    Invoice[] 
 
   @@unique([userId, number]) 
 }
@@ -166,6 +167,8 @@ model Invoice {
   templateId      String?
   userId          String
   clientId        String
+  contractId      String
+  quoteId         String
   status          InvoiceStatus @default(draft)
   generatedHtml   String
   issuedAt        DateTime
@@ -177,7 +180,8 @@ model Invoice {
   client          Client   @relation(fields: [clientId], references: [id])
   template        InvoiceTemplate? @relation(fields: [templateId], references: [id])
   variableValues  InvoiceVariableValue[]
-  contracts   Contract[] 
+  contracts       Contract[] 
+  quote    Quote   @relation(fields: [quoteId], references: [id])
 
   @@unique([userId, number])
 }
@@ -185,9 +189,9 @@ model Invoice {
 model Contract {
   id              String   @id @default(uuid())
   number          Int
-  templateId      String?     // Pour le ContractTemplate
-  quoteId         String      // Pour le devis
-  invoiceId       String      // Pour la facture
+  templateId      String?     
+  quoteId         String?      
+  invoiceId       String?    
   userId          String
   clientId        String
   status          ContractStatus @default(draft)
@@ -199,8 +203,8 @@ model Contract {
 
   user            User     @relation(fields: [userId], references: [id])
   client          Client   @relation(fields: [clientId], references: [id])
-  quote           Quote    @relation(fields: [quoteId], references: [id])
-  invoice         Invoice  @relation(fields: [invoiceId], references: [id])
+  quote           Quote?    @relation(fields: [quoteId], references: [id])
+  invoice         Invoice?  @relation(fields: [invoiceId], references: [id])
   template        ContractTemplate? @relation(fields: [templateId], references: [id])
   variableValues  ContractVariableValue[]
 

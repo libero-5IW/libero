@@ -2,21 +2,19 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const modelMap = {
+  quote: prisma.quote,
+  invoice: prisma.invoice,
+  contract: prisma.contract,
+} as const;
+
 export async function generateNextNumber(
-  tableName: 'quote' | 'invoice' | 'contract',
+  tableName: keyof typeof modelMap,
   userId: string,
-  fieldName: string = 'number',
+  fieldName = 'number',
 ): Promise<number> {
-  switch (tableName) {
-    case 'quote':
-      return getNextNumber(prisma.quote, userId, fieldName);
-    case 'invoice':
-      return getNextNumber(prisma.invoice, userId, fieldName);
-    case 'contract':
-      return getNextNumber(prisma.contract, userId, fieldName);
-    default:
-      throw new Error('Invalid table name');
-  }
+  const model = modelMap[tableName];
+  return getNextNumber(model, userId, fieldName);
 }
 
 async function getNextNumber(model: any, userId: string, fieldName: string): Promise<number> {
