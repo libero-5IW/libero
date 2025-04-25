@@ -5,6 +5,8 @@ import { UserModule } from './resources/user/user.module';
 import { QuoteTemplateModule } from './resources/quote-template/quote-template.module';
 import { PrismaModule } from './database/prisma/prisma.module';
 import { InvoiceTemplateModule } from './resources/invoice-template/invoice-template.module';
+import { ContractModule } from './resources/contract/contract.module';
+import { ContractTemplateModule } from './resources/contract-template/contract-template.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { InvoiceTemplateModule } from './resources/invoice-template/invoice-temp
     // QuoteModule,
     QuoteTemplateModule,
     InvoiceTemplateModule,
+    ContractModule,
+    ContractTemplateModule,
   ],
 })
 export class AppModule {}
