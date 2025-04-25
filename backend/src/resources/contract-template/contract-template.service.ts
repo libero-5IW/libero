@@ -16,7 +16,7 @@ import { CONTRACT_VARIABLES_SYSTEM } from 'src/common/constants/system-variables
 
 @Injectable()
 export class ContractTemplateService {
-  DEFAULT_USER_ID = 'b17336a6-53be-489f-a85b-820a1eef90aa';
+  DEFAULT_USER_ID = 'e0f77fd1-d9ff-4875-ad81-ebd3338f1a4c';
 
   constructor(
     private readonly prisma: PrismaService,

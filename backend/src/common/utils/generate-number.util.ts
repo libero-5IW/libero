@@ -7,7 +7,20 @@ export async function generateNextNumber(
   userId: string,
   fieldName: string = 'number',
 ): Promise<number> {
-  const lastItem = await prisma[tableName].findFirst({
+  switch (tableName) {
+    case 'quote':
+      return getNextNumber(prisma.quote, userId, fieldName);
+    case 'invoice':
+      return getNextNumber(prisma.invoice, userId, fieldName);
+    case 'contract':
+      return getNextNumber(prisma.contract, userId, fieldName);
+    default:
+      throw new Error('Invalid table name');
+  }
+}
+
+async function getNextNumber(model: any, userId: string, fieldName: string): Promise<number> {
+  const lastItem = await model.findFirst({
     where: { userId },
     orderBy: { [fieldName]: 'desc' },
   });

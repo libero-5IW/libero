@@ -9,8 +9,8 @@ export const DEFAULT_CONTRACT_TEMPLATE = {
     <p><strong>Prestation :</strong> {{prestation_description}}</p>
     <p><strong>Montant :</strong> {{total_amount}} € HT</p>
     <p><strong>Modalités de paiement :</strong> {{payment_terms}}</p>
-    <p><strong>Signature Freelance :</strong> /freelancer_sign_here/</p>
-    <p><strong>Signature Client :</strong> /client_sign_here/</p>
+    <p><strong>Signature Freelance :</strong> {{freelancer_signature}}</p>
+    <p><strong>Signature Client :</strong> {{client_signature}}</p>
   `,
   variables: CONTRACT_VARIABLES_SYSTEM,
 };
