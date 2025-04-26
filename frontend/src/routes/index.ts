@@ -3,6 +3,7 @@ import quoteTemplateRoutes from '@/routes/quoteTemplate'
 import securityRoutes from '@/routes/security'
 import invoiceTemplateRoutes from '@/routes/invoiceTemplate'
 import contractTemplateRoutes from './contractTemplate' 
+import invoiceRoutes from './invoice';
 
 
 const routes: Array<RouteRecordRaw> = [
@@ -10,6 +11,7 @@ const routes: Array<RouteRecordRaw> = [
   ...invoiceTemplateRoutes,
   ...securityRoutes,
   ...contractTemplateRoutes,
+  ...invoiceRoutes,
 ]
 
 const router = createRouter({
