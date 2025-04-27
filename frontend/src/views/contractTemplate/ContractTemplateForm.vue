@@ -6,7 +6,7 @@
         <ContractTemplateFormMain
           :template="template"
           :isEdit="isEdit"
-          :editorRef="editorRef"
+          @editor-ready="setEditor"
           :onSave="saveTemplate"
         />
       </v-col>
@@ -60,7 +60,6 @@ import ContractTemplateSidebar from '@/components/TemplateEditor/Sidebar.vue'
 import ContractTemplatePreview from '@/components/ui/PreviewPdf.vue' 
 import ImportVariableModal from '@/components/TemplateEditor/variable/VariableImportModal.vue'
 import VariableFormModal from '@/components/TemplateEditor/variable/VariableFormModal.vue'
-import TemplateEditor from '@/components/TemplateEditor/Editor.vue'
 
 import type { ContractTemplateVariable } from '@/schemas/contractTemplate.schema'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
@@ -85,8 +84,7 @@ const currentVariable = ref<ContractTemplateVariable>({
   required: false
 })
 
-const editorRef = ref<InstanceType<typeof TemplateEditor> & { getEditor?: () => Editor | undefined }>()
-
+const editorRef = ref<Editor | null>(null)
 const showImportModal = ref(false)
 const showVariableForm = ref(false)
 const variableMode = ref<'create' | 'edit'>('create')
@@ -113,6 +111,10 @@ onMounted(async () => {
     })
   }
 })
+
+function setEditor(editorInstance: Editor) {
+  editorRef.value = editorInstance
+}
 
 function openEditModal(index: number) {
   currentVariable.value = { ...template.variables[index] }
@@ -144,9 +146,8 @@ function addImportedVariables(vars: ContractTemplateVariable[]) {
 
 function insertVariableInEditor(index: number) {
   const variable = template.variables[index]
-  const editor = editorRef.value?.getEditor?.()
-  if (editor && variable) {
-    editor.commands.insertContent(`{{${variable.variableName}}}`)
+  if (editorRef.value && variable) {
+    editorRef.value.commands.insertContent(`{{${variable.variableName}}}`)
   }
 }
 
@@ -155,7 +156,6 @@ function getLabelVariables(vars: ContractTemplateVariable[]) {
   vars.forEach((v) => {
     result[v.variableName] = `<em class="text-gray-500">${v.label}</em>`
   })
-
   return result
 }
 
