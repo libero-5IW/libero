@@ -13,8 +13,14 @@ export class InvoiceController {
   @ApiResponse({ status: 201, description: 'Facture créée avec succès.' })
   @ApiResponse({ status: 400, description: 'Erreur de validation des données.' })
   async createInvoice(@Body() createInvoiceDto: CreateInvoiceDto) {
-    return await this.invoiceService.createInvoiceFromTemplate(createInvoiceDto);
+    return await this.invoiceService.createInvoiceFromTemplate(createInvoiceDto, createInvoiceDto.userId);
   }
+
+  @Get('next-number')
+  @ApiOperation({ summary: 'Obtenir le prochain numéro de facture' })
+  async getNextInvoiceNumber() {
+    return await this.invoiceService.getNextInvoiceNumber();
+  }  
 
   @Get(':id')
   @ApiOperation({ summary: 'Récupérer une facture par son ID' })
@@ -33,4 +39,6 @@ export class InvoiceController {
   async getAllInvoices() {
     return await this.invoiceService.findAll();
   }
+
+
 }

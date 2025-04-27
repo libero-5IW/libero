@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma/prisma.service'
+import { PrismaService } from '../../database/prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { InvoiceTemplateService } from '../invoice-template/invoice-template.service';
 
@@ -10,18 +10,10 @@ export class InvoiceService {
     private readonly invoiceTemplateService: InvoiceTemplateService,
   ) {}
 
-  /**
-   * Créer une facture à partir d'un template précis
-   */
-  async createInvoiceFromTemplate(dto: CreateInvoiceDto) {
-    // 1. Récupérer le template
+  async createInvoiceFromTemplate(dto: CreateInvoiceDto, userId: string) {
     const template = await this.invoiceTemplateService.findOne(dto.templateId);
+    if (!template) throw new NotFoundException('Template de facture introuvable');
 
-    if (!template) {
-      throw new NotFoundException('Template de facture introuvable');
-    }
-
-    // 2. Vérifier que toutes les variables requises sont présentes
     const expectedVariables = template.variables.map(v => v.variableName);
     const missingVars = expectedVariables.filter(v => !(v in dto.variables));
 
@@ -29,26 +21,23 @@ export class InvoiceService {
       throw new BadRequestException(`Variables manquantes : ${missingVars.join(', ')}`);
     }
 
-    // 3. Remplacer les variables dans le contentHtml
     let generatedHtml = template.contentHtml;
     for (const [key, value] of Object.entries(dto.variables)) {
       const regex = new RegExp(`{{${key}}}`, 'g');
       generatedHtml = generatedHtml.replace(regex, value);
     }
 
-    // 4. Générer le numéro de facture (auto-incrément par user)
     const lastInvoice = await this.prisma.invoice.findFirst({
-      where: { userId: dto.userId },
+      where: { userId },
       orderBy: { number: 'desc' },
     });
     const nextNumber = lastInvoice ? lastInvoice.number + 1 : 1;
 
-    // 5. Sauvegarder la facture en BDD
     const invoice = await this.prisma.invoice.create({
       data: {
         number: nextNumber,
         templateId: dto.templateId,
-        userId: dto.userId,
+        userId,
         clientId: dto.clientId,
         issuedAt: dto.issuedAt,
         dueDate: dto.dueDate,
@@ -67,9 +56,6 @@ export class InvoiceService {
     return invoice;
   }
 
-  /**
-   * Récupérer une facture par ID
-   */
   async findById(id: string) {
     return await this.prisma.invoice.findUnique({
       where: { id },
@@ -77,12 +63,18 @@ export class InvoiceService {
     });
   }
 
-  /**
-   * Lister toutes les factures
-   */
   async findAll() {
     return await this.prisma.invoice.findMany({
       include: { variableValues: true },
     });
   }
+
+  async getNextInvoiceNumber() {
+    const lastInvoice = await this.prisma.invoice.findFirst({
+      orderBy: { number: 'desc' },
+    });
+    const nextNumber = lastInvoice ? lastInvoice.number + 1 : 1;
+    return { nextNumber };
+  }  
+  
 }

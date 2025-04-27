@@ -8,6 +8,7 @@ import { InvoiceTemplateModule } from './resources/invoice-template/invoice-temp
 import { ContractModule } from './resources/contract/contract.module';
 import { ContractTemplateModule } from './resources/contract-template/contract-template.module';
 import { InvoiceModule } from './resources/invoice/invoice.module';
+import { ClientModule } from './resources/client/client.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { InvoiceModule } from './resources/invoice/invoice.module';
     ContractModule,
     ContractTemplateModule,
     InvoiceModule,
+    ClientModule,
   ],
 })
 export class AppModule {}
