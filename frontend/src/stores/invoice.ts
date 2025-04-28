@@ -61,7 +61,6 @@ export const useInvoiceStore = defineStore('invoice', () => {
     }
   }  
   
-
   return {
     invoices,
     currentInvoice,

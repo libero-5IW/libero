@@ -39,6 +39,4 @@ export class InvoiceController {
   async getAllInvoices() {
     return await this.invoiceService.findAll();
   }
-
-
 }
