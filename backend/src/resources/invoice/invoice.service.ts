@@ -63,6 +63,17 @@ export class InvoiceService {
     });
   }
 
+  async getInvoiceOrThrow(id: string) {
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id },
+      include: { variableValues: true },
+    });
+    if (!invoice) {
+      throw new NotFoundException('Facture non trouvée');
+    }
+    return invoice;
+  }  
+
   async findAll() {
     return await this.prisma.invoice.findMany({
       include: { variableValues: true },

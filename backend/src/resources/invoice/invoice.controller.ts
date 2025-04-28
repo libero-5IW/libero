@@ -23,12 +23,8 @@ export class InvoiceController {
 
   @Get(':id')
   async getInvoiceById(@Param('id') id: string) {
-    const invoice = await this.invoiceService.findById(id);
-    if (!invoice) {
-      throw new NotFoundException('Facture non trouvée');
-    }
-    return invoice;
-  }
+    return await this.invoiceService.getInvoiceOrThrow(id);
+  }  
 
   @Get()
   async getAllInvoices() {
