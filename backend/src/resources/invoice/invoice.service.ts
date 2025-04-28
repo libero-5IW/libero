@@ -10,41 +10,41 @@ export class InvoiceService {
     private readonly invoiceTemplateService: InvoiceTemplateService,
   ) {}
 
-  async createInvoiceFromTemplate(dto: CreateInvoiceDto, userId: string) {
-    const template = await this.invoiceTemplateService.findOne(dto.templateId);
+  async createInvoiceFromTemplate(createInvoiceDto: CreateInvoiceDto, userId: string) {
+    const template = await this.invoiceTemplateService.findOne(createInvoiceDto.templateId);
     if (!template) throw new NotFoundException('Template de facture introuvable');
-
+  
     const expectedVariables = template.variables.map(v => v.variableName);
-    const missingVars = expectedVariables.filter(v => !(v in dto.variables));
-
+    const missingVars = expectedVariables.filter(v => !(v in createInvoiceDto.variables));
+  
     if (missingVars.length > 0) {
       throw new BadRequestException(`Variables manquantes : ${missingVars.join(', ')}`);
     }
-
+  
     let generatedHtml = template.contentHtml;
-    for (const [key, value] of Object.entries(dto.variables)) {
+    for (const [key, value] of Object.entries(createInvoiceDto.variables)) {
       const regex = new RegExp(`{{${key}}}`, 'g');
       generatedHtml = generatedHtml.replace(regex, value);
     }
-
+  
     const lastInvoice = await this.prisma.invoice.findFirst({
       where: { userId },
       orderBy: { number: 'desc' },
     });
     const nextNumber = lastInvoice ? lastInvoice.number + 1 : 1;
-
+  
     const invoice = await this.prisma.invoice.create({
       data: {
         number: nextNumber,
-        templateId: dto.templateId,
+        templateId: createInvoiceDto.templateId,
         userId,
-        clientId: dto.clientId,
-        issuedAt: dto.issuedAt,
-        dueDate: dto.dueDate,
+        clientId: createInvoiceDto.clientId,
+        issuedAt: createInvoiceDto.issuedAt,
+        dueDate: createInvoiceDto.dueDate,
         generatedHtml,
         status: 'draft',
         variableValues: {
-          create: Object.entries(dto.variables).map(([variableName, value]) => ({
+          create: Object.entries(createInvoiceDto.variables).map(([variableName, value]) => ({
             variableName,
             value,
           })),
@@ -52,9 +52,9 @@ export class InvoiceService {
       },
       include: { variableValues: true },
     });
-
+  
     return invoice;
-  }
+  }  
 
   async findById(id: string) {
     return await this.prisma.invoice.findUnique({
