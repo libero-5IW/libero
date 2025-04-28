@@ -1,25 +1,45 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 import { INVOICE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables/invoice.variables';
+import { InvoiceTemplateService } from '../../invoice-template/invoice-template.service';
+import { CreateInvoiceDto } from '../dto/create-invoice.dto';
 
 @Injectable()
-export class ValidateInvoiceVariablesPipe implements PipeTransform {
-  transform(value: { variables: Record<string, string> }) {
-    const providedVars = value.variables || {};
-    const requiredVars = INVOICE_VARIABLES_SYSTEM.filter(v => v.required);
+export class ValidateInvoiceVariablesPipe implements PipeTransform<CreateInvoiceDto> {
+  constructor(private readonly invoiceTemplateService: InvoiceTemplateService) {}
 
-    const missingVars = requiredVars
-      .filter(v => !(v.variableName in providedVars))
+  async transform(value: CreateInvoiceDto) {
+    const { variables = {}, templateId } = value;
+
+    await this.ensureTemplateVariables(templateId, variables);
+    this.ensureSystemVariables(variables);
+    this.validateBusinessRules(variables);
+
+    return value;
+  }
+
+  private async ensureTemplateVariables(templateId: string, variables: Record<string, string>) {
+    const template = await this.invoiceTemplateService.findOne(templateId);
+    if (!template) {
+      throw new BadRequestException('Template de facture introuvable');
+    }
+
+    const requiredTemplateVars = template.variables.map(v => v.variableName);
+    const missingVars = requiredTemplateVars.filter(v => !(v in variables));
+
+    if (missingVars.length > 0) {
+      throw new BadRequestException(`Variables manquantes : ${missingVars.join(', ')}`);
+    }
+  }
+
+  private ensureSystemVariables(variables: Record<string, string>) {
+    const requiredSystemVars = INVOICE_VARIABLES_SYSTEM.filter(v => v.required);
+    const missingVars = requiredSystemVars
+      .filter(v => !(v.variableName in variables))
       .map(v => v.variableName);
 
     if (missingVars.length > 0) {
-      throw new BadRequestException(
-        `Variables manquantes : ${missingVars.join(', ')}`
-      );
+      throw new BadRequestException(`Variables système manquantes : ${missingVars.join(', ')}`);
     }
-
-    this.validateBusinessRules(providedVars);
-
-    return value;
   }
 
   private validateBusinessRules(vars: Record<string, string>) {

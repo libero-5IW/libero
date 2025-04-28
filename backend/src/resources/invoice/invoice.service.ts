@@ -14,13 +14,6 @@ export class InvoiceService {
     const template = await this.invoiceTemplateService.findOne(createInvoiceDto.templateId);
     if (!template) throw new NotFoundException('Template de facture introuvable');
   
-    const expectedVariables = template.variables.map(v => v.variableName);
-    const missingVars = expectedVariables.filter(v => !(v in createInvoiceDto.variables));
-  
-    if (missingVars.length > 0) {
-      throw new BadRequestException(`Variables manquantes : ${missingVars.join(', ')}`);
-    }
-  
     let generatedHtml = template.contentHtml;
     for (const [key, value] of Object.entries(createInvoiceDto.variables)) {
       const regex = new RegExp(`{{${key}}}`, 'g');
