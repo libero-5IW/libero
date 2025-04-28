@@ -1,15 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-
-export class InvoiceVariableValueEntity {
-  @ApiProperty({ example: 'variable_name' })
-  @Expose()
-  variableName: string;
-
-  @ApiProperty({ example: 'Valeur de la variable' })
-  @Expose()
-  value: string;
-}
+import { InvoiceVariableValueEntity } from './invoice-variable-value.entity';
 
 export class InvoiceEntity {
   @ApiProperty({ example: 'f21796d5-e7e4-4d5c-8f47-48f6d7c4457b' })
