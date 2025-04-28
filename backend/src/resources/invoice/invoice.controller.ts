@@ -2,6 +2,8 @@ import { Controller, Post, Body, Get, Param, NotFoundException } from '@nestjs/c
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ValidateInvoiceVariablesPipe } from './pipes/validate-invoice-variables.pipe';
+
 
 @ApiTags('Invoices')
 @Controller('invoices')
@@ -12,7 +14,10 @@ export class InvoiceController {
   @ApiOperation({ summary: 'Créer une facture à partir d’un template' })
   @ApiResponse({ status: 201, description: 'Facture créée avec succès.' })
   @ApiResponse({ status: 400, description: 'Erreur de validation des données.' })
-  async createInvoice(@Body() createInvoiceDto: CreateInvoiceDto) {
+  
+  async createInvoice(
+    @Body(new ValidateInvoiceVariablesPipe()) createInvoiceDto: CreateInvoiceDto
+  ) {
     return await this.invoiceService.createInvoiceFromTemplate(createInvoiceDto, createInvoiceDto.userId);
   }
 
