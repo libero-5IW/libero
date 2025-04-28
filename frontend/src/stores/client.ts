@@ -13,10 +13,10 @@ export const useClientStore = defineStore('client', () => {
     isLoading.value = true
     try {
       const { data } = await apiClient.get('/clients')
-      console.log('Données brutes API:', data)   // 👈 Ajoute ça
+      console.log('Données brutes API:', data)  
       clients.value = data.map((item: Client) => ClientSchema.parse(item))
     } catch (error) {
-      console.error('Erreur capturée:', error)   // 👈 Log l'erreur complète
+      console.error('Erreur capturée:', error)   
       handleAxiosError(error, 'Erreur lors de la récupération des clients.')
     } finally {
       isLoading.value = false
