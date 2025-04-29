@@ -108,6 +108,8 @@
   import QuoteTemplatePreview from '@/components/ui/PreviewPdf.vue';
   import TemplateSelectionModal from '@/components/Invoice/TemplateSelectionModal.vue';
   import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
+  import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
+
   
   const router = useRouter();
   const route = useRoute();
@@ -242,7 +244,7 @@ async function onCreateInvoice() {
         issuedAt: new Date().toISOString(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         generatedHtml: generatedHtml,
-        status: 'draft'
+        status: INVOICE_STATUS.DRAFT,
     };
   
     const invoice = await invoiceStore.createInvoice(payload);
