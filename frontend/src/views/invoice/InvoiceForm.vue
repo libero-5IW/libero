@@ -109,7 +109,7 @@
   import TemplateSelectionModal from '@/components/Invoice/TemplateSelectionModal.vue';
   import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
   import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
-
+  import { useToastHandler } from '@/composables/useToastHandler';
   
   const router = useRouter();
   const route = useRoute();
@@ -124,6 +124,8 @@
   const selectedClientId = ref<string>('');
   const templateVariables = ref<InvoiceTemplateVariable[]>([]);
   const variables = ref<Record<string, string>>({});
+  const { showToast } = useToastHandler();
+
   
   const previewHtml = ref<string>('');
   const previewVariables = ref<Record<string, string>>({});
@@ -250,10 +252,8 @@ async function onCreateInvoice() {
     const invoice = await invoiceStore.createInvoice(payload);
 
     if (invoice) {
-    sessionStorage.setItem('toastMessage', `La facture #${invoice.number} a été créée avec succès.`);
-    sessionStorage.setItem('toastStatus', 'success');
-
-    router.push({ name: 'InvoiceList' });
+      showToast('success', `La facture #${invoice.number} a été créée avec succès.`);
+      router.push({ name: 'InvoiceList' });
     }
 }
   
