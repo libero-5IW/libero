@@ -41,11 +41,8 @@ export class InvoiceService {
         generatedHtml,
         status: INVOICE_STATUS.DRAFT,
         variableValues: {
-          create: Object.entries(createInvoiceDto.variables).map(([variableName, value]) => ({
-            variableName,
-            value,
-          })),
-        },
+          create: this.mapVariableData(createInvoiceDto.variables),
+        },        
       },
       include: { variableValues: true },
     });
@@ -81,5 +78,12 @@ export class InvoiceService {
     const nextNumber = await generateNextNumber('invoice', userId);
     return { nextNumber };
   }
+
+  private mapVariableData(variables: Record<string, string>) {
+    return Object.entries(variables).map(([variableName, value]) => ({
+      variableName,
+      value,
+    }));
+  }  
   
 }
