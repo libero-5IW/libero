@@ -110,6 +110,9 @@
   import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
   import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
   import { useToastHandler } from '@/composables/useToastHandler';
+  import { DEFAULT_INVOICE_TEMPLATE } from '@/constants/system-templates/defaultInvoiceTemplate';
+  import { mapTemplateVariablesForFrontend } from '@/utils/mapTemplateVariables'; 
+
   
   const router = useRouter();
   const route = useRoute();
@@ -139,12 +142,14 @@
     }))
   );
   
-  const templateOptions = computed(() =>
-  invoiceTemplateStore.templates.map(t => ({
-    id: t.id,
-    name: t.name
-  }))
-  );
+  const templateOptions = computed(() => [
+    { id: DEFAULT_INVOICE_TEMPLATE.id, name: DEFAULT_INVOICE_TEMPLATE.name },
+    ...invoiceTemplateStore.templates.map(t => ({
+      id: t.id,
+      name: t.name
+    }))
+  ]);
+
 
 const canCreate = computed(() => {
   const hasTemplate = !!selectedTemplateId.value;
@@ -186,29 +191,58 @@ function mapType(type: string) {
 }
   
 async function handleTemplateSelected(templateId: string) {
-    selectedTemplateId.value = templateId;
+  selectedTemplateId.value = templateId;
+
+  if (templateId === DEFAULT_INVOICE_TEMPLATE.id) {
+    const template = DEFAULT_INVOICE_TEMPLATE;
+    templateVariables.value = mapTemplateVariablesForFrontend(template.variables);
+    previewHtml.value = template.contentHtml;
+    previewVariables.value = {};
+    variables.value = {};
+
+    template.variables.forEach(v => {
+      previewVariables.value[v.variableName] = `<em class="text-gray-500">${v.label}</em>`;
+      variables.value[v.variableName] = '';
+    });
+
+    const nextNumber = await invoiceStore.fetchNextInvoiceNumber();
+    if (nextNumber !== null) {
+      variables.value['invoice_number'] = `${nextNumber}`;
+    }
+
+    if (currentUser.value) {
+      if ('freelancer_name' in variables.value) {
+        variables.value['freelancer_name'] = `${currentUser.value.firstName} ${currentUser.value.lastName}`;
+      }
+      if ('freelancer_address' in variables.value) {
+        variables.value['freelancer_address'] = `${currentUser.value.addressLine}, ${currentUser.value.postalCode} ${currentUser.value.city}, ${currentUser.value.country}`;
+      }
+      if ('freelancer_siret' in variables.value) {
+        variables.value['freelancer_siret'] = currentUser.value.siret;
+      }
+    }
+  } else {
     await invoiceTemplateStore.fetchTemplate(templateId);
-  
+
     const template = invoiceTemplateStore.currentTemplate;
     if (template) {
-    
       templateVariables.value = template.variables;
       previewHtml.value = template.contentHtml;
       previewVariables.value = {};
       variables.value = {};
-  
+
       template.variables.forEach(v => {
         previewVariables.value[v.variableName] = `<em class="text-gray-500">${v.label}</em>`;
         variables.value[v.variableName] = '';
       });
-  
+
       if (template.variables.some(v => v.variableName === 'invoice_number')) {
         const nextNumber = await invoiceStore.fetchNextInvoiceNumber();
         if (nextNumber !== null) {
           variables.value['invoice_number'] = `${nextNumber}`;
         }
       }
-  
+
       if (currentUser.value) {
         if ('freelancer_name' in variables.value) {
           variables.value['freelancer_name'] = `${currentUser.value.firstName} ${currentUser.value.lastName}`;
@@ -222,6 +256,7 @@ async function handleTemplateSelected(templateId: string) {
       }
     }
   }
+}
   
 async function onCreateInvoice() {
     if (!currentUser.value) {

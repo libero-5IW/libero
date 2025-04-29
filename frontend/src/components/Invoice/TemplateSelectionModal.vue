@@ -26,6 +26,7 @@
 <script setup lang="ts">
   import { ref, watch, onMounted } from 'vue';
   import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
+  import { DEFAULT_INVOICE_TEMPLATE } from '@/constants/system-templates/defaultInvoiceTemplate'; 
   
   const props = defineProps<{ modelValue: boolean }>();
   const emit = defineEmits(['update:modelValue', 'templateSelected']);
@@ -41,15 +42,23 @@
   const templates = ref<{ id: string, name: string }[]>([]);
   
   onMounted(async () => {
-  await invoiceTemplateStore.fetchAllTemplates();
-  templates.value = invoiceTemplateStore.templates
-    .filter(t => t.id)
-    .map(t => ({ id: t.id as string, name: t.name }));
+    await invoiceTemplateStore.fetchAllTemplates();
+    
+    templates.value = [
+      {
+        id: DEFAULT_INVOICE_TEMPLATE.id,
+        name: DEFAULT_INVOICE_TEMPLATE.name,
+      },
+      ...invoiceTemplateStore.templates
+        .filter(t => t.id)
+        .map(t => ({ id: t.id as string, name: t.name })),
+    ];
 
-  const defaultTemplate = templates.value.find(t => t.name === 'Modèle de base - Facture');
-  if (defaultTemplate) {
-    selectedTemplate.value = defaultTemplate.id;
-  }
+    const defaultTemplate = templates.value.find(t => t.id === DEFAULT_INVOICE_TEMPLATE.id);
+
+    if (defaultTemplate) {
+      selectedTemplate.value = defaultTemplate.id;
+    }
   });
 
   function confirmSelection() {
