@@ -2,6 +2,10 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { InvoiceTemplateService } from '../invoice-template/invoice-template.service';
+import { generateNextNumber } from 'src/common/utils/generate-number.util';
+import { INVOICE_STATUS } from 'src/common/constants/status/invoice-status.constant';
+
+
 
 @Injectable()
 export class InvoiceService {
@@ -35,7 +39,7 @@ export class InvoiceService {
         issuedAt: createInvoiceDto.issuedAt,
         dueDate: createInvoiceDto.dueDate,
         generatedHtml,
-        status: 'draft',
+        status: INVOICE_STATUS.DRAFT,
         variableValues: {
           create: Object.entries(createInvoiceDto.variables).map(([variableName, value]) => ({
             variableName,
@@ -73,12 +77,9 @@ export class InvoiceService {
     });
   }
 
-  async getNextInvoiceNumber() {
-    const lastInvoice = await this.prisma.invoice.findFirst({
-      orderBy: { number: 'desc' },
-    });
-    const nextNumber = lastInvoice ? lastInvoice.number + 1 : 1;
+  async getNextInvoiceNumber(userId: string) {
+    const nextNumber = await generateNextNumber('invoice', userId);
     return { nextNumber };
-  }  
+  }
   
 }

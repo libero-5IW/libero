@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param,Query } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { ValidateInvoiceVariablesPipe } from './pipes/validate-invoice-variables.pipe';
@@ -19,9 +19,9 @@ export class InvoiceController {
   }
 
   @Get('next-number')
-  async getNextInvoiceNumber() {
-    return await this.invoiceService.getNextInvoiceNumber();
-  }  
+  async getNextInvoiceNumber(@Query('userId') userId: string) {
+    return await this.invoiceService.getNextInvoiceNumber(userId);
+  } 
 
   @Get(':id')
   async getInvoiceById(@Param('id') id: string) {
