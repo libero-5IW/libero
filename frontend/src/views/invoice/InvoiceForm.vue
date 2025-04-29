@@ -269,9 +269,12 @@ async function onCreateInvoice() {
   const invoice = await invoiceStore.createInvoice(payload);
 
   if (invoice) {
-    showToast('success', `La facture #${invoice.number} a été créée avec succès.`);
-    router.push({ name: 'InvoiceList' });
+    router.push ({
+      path: '/invoice',
+      state: { toastStatus : 'success', toastMessage: `La facture #${invoice.number} a été créée avec succès.` }
+    });
   }
+
 }
 
 function generateHtmlFromTemplate(templateHtml: string, vars: Record<string, string>): string {
