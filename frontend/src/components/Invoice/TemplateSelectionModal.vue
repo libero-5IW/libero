@@ -51,6 +51,7 @@
       id: invoiceTemplateStore.defaultTemplate.id as string,
       name: invoiceTemplateStore.defaultTemplate.name,
     });
+    selectedTemplate.value = invoiceTemplateStore.defaultTemplate.id as string;
   }
 
   templates.value.push(
@@ -59,9 +60,6 @@
       .map(t => ({ id: t.id as string, name: t.name }))
   );
 
-  if (invoiceTemplateStore.defaultTemplate) {
-    selectedTemplate.value = invoiceTemplateStore.defaultTemplate.id as string;
-  }
 });
 
 
