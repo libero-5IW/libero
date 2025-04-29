@@ -171,7 +171,7 @@ export class InvoiceTemplateService {
   }
 
   async getDefaultTemplate(): Promise<InvoiceTemplateEntity> {
-    const fakeDefaultTemplate: InvoiceTemplateEntity = {
+    const DefaultTemplate: InvoiceTemplateEntity = {
       id: DEFAULT_INVOICE_TEMPLATE.id,
       name: DEFAULT_INVOICE_TEMPLATE.name,
       contentHtml: DEFAULT_INVOICE_TEMPLATE.contentHtml,
@@ -188,7 +188,7 @@ export class InvoiceTemplateService {
       })),
     };
   
-    return plainToInstance(InvoiceTemplateEntity, fakeDefaultTemplate);
+    return plainToInstance(InvoiceTemplateEntity, DefaultTemplate);
   }
   
   private mapVariableData(variables: InvoiceTemplateVariableDto[]) {
