@@ -261,7 +261,7 @@ async function onCreateInvoice() {
     userId: currentUser.value.id,
     variables: variables.value,
     issuedAt: new Date().toISOString(),
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    dueDate: new Date().toISOString(),
     generatedHtml: generatedHtml,
     status: INVOICE_STATUS.DRAFT,
   };

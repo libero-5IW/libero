@@ -3,7 +3,6 @@ import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { ValidateInvoiceVariablesPipe } from './pipes/validate-invoice-variables.pipe';
 import { ApiTags } from '@nestjs/swagger';
-import { UsePipes } from '@nestjs/common';
 
 @ApiTags('Invoices')
 @Controller('invoices')
@@ -11,12 +10,12 @@ export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Post()
-  @UsePipes(ValidateInvoiceVariablesPipe)
   async createInvoice(
-    @Body() createInvoiceDto: CreateInvoiceDto
-    ) {
-      return await this.invoiceService.createInvoiceFromTemplate(createInvoiceDto, createInvoiceDto.userId);
+    @Body(new ValidateInvoiceVariablesPipe()) createInvoiceDto: CreateInvoiceDto
+  ) {
+    return await this.invoiceService.createInvoiceFromTemplate(createInvoiceDto, createInvoiceDto.userId);
   }
+  
 
   @Get('next-number')
   async getNextInvoiceNumber(@Query('userId') userId: string) {
