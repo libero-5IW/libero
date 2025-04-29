@@ -34,7 +34,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useInvoiceStore } from '@/stores/invoice';
 import DataTable from '@/components/Table/DataTable.vue';
-import TemplateSelectionModal from '@/components/Invoice/TemplateSelectionModal.vue';  // 🔹 Import de la modal
+import TemplateSelectionModal from '@/components/Invoice/TemplateSelectionModal.vue'; 
 import { useToastHandler } from '@/composables/useToastHandler';
 import type { ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
@@ -73,13 +73,11 @@ const handleTemplateSelected = (templateId: string) => {
 };
 
 onMounted(async () => {
-  const message = sessionStorage.getItem('toastMessage');
-  const status = sessionStorage.getItem('toastStatus') as ToastStatus;
+  const status = history.state?.toastStatus as ToastStatus;
+  const message = history.state?.toastMessage as string;
 
   if (message && status) {
     showToast(status, message);
-    sessionStorage.removeItem('toastMessage');
-    sessionStorage.removeItem('toastStatus');
   }
 
   await fetchAllInvoices();
