@@ -26,7 +26,6 @@
 <script setup lang="ts">
   import { ref, watch, onMounted } from 'vue';
   import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
-  import { DEFAULT_INVOICE_TEMPLATE } from '@/constants/system-templates/defaultInvoiceTemplate'; 
   
   const props = defineProps<{ modelValue: boolean }>();
   const emit = defineEmits(['update:modelValue', 'templateSelected']);
@@ -42,24 +41,29 @@
   const templates = ref<{ id: string, name: string }[]>([]);
   
   onMounted(async () => {
-    await invoiceTemplateStore.fetchAllTemplates();
-    
-    templates.value = [
-      {
-        id: DEFAULT_INVOICE_TEMPLATE.id,
-        name: DEFAULT_INVOICE_TEMPLATE.name,
-      },
-      ...invoiceTemplateStore.templates
-        .filter(t => t.id)
-        .map(t => ({ id: t.id as string, name: t.name })),
-    ];
+  await invoiceTemplateStore.fetchDefaultTemplate();
+  await invoiceTemplateStore.fetchAllTemplates();
 
-    const defaultTemplate = templates.value.find(t => t.id === DEFAULT_INVOICE_TEMPLATE.id);
+  templates.value = [];
 
-    if (defaultTemplate) {
-      selectedTemplate.value = defaultTemplate.id;
-    }
-  });
+  if (invoiceTemplateStore.defaultTemplate) {
+    templates.value.push({
+      id: invoiceTemplateStore.defaultTemplate.id as string,
+      name: invoiceTemplateStore.defaultTemplate.name,
+    });
+  }
+
+  templates.value.push(
+    ...invoiceTemplateStore.templates
+      .filter(t => t.id)
+      .map(t => ({ id: t.id as string, name: t.name }))
+  );
+
+  if (invoiceTemplateStore.defaultTemplate) {
+    selectedTemplate.value = invoiceTemplateStore.defaultTemplate.id as string;
+  }
+});
+
 
   function confirmSelection() {
     emit('templateSelected', selectedTemplate.value);

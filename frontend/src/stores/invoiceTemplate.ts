@@ -8,6 +8,7 @@ import { handleAxiosError } from '@/utils/handleAxiosError'
 export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   const templates = ref<InvoiceTemplate[]>([])
   const currentTemplate = ref<InvoiceTemplate | null>(null)
+  const defaultTemplate = ref<InvoiceTemplate | null>(null)
   const isLoading = ref(false)
 
   async function fetchAllTemplates() {
@@ -37,11 +38,11 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   async function fetchDefaultTemplate() {
     try {
       const { data } = await apiClient.get('/invoice-templates/default-template')
-      return InvoiceTemplateSchema.parse(data)
+      defaultTemplate.value = InvoiceTemplateSchema.parse(data)
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la récupération du template par défaut.')
     }
-  }
+  }  
 
   async function createTemplate(payload: InvoiceTemplate) {
     try {
@@ -91,6 +92,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
     createTemplate,
     updateTemplate,
     deleteTemplate,
-    duplicateTemplate
+    duplicateTemplate,
+    defaultTemplate,
   }
 })

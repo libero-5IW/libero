@@ -75,8 +75,7 @@ export class InvoiceService {
   }
 
   async getNextInvoiceNumber(userId: string) {
-    const nextNumber = await generateNextNumber('invoice', userId);
-    return { nextNumber };
+    return generateNextNumber('invoice', userId);
   }
 
   private mapVariableData(variables: Record<string, string>) {

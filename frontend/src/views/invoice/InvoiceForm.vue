@@ -99,57 +99,60 @@
   </template>
   
   <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'vue';
-  import { useRouter, useRoute } from 'vue-router';
-  import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
-  import { useInvoiceStore } from '@/stores/invoice';
-  import { useClientStore } from '@/stores/client';
-  import { useUserStore } from '@/stores/user';
-  import QuoteTemplatePreview from '@/components/ui/PreviewPdf.vue';
-  import TemplateSelectionModal from '@/components/Invoice/TemplateSelectionModal.vue';
-  import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
-  import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
-  import { useToastHandler } from '@/composables/useToastHandler';
-  import { DEFAULT_INVOICE_TEMPLATE } from '@/constants/system-templates/defaultInvoiceTemplate';
-  import { mapTemplateVariablesForFrontend } from '@/utils/mapTemplateVariables'; 
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
+import { useInvoiceStore } from '@/stores/invoice';
+import { useClientStore } from '@/stores/client';
+import { useUserStore } from '@/stores/user';
+import QuoteTemplatePreview from '@/components/ui/PreviewPdf.vue';
+import TemplateSelectionModal from '@/components/Invoice/TemplateSelectionModal.vue';
+import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
+import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
+import { useToastHandler } from '@/composables/useToastHandler';
+import { mapTemplateVariablesForFrontend } from '@/utils/mapTemplateVariables';
 
-  
-  const router = useRouter();
-  const route = useRoute();
-  
-  const invoiceTemplateStore = useInvoiceTemplateStore();
-  const invoiceStore = useInvoiceStore();
-  const clientStore = useClientStore();
-  const userStore = useUserStore();
-  
-  const showTemplateModal = ref(false);
-  const selectedTemplateId = ref<string>('');
-  const selectedClientId = ref<string>('');
-  const templateVariables = ref<InvoiceTemplateVariable[]>([]);
-  const variables = ref<Record<string, string>>({});
-  const { showToast } = useToastHandler();
+const router = useRouter();
+const route = useRoute();
 
-  
-  const previewHtml = ref<string>('');
-  const previewVariables = ref<Record<string, string>>({});
-  
-  const currentUser = computed(() => userStore.users[0]);
+const invoiceTemplateStore = useInvoiceTemplateStore();
+const invoiceStore = useInvoiceStore();
+const clientStore = useClientStore();
+const userStore = useUserStore();
 
-  const clients = computed(() =>
-    clientStore.clients.map(client => ({
-      id: client.id,
-      fullName: `${client.firstName} ${client.lastName}`,
-    }))
-  );
-  
-  const templateOptions = computed(() => [
-    { id: DEFAULT_INVOICE_TEMPLATE.id, name: DEFAULT_INVOICE_TEMPLATE.name },
-    ...invoiceTemplateStore.templates.map(t => ({
-      id: t.id,
-      name: t.name
-    }))
-  ]);
+const showTemplateModal = ref(false);
+const selectedTemplateId = ref<string>('');
+const selectedClientId = ref<string>('');
+const templateVariables = ref<InvoiceTemplateVariable[]>([]);
+const variables = ref<Record<string, string>>({});
+const previewHtml = ref<string>('');
+const previewVariables = ref<Record<string, string>>({});
+const { showToast } = useToastHandler();
 
+const currentUser = computed(() => userStore.users[0]);
+
+const clients = computed(() =>
+  clientStore.clients.map(client => ({
+    id: client.id,
+    fullName: `${client.firstName} ${client.lastName}`,
+  }))
+);
+
+const templateOptions = computed(() => {
+  const options = invoiceTemplateStore.templates.map(t => ({
+    id: t.id,
+    name: t.name
+  }));
+
+  if (invoiceTemplateStore.defaultTemplate) {
+    options.unshift({
+      id: invoiceTemplateStore.defaultTemplate.id,
+      name: invoiceTemplateStore.defaultTemplate.name
+    });
+  }
+
+  return options;
+});
 
 const canCreate = computed(() => {
   const hasTemplate = !!selectedTemplateId.value;
@@ -163,167 +166,141 @@ const canCreate = computed(() => {
 
   return hasTemplate && hasClient && hasUser && allRequiredFilled;
 });
-  
+
 const orderedTemplateVariables = computed(() => {
-    return [...templateVariables.value].sort((a, b) => {
-      const indexA = previewHtml.value.indexOf(`{{${a.variableName}}}`);
-      const indexB = previewHtml.value.indexOf(`{{${b.variableName}}}`);
-      return indexA - indexB;
-    });
+  return [...templateVariables.value].sort((a, b) => {
+    const indexA = previewHtml.value.indexOf(`{{${a.variableName}}}`);
+    const indexB = previewHtml.value.indexOf(`{{${b.variableName}}}`);
+    return indexA - indexB;
+  });
 });
-  
+
 onMounted(async () => {
-    await clientStore.fetchAllClients();
-    await userStore.fetchUsers();
-  
-    const templateIdFromQuery = route.query.templateId as string | undefined;
-    if (templateIdFromQuery) {
-      await handleTemplateSelected(templateIdFromQuery);
-    } else {
-      showTemplateModal.value = true;
-    }
+  await clientStore.fetchAllClients();
+  await userStore.fetchUsers();
+  await invoiceTemplateStore.fetchDefaultTemplate();
+
+  const templateIdFromQuery = route.query.templateId as string | undefined;
+  if (templateIdFromQuery) {
+    await handleTemplateSelected(templateIdFromQuery);
+  } else {
+    showTemplateModal.value = true;
+  }
 });
-  
+
 function mapType(type: string) {
-    if (type === 'number') return 'number';
-    if (type === 'date') return 'date';
-    return 'text';
+  if (type === 'number') return 'number';
+  if (type === 'date') return 'date';
+  return 'text';
 }
-  
+
 async function handleTemplateSelected(templateId: string) {
   selectedTemplateId.value = templateId;
 
-  if (templateId === DEFAULT_INVOICE_TEMPLATE.id) {
-    const template = DEFAULT_INVOICE_TEMPLATE;
-    templateVariables.value = mapTemplateVariablesForFrontend(template.variables);
-    previewHtml.value = template.contentHtml;
-    previewVariables.value = {};
-    variables.value = {};
+  let template = null;
 
-    template.variables.forEach(v => {
-      previewVariables.value[v.variableName] = `<em class="text-gray-500">${v.label}</em>`;
-      variables.value[v.variableName] = '';
-    });
+  if (
+    invoiceTemplateStore.defaultTemplate &&
+    templateId === invoiceTemplateStore.defaultTemplate.id
+  ) {
+    template = invoiceTemplateStore.defaultTemplate;
+  } else {
+    await invoiceTemplateStore.fetchTemplate(templateId);
+    template = invoiceTemplateStore.currentTemplate;
+  }
 
+  if (!template) return;
+
+  templateVariables.value = mapTemplateVariablesForFrontend(template.variables);
+  previewHtml.value = template.contentHtml;
+  previewVariables.value = {};
+  variables.value = {};
+
+  template.variables.forEach(v => {
+    previewVariables.value[v.variableName] = `<em class="text-gray-500">${v.label}</em>`;
+    variables.value[v.variableName] = '';
+  });
+
+  if (template.variables.some(v => v.variableName === 'invoice_number')) {
     const nextNumber = await invoiceStore.fetchNextInvoiceNumber();
     if (nextNumber !== null) {
       variables.value['invoice_number'] = `${nextNumber}`;
     }
+  }
 
-    if (currentUser.value) {
-      if ('freelancer_name' in variables.value) {
-        variables.value['freelancer_name'] = `${currentUser.value.firstName} ${currentUser.value.lastName}`;
-      }
-      if ('freelancer_address' in variables.value) {
-        variables.value['freelancer_address'] = `${currentUser.value.addressLine}, ${currentUser.value.postalCode} ${currentUser.value.city}, ${currentUser.value.country}`;
-      }
-      if ('freelancer_siret' in variables.value) {
-        variables.value['freelancer_siret'] = currentUser.value.siret;
-      }
+  if (currentUser.value) {
+    if ('freelancer_name' in variables.value) {
+      variables.value['freelancer_name'] = `${currentUser.value.firstName} ${currentUser.value.lastName}`;
     }
-  } else {
-    await invoiceTemplateStore.fetchTemplate(templateId);
-
-    const template = invoiceTemplateStore.currentTemplate;
-    if (template) {
-      templateVariables.value = template.variables;
-      previewHtml.value = template.contentHtml;
-      previewVariables.value = {};
-      variables.value = {};
-
-      template.variables.forEach(v => {
-        previewVariables.value[v.variableName] = `<em class="text-gray-500">${v.label}</em>`;
-        variables.value[v.variableName] = '';
-      });
-
-      if (template.variables.some(v => v.variableName === 'invoice_number')) {
-        const nextNumber = await invoiceStore.fetchNextInvoiceNumber();
-        if (nextNumber !== null) {
-          variables.value['invoice_number'] = `${nextNumber}`;
-        }
-      }
-
-      if (currentUser.value) {
-        if ('freelancer_name' in variables.value) {
-          variables.value['freelancer_name'] = `${currentUser.value.firstName} ${currentUser.value.lastName}`;
-        }
-        if ('freelancer_address' in variables.value) {
-          variables.value['freelancer_address'] = `${currentUser.value.addressLine}, ${currentUser.value.postalCode} ${currentUser.value.city}, ${currentUser.value.country}`;
-        }
-        if ('freelancer_siret' in variables.value) {
-          variables.value['freelancer_siret'] = currentUser.value.siret;
-        }
-      }
+    if ('freelancer_address' in variables.value) {
+      variables.value['freelancer_address'] = `${currentUser.value.addressLine}, ${currentUser.value.postalCode} ${currentUser.value.city}, ${currentUser.value.country}`;
+    }
+    if ('freelancer_siret' in variables.value) {
+      variables.value['freelancer_siret'] = currentUser.value.siret;
     }
   }
 }
-  
+
 async function onCreateInvoice() {
-    if (!currentUser.value) {
-      alert("Utilisateur non chargé !");
-      return;
-    }
-  
-    const missingFields = templateVariables.value.filter(v => v.required && !variables.value[v.variableName]);
+  if (!currentUser.value) {
+    alert("Utilisateur non chargé !");
+    return;
+  }
 
-    if (missingFields.length > 0) {
-        alert(`Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}`);
-        return;
-    }
+  const missingFields = templateVariables.value.filter(v => v.required && !variables.value[v.variableName]);
+  if (missingFields.length > 0) {
+    alert(`Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}`);
+    return;
+  }
 
-    const generatedHtml = generateHtmlFromTemplate(previewHtml.value, variables.value);
-    
-    const payload = {
-        templateId: selectedTemplateId.value,
-        clientId: selectedClientId.value,
-        userId: currentUser.value.id,
-        variables: variables.value,
-        issuedAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        generatedHtml: generatedHtml,
-        status: INVOICE_STATUS.DRAFT,
-    };
-  
-    const invoice = await invoiceStore.createInvoice(payload);
+  const generatedHtml = generateHtmlFromTemplate(previewHtml.value, variables.value);
 
-    if (invoice) {
-      showToast('success', `La facture #${invoice.number} a été créée avec succès.`);
-      router.push({ name: 'InvoiceList' });
-    }
+  const payload = {
+    templateId: selectedTemplateId.value,
+    clientId: selectedClientId.value,
+    userId: currentUser.value.id,
+    variables: variables.value,
+    issuedAt: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    generatedHtml: generatedHtml,
+    status: INVOICE_STATUS.DRAFT,
+  };
+
+  const invoice = await invoiceStore.createInvoice(payload);
+
+  if (invoice) {
+    showToast('success', `La facture #${invoice.number} a été créée avec succès.`);
+    router.push({ name: 'InvoiceList' });
+  }
 }
-  
+
 function generateHtmlFromTemplate(templateHtml: string, vars: Record<string, string>): string {
-    let html = templateHtml;
-
-    for (const [key, value] of Object.entries(vars)) {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      html = html.replace(regex, value);
-    }
-
-    return html;
+  let html = templateHtml;
+  for (const [key, value] of Object.entries(vars)) {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    html = html.replace(regex, value);
+  }
+  return html;
 }
-  
-watch(variables, (newVars) => {
-    const updatedPreview: Record<string, string> = {};
-    templateVariables.value.forEach(v => {
-      updatedPreview[v.variableName] = newVars[v.variableName] || `<em class="text-gray-500">${v.label}</em>`;
-    });
-    previewVariables.value = updatedPreview;
-}, { deep: true });
-  
-watch(selectedClientId, (newClientId) => {
-    if (!newClientId) return;
-  
-    const client = clientStore.clients.find(c => c.id === newClientId);
-    if (client) {
-      if ('client_name' in variables.value) {
-        variables.value['client_name'] = `${client.firstName} ${client.lastName}`;
-      }
-      if ('client_address' in variables.value) {
-        variables.value['client_address'] = `${client.addressLine}, ${client.postalCode} ${client.city}, ${client.country}`;
-      }
-    }
-});
 
+watch(variables, (newVars) => {
+  const updatedPreview: Record<string, string> = {};
+  templateVariables.value.forEach(v => {
+    updatedPreview[v.variableName] = newVars[v.variableName] || `<em class="text-gray-500">${v.label}</em>`;
+  });
+  previewVariables.value = updatedPreview;
+}, { deep: true });
+
+watch(selectedClientId, (newClientId) => {
+  if (!newClientId) return;
+  const client = clientStore.clients.find(c => c.id === newClientId);
+  if (client) {
+    if ('client_name' in variables.value) {
+      variables.value['client_name'] = `${client.firstName} ${client.lastName}`;
+    }
+    if ('client_address' in variables.value) {
+      variables.value['client_address'] = `${client.addressLine}, ${client.postalCode} ${client.city}, ${client.country}`;
+    }
+  }
+});
 </script>
-  

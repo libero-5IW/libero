@@ -13,6 +13,8 @@ import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.ut
 import { InvoiceTemplateVariableDto } from './dto/invoice-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { INVOICE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
+import { DEFAULT_INVOICE_TEMPLATE } from 'src/common/constants/system-templates/defaultInvoiceTemplate';
+
 
 @Injectable()
 export class InvoiceTemplateService {
@@ -168,6 +170,27 @@ export class InvoiceTemplateService {
     return template;
   }
 
+  async getDefaultTemplate(): Promise<InvoiceTemplateEntity> {
+    const fakeDefaultTemplate: InvoiceTemplateEntity = {
+      id: DEFAULT_INVOICE_TEMPLATE.id,
+      name: DEFAULT_INVOICE_TEMPLATE.name,
+      contentHtml: DEFAULT_INVOICE_TEMPLATE.contentHtml,
+      userId: this.DEFAULT_USER_ID,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      variables: DEFAULT_INVOICE_TEMPLATE.variables.map((v, index) => ({
+        id: `${index}`,
+        templateId: DEFAULT_INVOICE_TEMPLATE.id,
+        variableName: v.variableName,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+      })),
+    };
+  
+    return plainToInstance(InvoiceTemplateEntity, fakeDefaultTemplate);
+  }
+  
   private mapVariableData(variables: InvoiceTemplateVariableDto[]) {
     return variables.map((v) => ({
       variableName: v.variableName,
