@@ -11,7 +11,6 @@ import { InvoiceTemplateService } from './invoice-template.service';
 import { CreateInvoiceTemplateDto } from './dto/create-invoice-template.dto';
 import { UpdateInvoiceTemplateDto } from './dto/update-invoice-template.dto';
 import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe';
-import { DEFAULT_INVOICE_TEMPLATE } from 'src/common/constants/system-templates/defaultInvoiceTemplate';
 
 @Controller('invoice-templates')
 export class InvoiceTemplateController {
@@ -19,8 +18,8 @@ export class InvoiceTemplateController {
 
   @Get('default-template')
   getDefaultTemplate() {
-    return DEFAULT_INVOICE_TEMPLATE;
-  }
+    return this.invoiceTemplateService.getDefaultTemplate();
+  }  
 
   @Post()
   create(

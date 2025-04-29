@@ -8,5 +8,6 @@ import { UserModule } from '../user/user.module';
   imports: [PrismaModule, UserModule],
   controllers: [InvoiceTemplateController],
   providers: [InvoiceTemplateService],
+  exports: [InvoiceTemplateService], 
 })
 export class InvoiceTemplateModule {}

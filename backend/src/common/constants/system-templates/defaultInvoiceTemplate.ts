@@ -1,6 +1,7 @@
 import { INVOICE_VARIABLES_SYSTEM } from '../system-variables/invoice.variables';
 
 export const DEFAULT_INVOICE_TEMPLATE = {
+  id: 'defaultTemplate',
   name: 'Modèle de base - Facture',
   contentHtml: `
     <h1>Facture n°{{invoice_number}}</h1>
