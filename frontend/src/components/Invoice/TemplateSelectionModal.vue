@@ -22,12 +22,6 @@
     </v-card>
     </v-dialog>
 </template>
-  
-<style>
-.v-overlay__scrim {
-  background-color: rgba(33, 33, 33, 0.6) !important;
-}
-</style>
 
 <script setup lang="ts">
   import { ref, watch, onMounted } from 'vue';
