@@ -38,11 +38,13 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   async function fetchDefaultTemplate() {
     try {
       const { data } = await apiClient.get('/invoice-templates/default-template')
-      defaultTemplate.value = InvoiceTemplateSchema.parse(data)
+      const parsed = InvoiceTemplateSchema.parse(data)
+      defaultTemplate.value = parsed
+      return parsed 
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la récupération du template par défaut.')
     }
-  }  
+  }
 
   async function createTemplate(payload: InvoiceTemplate) {
     try {
