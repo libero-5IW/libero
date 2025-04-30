@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const InvoiceTemplateVariableSchema = z.object({
-  id: z.string().uuid().or(z.literal('systemVariable')).or(z.string()), 
+  id: z.string().uuid().or(z.literal('systemVariable')).or(z.string()).optional(), 
   variableName: z
     .string()
     .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, {

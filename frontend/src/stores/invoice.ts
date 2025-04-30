@@ -51,10 +51,12 @@ export const useInvoiceStore = defineStore('invoice', () => {
     }
   }
 
-  async function fetchNextInvoiceNumber() {
+  async function fetchNextInvoiceNumber(userId: string) {
     try {
-      const { data } = await apiClient.get('/invoices/next-number');
-      return data.nextNumber;  
+      const { data } = await apiClient.get('/invoices/next-number', {
+        params: { userId },
+      });
+      return data;
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la récupération du numéro de facture.');
       return null;
