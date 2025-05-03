@@ -33,6 +33,8 @@ const mockUserService = {
 describe('QuoteTemplateService', () => {
   let service: QuoteTemplateService;
 
+  const userId = 'test-user-id';
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -62,7 +64,7 @@ describe('QuoteTemplateService', () => {
 
       const dto = { name: 'Test', contentHtml: '<p>Test</p>', variables: [] };
 
-      const result = await service.create(dto as any);
+      const result = await service.create(userId, dto as any);
 
       expect(mockUserService.getUserOrThrow).toHaveBeenCalled();
       expect(mockPrismaService.quoteTemplate.create).toHaveBeenCalled();
@@ -76,7 +78,7 @@ describe('QuoteTemplateService', () => {
       });
 
       await expect(
-        service.create({ name: 'Test', contentHtml: '' } as any),
+        service.create(userId, { name: 'Test', contentHtml: '' } as any),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -86,7 +88,7 @@ describe('QuoteTemplateService', () => {
       mockPrismaService.quoteTemplate.findMany.mockResolvedValue([
         { id: '1', variables: [] },
       ]);
-      const result = await service.findAll();
+      const result = await service.findAll(userId);
       expect(result.length).toBe(1);
     });
   });
@@ -97,13 +99,15 @@ describe('QuoteTemplateService', () => {
         id: '1',
         variables: [],
       });
-      const result = await service.findOne('1');
+      const result = await service.findOne('1', userId);
       expect(result).toHaveProperty('id', '1');
     });
 
     it('should throw if not found', async () => {
       mockPrismaService.quoteTemplate.findUnique.mockResolvedValue(null);
-      await expect(service.findOne('99')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('99', userId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -117,7 +121,7 @@ describe('QuoteTemplateService', () => {
         variables: [],
       });
 
-      const result = await service.update('1', {
+      const result = await service.update('1', userId, {
         name: 'Updated',
         contentHtml: '<p>Updated</p>',
       } as any);
@@ -134,7 +138,7 @@ describe('QuoteTemplateService', () => {
       });
       mockPrismaService.quoteTemplate.delete.mockResolvedValue({ id: '1' });
 
-      const result = await service.remove('1');
+      const result = await service.remove('1', userId);
 
       expect(result).toHaveProperty('id', '1');
     });
@@ -153,7 +157,7 @@ describe('QuoteTemplateService', () => {
         variables: [],
       });
 
-      const result = await service.duplicate('1');
+      const result = await service.duplicate('1', userId);
 
       expect(result).toHaveProperty('id', '2');
       expect(generateCopyNameUtil.generateCopyName).toHaveBeenCalled();

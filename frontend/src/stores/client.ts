@@ -13,7 +13,6 @@ export const useClientStore = defineStore('client', () => {
     isLoading.value = true
     try {
       const { data } = await apiClient.get('/clients')
-      console.log('Données brutes API:', data)  
       clients.value = data.map((item: Client) => ClientSchema.parse(item))
     } catch (error) {
       console.error('Erreur capturée:', error)   

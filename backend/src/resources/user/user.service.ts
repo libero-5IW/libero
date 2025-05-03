@@ -2,34 +2,18 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { plainToInstance } from 'class-transformer';
+import bcrypt from 'bcryptjs';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
-
-  async create(createUserDto: CreateUserDto): Promise<UserEntity> {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: createUserDto.email },
-    });
-
-    if (existingUser) {
-      throw new ConflictException(
-        'Un utilisateur avec cet e-mail existe déjà.',
-      );
-    }
-
-    const user = await this.prisma.user.create({
-      data: createUserDto,
-    });
-
-    return plainToInstance(UserEntity, user);
-  }
 
   async findAll(): Promise<UserEntity[]> {
     const users = await this.prisma.user.findMany();
@@ -38,6 +22,14 @@ export class UserService {
 
   async findOne(id: string): Promise<UserEntity> {
     const user = await this.getUserOrThrow(id);
+    return plainToInstance(UserEntity, user);
+  }
+
+  async findByEmail(email: string): Promise<UserEntity> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable.');
+    }
     return plainToInstance(UserEntity, user);
   }
 
@@ -70,6 +62,29 @@ export class UserService {
     });
 
     return plainToInstance(UserEntity, deletedUser);
+  }
+
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException();
+
+    const isMatch = await bcrypt.compare(
+      changePasswordDto.currentPassword,
+      user.password,
+    );
+    if (!isMatch) {
+      throw new UnauthorizedException('Mot de passe actuel incorrect');
+    }
+
+    const newHashedPassword = await bcrypt.hash(
+      changePasswordDto.newPassword,
+      10,
+    );
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: newHashedPassword },
+    });
   }
 
   async getUserOrThrow(id: string) {

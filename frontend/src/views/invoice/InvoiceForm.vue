@@ -129,7 +129,7 @@
   const previewVariables = ref<Record<string, string>>({});
   const { showToast } = useToastHandler();
   
-  const currentUser = computed(() => userStore.users[0]);
+  const currentUser = computed(() => userStore.user);
   
   const clients = computed(() =>
     clientStore.clients.map(client => ({
@@ -176,7 +176,7 @@
   
   onMounted(async () => {
     await clientStore.fetchAllClients();
-    await userStore.fetchUsers();
+    await userStore.fetchCurrentUser();
     await invoiceTemplateStore.fetchDefaultTemplate();
   
     const user = currentUser.value;
@@ -224,7 +224,9 @@
     });
   
     if (template.variables.some(v => v.variableName === 'invoice_number')) {
-      const nextNumber = await invoiceStore.fetchNextInvoiceNumber(currentUser.value.id);
+      const userId = currentUser.value?.id;
+      if (!userId) return;
+      const nextNumber = await invoiceStore.fetchNextInvoiceNumber(userId);
       if (nextNumber !== null) {
         variables.value['invoice_number'] = `${nextNumber}`;
       }

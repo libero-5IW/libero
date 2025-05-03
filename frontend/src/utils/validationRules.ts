@@ -37,5 +37,56 @@ export const requiredBooleanRules = () => [
 
 export const requiredRule = (field: string) => (v: string) => !!v || `${field} est requis`
 
+export const EmailRules = (required: boolean = true) => {
+  const rules: ((v: string) => boolean | string)[] = [
+      (v: string) => v.length <= 50 || "L'email doit contenir au maximum 50 caractères",
+      (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || "L'email n'est pas valide"
+  ];
+  if (required) {
+      rules.unshift(requiredRule("Email"));
+  }
+  return rules;
+};
+
+export const passwordRules = (options: {
+  required?: boolean,
+  minLength?: number,
+  uppercase?: boolean,
+  lowercase?: boolean,
+  digit?: boolean,
+  specialChar?: boolean
+} = {}) => {
+  const {
+      required = true,
+      minLength = 1,
+      uppercase = false,
+      lowercase = false,
+      digit = false,
+      specialChar = false
+  } = options;
+
+  const rules = [
+      (v: string) => v.length >= minLength || `Le mot de passe doit contenir au moins ${minLength} caractères`,
+  ];
+
+  if (uppercase) {
+      rules.push((v: string) => /[A-Z]/.test(v) || "Le mot de passe doit contenir au moins une lettre majuscule");
+  }
+  if (lowercase) {
+      rules.push((v: string) => /[a-z]/.test(v) || "Le mot de passe doit contenir au moins une lettre minuscule");
+  }
+  if (digit) {
+      rules.push((v: string) => /[0-9]/.test(v) || "Le mot de passe doit contenir au moins un chiffre");
+  }
+  if (specialChar) {
+      rules.push((v: string) => /[^A-Za-z0-9]/.test(v) || "Le mot de passe doit contenir au moins un caractère spécial");
+  }
+
+  if (required) {
+      rules.unshift(requiredRule("Mot de passe"));
+  }
+
+  return rules;
+};
 
   

@@ -13,27 +13,19 @@ import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.ut
 import { InvoiceTemplateVariableDto } from './dto/invoice-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { INVOICE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
-import { DEFAULT_INVOICE_TEMPLATE } from 'src/common/constants/system-templates/defaultInvoiceTemplate';
-
 
 @Injectable()
 export class InvoiceTemplateService {
-  DEFAULT_USER_ID = 'e0f77fd1-d9ff-4875-ad81-ebd3338f1a4c';
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
   ) {}
 
   async create(
+    userId: string,
     createInvoiceTemplateDto: CreateInvoiceTemplateDto,
   ): Promise<InvoiceTemplateEntity> {
-    const {
-      name,
-      contentHtml,
-      userId = this.DEFAULT_USER_ID,
-      variables = [],
-    } = createInvoiceTemplateDto;
+    const { name, contentHtml, variables = [] } = createInvoiceTemplateDto;
 
     await this.userService.getUserOrThrow(userId);
 
@@ -62,8 +54,9 @@ export class InvoiceTemplateService {
     return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
   }
 
-  async findAll(): Promise<InvoiceTemplateEntity[]> {
+  async findAll(userId: string): Promise<InvoiceTemplateEntity[]> {
     const templates = await this.prisma.invoiceTemplate.findMany({
+      where: { userId },
       include: { variables: true },
     });
 
@@ -74,19 +67,20 @@ export class InvoiceTemplateService {
     return plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables);
   }
 
-  async findOne(id: string): Promise<InvoiceTemplateEntity> {
-    const template = await this.getTemplateOrThrow(id);
+  async findOne(id: string, userId: string): Promise<InvoiceTemplateEntity> {
+    const template = await this.getTemplateOrThrow(id, userId);
     const templateWithSystemVariables = this.mergeWithSystemVariables(template);
     return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
   }
 
   async update(
     id: string,
+    userId: string,
     updateInvoiceTemplateDto: UpdateInvoiceTemplateDto,
   ): Promise<InvoiceTemplateEntity> {
     const { name, contentHtml, variables } = updateInvoiceTemplateDto;
 
-    await this.prisma.invoiceTemplate.findUniqueOrThrow({ where: { id } });
+    await this.getTemplateOrThrow(id, userId);
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
       if (variables?.length) {
@@ -120,8 +114,8 @@ export class InvoiceTemplateService {
     return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
   }
 
-  async remove(id: string): Promise<InvoiceTemplateEntity> {
-    await this.getTemplateOrThrow(id);
+  async remove(id: string, userId: string): Promise<InvoiceTemplateEntity> {
+    await this.getTemplateOrThrow(id, userId);
 
     const deletedTemplate = await this.prisma.invoiceTemplate.delete({
       where: { id },
@@ -130,8 +124,8 @@ export class InvoiceTemplateService {
     return plainToInstance(InvoiceTemplateEntity, deletedTemplate);
   }
 
-  async duplicate(id: string): Promise<InvoiceTemplateEntity> {
-    const template = await this.getTemplateOrThrow(id);
+  async duplicate(id: string, userId: string): Promise<InvoiceTemplateEntity> {
+    const template = await this.getTemplateOrThrow(id, userId);
 
     const name = await generateCopyName({
       table: 'invoiceTemplate',
@@ -143,7 +137,7 @@ export class InvoiceTemplateService {
       data: {
         name,
         contentHtml: template.contentHtml,
-        userId: template.userId,
+        userId,
         variables: { create: this.mapVariableData(template.variables) },
       },
       include: {
@@ -157,9 +151,9 @@ export class InvoiceTemplateService {
     return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
   }
 
-  private async getTemplateOrThrow(id: string) {
+  private async getTemplateOrThrow(id: string, userId: string) {
     const template = await this.prisma.invoiceTemplate.findUnique({
-      where: { id },
+      where: { id, userId },
       include: { variables: true },
     });
 
@@ -170,27 +164,6 @@ export class InvoiceTemplateService {
     return template;
   }
 
-  async getDefaultTemplate(): Promise<InvoiceTemplateEntity> {
-    const DefaultTemplate: InvoiceTemplateEntity = {
-      id: DEFAULT_INVOICE_TEMPLATE.id,
-      name: DEFAULT_INVOICE_TEMPLATE.name,
-      contentHtml: DEFAULT_INVOICE_TEMPLATE.contentHtml,
-      userId: this.DEFAULT_USER_ID,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      variables: DEFAULT_INVOICE_TEMPLATE.variables.map((v, index) => ({
-        id: `${index}`,
-        templateId: DEFAULT_INVOICE_TEMPLATE.id,
-        variableName: v.variableName,
-        label: v.label,
-        type: v.type,
-        required: v.required,
-      })),
-    };
-  
-    return plainToInstance(InvoiceTemplateEntity, DefaultTemplate);
-  }
-  
   private mapVariableData(variables: InvoiceTemplateVariableDto[]) {
     return variables.map((v) => ({
       variableName: v.variableName,

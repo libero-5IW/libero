@@ -33,6 +33,8 @@ const mockUserService = {
 describe('ContractTemplateService', () => {
   let service: ContractTemplateService;
 
+  const userId = 'test-user-id';
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,9 +62,13 @@ describe('ContractTemplateService', () => {
         variables: [],
       });
 
-      const dto = { name: 'Test Contract', contentHtml: '<p>Test</p>', variables: [] };
+      const dto = {
+        name: 'Test Contract',
+        contentHtml: '<p>Test</p>',
+        variables: [],
+      };
 
-      const result = await service.create(dto as any);
+      const result = await service.create(userId, dto as any);
 
       expect(mockUserService.getUserOrThrow).toHaveBeenCalled();
       expect(mockPrismaService.contractTemplate.create).toHaveBeenCalled();
@@ -71,10 +77,12 @@ describe('ContractTemplateService', () => {
 
     it('should throw if contract template name exists', async () => {
       mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.contractTemplate.findFirst.mockResolvedValue({ id: 'exists' });
+      mockPrismaService.contractTemplate.findFirst.mockResolvedValue({
+        id: 'exists',
+      });
 
       await expect(
-        service.create({ name: 'Duplicate', contentHtml: '' } as any),
+        service.create(userId, { name: 'Duplicate', contentHtml: '' } as any),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -84,7 +92,7 @@ describe('ContractTemplateService', () => {
       mockPrismaService.contractTemplate.findMany.mockResolvedValue([
         { id: '1', variables: [] },
       ]);
-      const result = await service.findAll();
+      const result = await service.findAll(userId);
       expect(result.length).toBe(1);
     });
   });
@@ -95,25 +103,29 @@ describe('ContractTemplateService', () => {
         id: '1',
         variables: [],
       });
-      const result = await service.findOne('1');
+      const result = await service.findOne('1', userId);
       expect(result).toHaveProperty('id', '1');
     });
 
     it('should throw if contract template not found', async () => {
       mockPrismaService.contractTemplate.findUnique.mockResolvedValue(null);
-      await expect(service.findOne('99')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('99', userId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
   describe('update', () => {
     it('should update a contract template', async () => {
-      mockPrismaService.contractTemplate.findUniqueOrThrow.mockResolvedValue({ id: '1' });
+      mockPrismaService.contractTemplate.findUniqueOrThrow.mockResolvedValue({
+        id: '1',
+      });
       mockPrismaService.contractTemplate.update.mockResolvedValue({
         id: '1',
         variables: [],
       });
 
-      const result = await service.update('1', {
+      const result = await service.update('1', userId, {
         name: 'Updated Contract',
         contentHtml: '<p>Updated</p>',
       } as any);
@@ -130,7 +142,7 @@ describe('ContractTemplateService', () => {
       });
       mockPrismaService.contractTemplate.delete.mockResolvedValue({ id: '1' });
 
-      const result = await service.remove('1');
+      const result = await service.remove('1', userId);
 
       expect(result).toHaveProperty('id', '1');
     });
@@ -149,7 +161,7 @@ describe('ContractTemplateService', () => {
         variables: [],
       });
 
-      const result = await service.duplicate('1');
+      const result = await service.duplicate('1', userId);
 
       expect(result).toHaveProperty('id', '2');
       expect(generateCopyNameUtil.generateCopyName).toHaveBeenCalled();

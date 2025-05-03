@@ -1,0 +1,4 @@
+<template>
+    notfound page
+
+</template>

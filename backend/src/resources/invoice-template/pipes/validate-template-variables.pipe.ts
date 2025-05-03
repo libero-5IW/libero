@@ -1,15 +1,28 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 import { InvoiceTemplateVariableDto } from '../dto/invoice-template-variable.dto';
 import { INVOICE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
+import { DEFAULT_INVOICE_TEMPLATE } from 'src/common/constants/system-templates/defaultInvoiceTemplate';
 
 @Injectable()
 export class ValidateTemplateVariablesPipe<
-  T extends { variables?: InvoiceTemplateVariableDto[]; contentHtml?: string },
+  T extends {
+    name?: string;
+    variables?: InvoiceTemplateVariableDto[];
+    contentHtml?: string;
+  },
 > implements PipeTransform<T>
 {
   transform(value: T): T {
-    const { variables = [], contentHtml = '' } = value;
+    const { name, variables = [], contentHtml = '' } = value;
 
+    if (
+      name &&
+      name.trim().toLowerCase() === DEFAULT_INVOICE_TEMPLATE.name.toLowerCase()
+    ) {
+      throw new BadRequestException(
+        `Vous ne pouvez pas utiliser le nom "${DEFAULT_INVOICE_TEMPLATE.name}" car il est réservé au modèle par défaut.`,
+      );
+    }
     this.ensureUniqueAndNonSystemVariables(variables);
     this.ensureRequiredVariablesInHtml(variables, contentHtml);
     this.ensureRequiredVariablesInHtml(INVOICE_VARIABLES_SYSTEM, contentHtml);
