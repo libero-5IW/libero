@@ -1,13 +1,28 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 import { ContractTemplateVariableDto } from '../dto/contract-template-variable.dto';
 import { CONTRACT_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
+import { DEFAULT_CONTRACT_TEMPLATE } from 'src/common/constants/system-templates/defaultContractTemplate';
 
 @Injectable()
 export class ValidateTemplateVariablesPipe<
-  T extends { variables?: ContractTemplateVariableDto[]; contentHtml?: string },
-> implements PipeTransform<T> {
+  T extends {
+    name?: string;
+    variables?: ContractTemplateVariableDto[];
+    contentHtml?: string;
+  },
+> implements PipeTransform<T>
+{
   transform(value: T): T {
-    const { variables = [], contentHtml = '' } = value;
+    const { name, variables = [], contentHtml = '' } = value;
+
+    if (
+      name &&
+      name.trim().toLowerCase() === DEFAULT_CONTRACT_TEMPLATE.name.toLowerCase()
+    ) {
+      throw new BadRequestException(
+        `Vous ne pouvez pas utiliser le nom "${DEFAULT_CONTRACT_TEMPLATE.name}" car il est réservé au modèle par défaut.`,
+      );
+    }
 
     this.ensureUniqueAndNonSystemVariables(variables);
     this.ensureRequiredVariablesInHtml(variables, contentHtml);

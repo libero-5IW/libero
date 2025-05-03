@@ -1,9 +1,7 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserDto } from './create-user.dto';
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
+export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'John' })
   @IsOptional()
   @IsNotEmpty({ message: 'Le prénom ne peut pas être vide.' })
@@ -50,11 +48,4 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   @ApiPropertyOptional({ example: 'FR12345678901' })
   @IsOptional()
   tvaNumber?: string;
-
-  @ApiPropertyOptional({ example: 'StrongPassword123!' })
-  @IsOptional()
-  @MinLength(6, {
-    message: 'Le mot de passe doit contenir au moins 6 caractères.',
-  })
-  password?: string;
 }

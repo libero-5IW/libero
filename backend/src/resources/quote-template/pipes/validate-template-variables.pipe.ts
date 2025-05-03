@@ -1,14 +1,28 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 import { QuoteTemplateVariableDto } from '../dto/quote-template-variable.dto';
 import { QUOTE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
+import { DEFAULT_QUOTE_TEMPLATE } from 'src/common/constants/system-templates/defaultQuoteTemplate';
 
 @Injectable()
 export class ValidateTemplateVariablesPipe<
-  T extends { variables?: QuoteTemplateVariableDto[]; contentHtml?: string },
+  T extends {
+    name?: string;
+    variables?: QuoteTemplateVariableDto[];
+    contentHtml?: string;
+  },
 > implements PipeTransform<T>
 {
   transform(value: T): T {
-    const { variables = [], contentHtml = '' } = value;
+    const { name, variables = [], contentHtml = '' } = value;
+
+    if (
+      name &&
+      name.trim().toLowerCase() === DEFAULT_QUOTE_TEMPLATE.name.toLowerCase()
+    ) {
+      throw new BadRequestException(
+        `Vous ne pouvez pas utiliser le nom "${DEFAULT_QUOTE_TEMPLATE.name}" car il est réservé au modèle par défaut.`,
+      );
+    }
 
     this.ensureUniqueAndNonSystemVariables(variables);
     this.ensureRequiredVariablesInHtml(variables, contentHtml);

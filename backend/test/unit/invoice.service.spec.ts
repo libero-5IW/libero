@@ -20,12 +20,17 @@ const mockInvoiceTemplateService = {
 describe('InvoiceService', () => {
   let service: InvoiceService;
 
+  const userId = 'test-user-id';
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InvoiceService,
         { provide: PrismaService, useValue: mockPrismaService },
-        { provide: InvoiceTemplateService, useValue: mockInvoiceTemplateService },
+        {
+          provide: InvoiceTemplateService,
+          useValue: mockInvoiceTemplateService,
+        },
       ],
     }).compile();
 
@@ -52,12 +57,18 @@ describe('InvoiceService', () => {
 
       mockInvoiceTemplateService.findOne.mockResolvedValue({
         id: 'tpl-1',
-        variables: [{ variableName: 'total_amount' }, { variableName: 'freelancer_address' }],
+        variables: [
+          { variableName: 'total_amount' },
+          { variableName: 'freelancer_address' },
+        ],
         contentHtml: '<p>{{total_amount}} - {{freelancer_address}}</p>',
       });
 
       mockPrismaService.invoice.findFirst.mockResolvedValue({ number: 5 });
-      mockPrismaService.invoice.create.mockResolvedValue({ id: 'inv-1', number: 6 });
+      mockPrismaService.invoice.create.mockResolvedValue({
+        id: 'inv-1',
+        number: 6,
+      });
 
       const result = await service.createInvoiceFromTemplate(dto, dto.userId);
 
@@ -70,7 +81,10 @@ describe('InvoiceService', () => {
       mockInvoiceTemplateService.findOne.mockResolvedValue(null);
 
       await expect(
-        service.createInvoiceFromTemplate({ templateId: 'invalid', variables: {} } as any, 'user-1'),
+        service.createInvoiceFromTemplate(
+          { templateId: 'invalid', variables: {} } as any,
+          'user-1',
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -82,7 +96,10 @@ describe('InvoiceService', () => {
       });
 
       await expect(
-        service.createInvoiceFromTemplate({ templateId: 'tpl-1', variables: {} } as any, 'user-1'),
+        service.createInvoiceFromTemplate(
+          { templateId: 'tpl-1', variables: {} } as any,
+          'user-1',
+        ),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -112,13 +129,13 @@ describe('InvoiceService', () => {
   describe('getNextInvoiceNumber', () => {
     it('should return next invoice number when invoices exist', async () => {
       mockPrismaService.invoice.findFirst.mockResolvedValue({ number: 10 });
-      const result = await service.getNextInvoiceNumber();
+      const result = await service.getNextInvoiceNumber(userId);
       expect(result).toEqual({ nextNumber: 11 });
     });
 
     it('should return 1 if no invoices exist', async () => {
       mockPrismaService.invoice.findFirst.mockResolvedValue(null);
-      const result = await service.getNextInvoiceNumber();
+      const result = await service.getNextInvoiceNumber(userId);
       expect(result).toEqual({ nextNumber: 1 });
     });
   });

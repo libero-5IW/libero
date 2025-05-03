@@ -9,6 +9,9 @@ import { ContractModule } from './resources/contract/contract.module';
 import { ContractTemplateModule } from './resources/contract-template/contract-template.module';
 import { InvoiceModule } from './resources/invoice/invoice.module';
 import { ClientModule } from './resources/client/client.module';
+import { AuthModule } from './resources/auth/auth.module';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './resources/auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -24,6 +27,13 @@ import { ClientModule } from './resources/client/client.module';
     ContractTemplateModule,
     InvoiceModule,
     ClientModule,
+    AuthModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule {}

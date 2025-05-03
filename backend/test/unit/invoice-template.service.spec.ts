@@ -33,6 +33,8 @@ const mockUserService = {
 describe('InvoiceTemplateService', () => {
   let service: InvoiceTemplateService;
 
+  const userId = 'test-user-id';
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,9 +62,13 @@ describe('InvoiceTemplateService', () => {
         variables: [],
       });
 
-      const dto = { name: 'Test Invoice', contentHtml: '<p>Invoice</p>', variables: [] };
+      const dto = {
+        name: 'Test Invoice',
+        contentHtml: '<p>Invoice</p>',
+        variables: [],
+      };
 
-      const result = await service.create(dto as any);
+      const result = await service.create(userId, dto as any);
 
       expect(mockUserService.getUserOrThrow).toHaveBeenCalled();
       expect(mockPrismaService.invoiceTemplate.create).toHaveBeenCalled();
@@ -71,10 +77,12 @@ describe('InvoiceTemplateService', () => {
 
     it('should throw if invoice template name exists', async () => {
       mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.invoiceTemplate.findFirst.mockResolvedValue({ id: 'exists' });
+      mockPrismaService.invoiceTemplate.findFirst.mockResolvedValue({
+        id: 'exists',
+      });
 
       await expect(
-        service.create({ name: 'Duplicate', contentHtml: '' } as any),
+        service.create(userId, { name: 'Duplicate', contentHtml: '' } as any),
       ).rejects.toThrow(BadRequestException);
     });
   });
@@ -84,7 +92,7 @@ describe('InvoiceTemplateService', () => {
       mockPrismaService.invoiceTemplate.findMany.mockResolvedValue([
         { id: '1', variables: [] },
       ]);
-      const result = await service.findAll();
+      const result = await service.findAll(userId);
       expect(result.length).toBe(1);
     });
   });
@@ -95,13 +103,15 @@ describe('InvoiceTemplateService', () => {
         id: '1',
         variables: [],
       });
-      const result = await service.findOne('1');
+      const result = await service.findOne('1', userId);
       expect(result).toHaveProperty('id', '1');
     });
 
     it('should throw if invoice template not found', async () => {
       mockPrismaService.invoiceTemplate.findUnique.mockResolvedValue(null);
-      await expect(service.findOne('99')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('99', userId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -115,7 +125,7 @@ describe('InvoiceTemplateService', () => {
         variables: [],
       });
 
-      const result = await service.update('1', {
+      const result = await service.update('1', userId, {
         name: 'Updated Invoice',
         contentHtml: '<p>Updated</p>',
       } as any);
@@ -132,7 +142,7 @@ describe('InvoiceTemplateService', () => {
       });
       mockPrismaService.invoiceTemplate.delete.mockResolvedValue({ id: '1' });
 
-      const result = await service.remove('1');
+      const result = await service.remove('1', userId);
 
       expect(result).toHaveProperty('id', '1');
     });
@@ -151,7 +161,7 @@ describe('InvoiceTemplateService', () => {
         variables: [],
       });
 
-      const result = await service.duplicate('1');
+      const result = await service.duplicate('1', userId);
 
       expect(result).toHaveProperty('id', '2');
       expect(generateCopyNameUtil.generateCopyName).toHaveBeenCalled();

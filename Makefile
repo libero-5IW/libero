@@ -1,10 +1,11 @@
-DOCKER_COMPOSE = docker compose
+DOCKER_COMPOSE = docker-compose
 
 # Initialize project: install dependencies and start Docker
 init:
 	cd backend && npm install
 	cd frontend && npm install
-	$(DOCKER_COMPOSE) up
+	$(DOCKER_COMPOSE) up -d
+	$(DOCKER_COMPOSE) exec backend npm run seed
 
 # Prisma: run migration and generate types
 migrate:
@@ -20,7 +21,9 @@ reset-db:
 # Create a full NestJS resource module
 resource:
 	@read -p "Module name: " name; \
-	cd backend && nest g resource resources/$$name
+	cd backend && nest g resource resources/$$name && \
+	mv src/resources/$$name/$$name.controller.spec.ts test/functional/ && \
+	mv src/resources/$$name/$$name.service.spec.ts test/unit/
 
 # Start the application with Docker Compose
 start:
@@ -31,6 +34,9 @@ stop:
 
 restart:
 	$(DOCKER_COMPOSE) down && $(DOCKER_COMPOSE) up
+
+seed:
+	$(DOCKER_COMPOSE) exec backend npm run seed
 
 # Run tests
 test:
@@ -58,6 +64,7 @@ help:
 	@echo "Commandes disponibles :"
 	@echo "  make migrate           - Exécuter une migration Prisma (nom demandé)"
 	@echo "  make generate          - Générer Prisma Client"
+	@echo "  make seed          	- Exécuter les seeders"
 	@echo "  make reset-db          - Réinitialise la base de données et relance toutes les migration"
 	@echo "  make resource          - Créer une ressource NestJS (nom demandé)"
 	@echo "  make start             - Démarrer l'application avec Docker Compose"

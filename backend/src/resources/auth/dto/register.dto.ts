@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
-export class CreateUserDto {
+export class RegisterDto {
   @ApiProperty({ example: 'John' })
   @IsNotEmpty({ message: 'Le prénom ne peut pas être vide.' })
   firstName: string;
@@ -47,8 +54,13 @@ export class CreateUserDto {
   tvaNumber?: string;
 
   @ApiProperty({ example: 'StrongPassword123!' })
-  @MinLength(6, {
-    message: 'Le mot de passe doit contenir au moins 6 caractères.',
+  @IsString({ message: 'Le mot de passe est requis.' })
+  @MinLength(12, {
+    message: 'Le mot de passe doit contenir au moins 12 caractères.',
+  })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/, {
+    message:
+      'Le mot de passe doit contenir au moins une lettre majuscule, une minuscule, un chiffre et un symbole.',
   })
   password: string;
 }

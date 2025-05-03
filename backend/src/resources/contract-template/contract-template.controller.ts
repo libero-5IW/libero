@@ -10,12 +10,16 @@ import {
 import { ContractTemplateService } from './contract-template.service';
 import { CreateContractTemplateDto } from './dto/create-contract-template.dto';
 import { UpdateContractTemplateDto } from './dto/update-contract-template.dto';
-import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe'; 
+import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe';
 import { DEFAULT_CONTRACT_TEMPLATE } from 'src/common/constants/system-templates/defaultContractTemplate';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 
 @Controller('contract-templates')
 export class ContractTemplateController {
-  constructor(private readonly contractTemplateService: ContractTemplateService) {}
+  constructor(
+    private readonly contractTemplateService: ContractTemplateService,
+  ) {}
 
   @Get('default-template')
   getDefaultTemplate() {
@@ -24,38 +28,47 @@ export class ContractTemplateController {
 
   @Post()
   create(
+    @CurrentUser() user: JwtPayload,
     @Body(new ValidateTemplateVariablesPipe())
     createContractTemplateDto: CreateContractTemplateDto,
   ) {
-    return this.contractTemplateService.create(createContractTemplateDto);
+    return this.contractTemplateService.create(
+      user.userId,
+      createContractTemplateDto,
+    );
   }
 
   @Get()
-  findAll() {
-    return this.contractTemplateService.findAll();
+  findAll(@CurrentUser() user: JwtPayload) {
+    return this.contractTemplateService.findAll(user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.contractTemplateService.findOne(id);
+  findOne(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.contractTemplateService.findOne(id, user.userId);
   }
 
   @Patch(':id')
   update(
+    @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
     @Body(new ValidateTemplateVariablesPipe())
     updateContractTemplateDto: UpdateContractTemplateDto,
   ) {
-    return this.contractTemplateService.update(id, updateContractTemplateDto);
+    return this.contractTemplateService.update(
+      id,
+      user.userId,
+      updateContractTemplateDto,
+    );
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.contractTemplateService.remove(id);
+  remove(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.contractTemplateService.remove(id, user.userId);
   }
 
   @Post(':id/duplicate')
-  duplicate(@Param('id') id: string) {
-    return this.contractTemplateService.duplicate(id);
+  duplicate(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.contractTemplateService.duplicate(id, user.userId);
   }
 }

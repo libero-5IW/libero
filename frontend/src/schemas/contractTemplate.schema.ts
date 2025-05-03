@@ -17,7 +17,6 @@ export const ContractTemplateSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1, 'Le nom du template est requis.'),
   contentHtml: z.string().min(1, 'Le contenu HTML est requis.'),
-  userId: z.string().optional(),
   variables: z.array(ContractTemplateVariableSchema),
 })
 

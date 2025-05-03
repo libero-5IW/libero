@@ -24,14 +24,10 @@ export class ContractTemplateService {
   ) {}
 
   async create(
+    userId: string,
     createContractTemplateDto: CreateContractTemplateDto,
   ): Promise<ContractTemplateEntity> {
-    const {
-      name,
-      contentHtml,
-      userId = this.DEFAULT_USER_ID,
-      variables = [],
-    } = createContractTemplateDto;
+    const { name, contentHtml, variables = [] } = createContractTemplateDto;
 
     await this.userService.getUserOrThrow(userId);
 
@@ -55,37 +51,40 @@ export class ContractTemplateService {
       },
     });
 
-    const templateWithSystemVariables =
-      this.mergeWithSystemVariables(template);
+    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
 
     return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
-  async findAll(): Promise<ContractTemplateEntity[]> {
+  async findAll(userId: string): Promise<ContractTemplateEntity[]> {
     const templates = await this.prisma.contractTemplate.findMany({
+      where: { userId },
       include: { variables: true },
     });
     const templatesWithSystemVariables = templates.map(
       this.mergeWithSystemVariables,
     );
 
-    return plainToInstance(ContractTemplateEntity, templatesWithSystemVariables);
+    return plainToInstance(
+      ContractTemplateEntity,
+      templatesWithSystemVariables,
+    );
   }
 
-  async findOne(id: string): Promise<ContractTemplateEntity> {
-    const template = await this.getTemplateOrThrow(id);
-    const templateWithSystemVariables =
-      this.mergeWithSystemVariables(template);
+  async findOne(id: string, userId: string): Promise<ContractTemplateEntity> {
+    const template = await this.getTemplateOrThrow(id, userId);
+    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
     return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
   async update(
     id: string,
+    userId: string,
     updateContractTemplateDto: UpdateContractTemplateDto,
   ): Promise<ContractTemplateEntity> {
     const { name, contentHtml, variables } = updateContractTemplateDto;
 
-    await this.prisma.contractTemplate.findUniqueOrThrow({ where: { id } });
+    await this.getTemplateOrThrow(id, userId);
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
       if (variables?.length) {
@@ -119,8 +118,8 @@ export class ContractTemplateService {
     return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
-  async remove(id: string): Promise<ContractTemplateEntity> {
-    await this.getTemplateOrThrow(id);
+  async remove(id: string, userId: string): Promise<ContractTemplateEntity> {
+    await this.getTemplateOrThrow(id, userId);
 
     const deletedContractTemplate = await this.prisma.contractTemplate.delete({
       where: { id },
@@ -129,8 +128,8 @@ export class ContractTemplateService {
     return plainToInstance(ContractTemplateEntity, deletedContractTemplate);
   }
 
-  async duplicate(id: string): Promise<ContractTemplateEntity> {
-    const template = await this.getTemplateOrThrow(id);
+  async duplicate(id: string, userId: string): Promise<ContractTemplateEntity> {
+    const template = await this.getTemplateOrThrow(id, userId);
 
     const name = await generateCopyName({
       table: 'contractTemplate',
@@ -142,7 +141,7 @@ export class ContractTemplateService {
       data: {
         name,
         contentHtml: template.contentHtml,
-        userId: template.userId,
+        userId,
         variables: { create: this.mapVariableData(template.variables) },
       },
       include: {
@@ -156,9 +155,9 @@ export class ContractTemplateService {
     return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
-  private async getTemplateOrThrow(id: string) {
-    const template = await this.prisma.contractTemplate.findUnique({
-      where: { id },
+  private async getTemplateOrThrow(id: string, userId: string) {
+    const template = await this.prisma.contractTemplate.findFirst({
+      where: { id, userId },
       include: { variables: true },
     });
 

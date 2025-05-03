@@ -1,6 +1,7 @@
 import { CONTRACT_VARIABLES_SYSTEM } from '../system-variables';
 
 export const DEFAULT_CONTRACT_TEMPLATE = {
+  id: 'defaultTemplate',
   name: 'Contrat par défaut',
   contentHtml: `
     <h1>Contrat de prestation</h1>
