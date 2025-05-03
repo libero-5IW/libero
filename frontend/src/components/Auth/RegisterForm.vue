@@ -179,7 +179,6 @@
 <script setup lang="ts">
     import { ref, computed, watch } from 'vue'
     import { RegisterDataSchema, type RegisterData } from '@/schemas/user.schema'
-    import { useAuthStore } from '@/stores/auth'
     import { countryList } from '@/utils/countries'
     import {passwordMatchRule} from "@/utils/validationRules.ts"
     import { legalStatus } from '@/constants/legal-status'

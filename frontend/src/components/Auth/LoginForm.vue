@@ -48,8 +48,7 @@
 </template>
   
 <script setup lang="ts">
-  import { computed, reactive, ref, watch } from 'vue';
-  import { useAuthStore } from '@/stores/auth';
+  import { reactive, ref, watch } from 'vue';
   import {EmailRules, passwordRules} from "@/utils/validationRules.ts";
 import type { LoginData } from '@/schemas/user.schema';
   
