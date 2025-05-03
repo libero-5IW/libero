@@ -18,6 +18,7 @@ export class RegisterDto {
   lastName: string;
 
   @ApiProperty({ example: 'johndoe@example.com' })
+  @IsNotEmpty({ message: "L'email ne peut pas être vide." })
   @IsEmail({}, { message: 'Le mail doit être valide.' })
   email: string;
 
@@ -26,27 +27,30 @@ export class RegisterDto {
   companyName?: string;
 
   @ApiProperty({ example: '14 avenue du moulin rouge' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: "L'adresse est requise." })
   addressLine: string;
 
   @ApiProperty({ example: '93420' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Le code postal est requis.' })
   postalCode: string;
 
   @ApiProperty({ example: 'Villepinte' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'La ville est requise.' })
   city: string;
 
   @ApiProperty({ example: 'France' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Le pays est requis.' })
   country: string;
 
   @ApiProperty({ example: 'SASU' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Le statut légal est requis.' })
   legalStatus: string;
 
   @ApiProperty({ example: '12345678901234' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Le numéro SIRET est requis.' })
+  @Matches(/^\d{14}$/, {
+    message: 'Le numéro SIRET doit contenir exactement 14 chiffres.',
+  })
   siret: string;
 
   @ApiProperty({ example: 'FR12345678901', required: false })

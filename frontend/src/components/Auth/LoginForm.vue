@@ -23,7 +23,7 @@
                 <v-text-field
                     label="Email"
                     type="text"
-                    v-model="form.email"
+                    v-model="localForm.email"
                     :rules="EmailValidationRules"
                 />
               </v-col>
@@ -31,7 +31,7 @@
                 <v-text-field
                     label="Mot de passe"
                     type="password"
-                    v-model="form.password"
+                    v-model="localForm.password"
                     :rules="passwordValidationRules"
                 />
               </v-col>
@@ -39,7 +39,7 @@
           </v-form>
         </v-card-text>
         <v-card-actions>
-          <v-btn :loading="loading" color="primary" block variant="flat" @click="login">Connexion</v-btn>
+          <v-btn :loading="loading" color="primary" block variant="flat" @click="submit">Connexion</v-btn>
         </v-card-actions>
         <slot name="content.additional"></slot>
       </v-card>
@@ -48,40 +48,39 @@
 </template>
   
 <script setup lang="ts">
-  import { computed, reactive, ref } from 'vue';
+  import { computed, reactive, ref, watch } from 'vue';
   import { useAuthStore } from '@/stores/auth';
   import {EmailRules, passwordRules} from "@/utils/validationRules.ts";
+import type { LoginData } from '@/schemas/user.schema';
   
-  const { form } = defineProps<{
+  const props = defineProps<{
     form: {
       email: string;
       password: string;
-    };
+    },   
+    loading?: boolean;
   }>();
 
   const emit = defineEmits<{
-    (e: 'error', message: string): void;
+    (e: 'submit', payload: LoginData): void;
   }>();
 
-  const authStore = useAuthStore();
-  const loading = computed(() => authStore.loading);
-  const hasError = computed(() => authStore.hasError);
-  const errorMessage = computed(() => authStore.errorMessage);
-
   let subtitle = 'Entrez vos identifiants';
+  const formRef = ref<any>(null);
+  const localForm = reactive({ ...props.form });
 
   const EmailValidationRules = EmailRules();
   const passwordValidationRules = passwordRules();
-  const formRef = ref<any>(null);
-  
-  const login = async () => {
-    const isFormValid = await formRef.value?.validate();
-    if (!isFormValid.valid) return;
 
-      await authStore.login(form);
-      if(hasError.value) {
-        emit('error', errorMessage.value);
-      }
+  watch(() => props.form, (newForm) => {
+    Object.assign(localForm, newForm);
+  });
+
+  const submit = async () => {
+    const isValid = await formRef.value?.validate();
+    if (!isValid.valid) return;
+    emit('submit', { ...localForm });
   };
+
 </script>
   
