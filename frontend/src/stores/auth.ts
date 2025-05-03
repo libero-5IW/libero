@@ -58,6 +58,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await apiClient.post('/auth/register', data);
       router.push('/login');
+      router.push({
+        path: '/login',
+        state: { toastStatus : 'success', toastMessage: 'Le compte a été crée avec succès, connectez-vous !' }
+    });
     } catch (err: any) {
       hasError.value = true;
       errorMessage.value = err.response?.data?.message || 'Erreur lors de l’inscription.';

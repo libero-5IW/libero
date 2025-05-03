@@ -89,4 +89,10 @@ export const passwordRules = (options: {
   return rules;
 };
 
+export function passwordMatchRule(target: string) {
+  return [
+      (v: string) => v === target || "Les mots de passe ne correspondent pas",
+  ];
+}
+
   
