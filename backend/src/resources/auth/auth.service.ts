@@ -4,7 +4,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../user/user.service';
 import * as bcrypt from 'bcryptjs';
 import { plainToInstance } from 'class-transformer';
 import { RegisterDto } from './dto/register.dto';
@@ -14,12 +13,11 @@ import { PrismaService } from 'src/database/prisma/prisma.service';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
   ) {}
 
-  async login(user: any) {
+  async login(user: UserEntity) {
     const payload = { userId: user.id, email: user.email };
     return {
       token: this.jwtService.sign(payload),

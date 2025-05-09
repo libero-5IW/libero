@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import apiClient from '@/config/axios';
 import { cleanAllStates } from '@/composables/useStateCleaner';
 import { type ApiCurrentUser, ApiCurrentUserSchema, type LoginData, type RegisterData } from '@/schemas/user.schema';
+import { handleAxiosError } from '@/utils/handleAxiosError';
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
@@ -11,14 +12,12 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<ApiCurrentUser | null>(null);
   const isAuthenticated = ref(false);
   const loading = ref(false);
-  const hasError = ref(false);
   const errorMessage = ref('');
   const authAlreadyChecked = ref(false);
 
 
   const clearState = () => {
     loading.value = false;
-    hasError.value = false;
     errorMessage.value = '';
     isAuthenticated.value = false;
     user.value = null;
@@ -38,9 +37,8 @@ export const useAuthStore = defineStore('auth', () => {
       isAuthenticated.value = true;
       router.push('/dashboard');
 
-    } catch (err: any) {
-      hasError.value = true;
-      errorMessage.value = err.response?.data?.message || 'Erreur lors de la connexion.';
+    } catch (error) {
+      handleAxiosError(error, 'Erreur lors de la connexion.')
     } finally {
       loading.value = false;
     }
@@ -57,14 +55,12 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     try {
       await apiClient.post('/auth/register', data);
-      router.push('/login');
       router.push({
         path: '/login',
         state: { toastStatus : 'success', toastMessage: 'Le compte a été crée avec succès, connectez-vous !' }
     });
-    } catch (err: any) {
-      hasError.value = true;
-      errorMessage.value = err.response?.data?.message || 'Erreur lors de l’inscription.';
+    } catch (error) {
+      handleAxiosError(error, 'Erreur lors de l’inscription.')
     } finally {
       loading.value = false;
     }
@@ -94,7 +90,6 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     logout,
     loading,
-    hasError,
     errorMessage,
     clearState,
     verifyAuth,

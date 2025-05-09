@@ -51,8 +51,5 @@
 
   const handleLogin = async (form: LoginData) => {
     await authStore.login(form);
-    if (authStore.hasError) {
-      showToast('error', authStore.errorMessage);
-    }
   };
 </script>

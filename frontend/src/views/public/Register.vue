@@ -25,12 +25,10 @@
   import RegisterForm from '@/components/Auth/RegisterForm.vue'
   import logo from '@/assets/logo.png'
   import { computed, reactive } from 'vue'
-  import { useToastHandler } from '@/composables/useToastHandler'
   import { useAuthStore } from '@/stores/auth'
-import type { RegisterData } from '@/schemas/user.schema'
+  import type { RegisterData } from '@/schemas/user.schema'
   
   const authStore = useAuthStore()
-  const { showToast } = useToastHandler()
 
   const loading = computed(() => authStore.loading);
   const data = reactive({
@@ -50,9 +48,6 @@ import type { RegisterData } from '@/schemas/user.schema'
 
   const handleRegister = async (payload: RegisterData) => {
     await authStore.register(payload);
-    if (authStore.hasError) {
-      showToast('error', authStore.errorMessage);
-    }
   }
 
 </script>
