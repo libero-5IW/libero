@@ -17,7 +17,11 @@ export async function generateNextNumber(
   return getNextNumber(model, userId, fieldName);
 }
 
-async function getNextNumber(model: any, userId: string, fieldName: string): Promise<number> {
+async function getNextNumber(
+  model: any,
+  userId: string,
+  fieldName: string,
+): Promise<number> {
   const lastItem = await model.findFirst({
     where: { userId },
     orderBy: { [fieldName]: 'desc' },

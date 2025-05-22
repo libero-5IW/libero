@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsBoolean,
-  IsIn,
+  IsEnum,
   IsNotEmpty,
   IsString,
   Matches,
 } from 'class-validator';
+import { VariableType } from 'src/common/enums/variable-type.enum';
 
 export class QuoteTemplateVariableDto {
   @ApiProperty({ example: 'project_title' })
@@ -24,12 +25,13 @@ export class QuoteTemplateVariableDto {
   label: string;
 
   @ApiProperty({
-    example: 'string',
-    enum: ['string', 'number', 'date', 'boolean'],
+    example: VariableType.STRING,
+    enum: VariableType,
+    description:
+      'Type de la variable : string, number, boolean, date, textarea, email ou url.',
   })
-  @IsString({ message: 'Le type doit être une chaîne de caractères.' })
-  @IsIn(['string', 'number', 'date', 'boolean'], {
-    message: 'Le type doit être string, number, date ou boolean.',
+  @IsEnum(VariableType, {
+    message: `Le type de variable doit être l’un des suivants : ${Object.values(VariableType).join(', ')}.`,
   })
   type: string;
 

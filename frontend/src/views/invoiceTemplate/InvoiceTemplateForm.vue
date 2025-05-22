@@ -63,6 +63,7 @@ import VariableFormModal from '@/components/TemplateEditor/variable/VariableForm
 
 import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema'
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate'
+import type { VariableType } from '@/types'
 
 const route = useRoute()
 const invoiceTemplate = useInvoiceTemplateStore()
@@ -79,7 +80,7 @@ const template = reactive({
 const currentVariable = ref<InvoiceTemplateVariable>({
   variableName: '',
   label: '',
-  type: 'string',
+  type: 'string' as VariableType,
   required: false
 })
 
@@ -95,15 +96,15 @@ onMounted(async () => {
   templateId.value = Array.isArray(idParam) ? idParam[0] : idParam || ''
   isEdit.value = !!templateId.value
 
-  const loadedTemplate = isEdit.value
+  isEdit.value
     ? await invoiceTemplate.fetchTemplate(templateId.value)
     : await invoiceTemplate.fetchDefaultTemplate()
 
-  const data = invoiceTemplate.currentTemplate || loadedTemplate
+  const data = invoiceTemplate.currentTemplate ||  invoiceTemplate.defaultTemplate
 
   if (data) {
     Object.assign(template, {
-      id: data.id || '',
+      id: data.id,
       name: data.name,
       contentHtml: data.contentHtml,
       variables: data.variables,
@@ -126,7 +127,7 @@ function openCreateModal() {
   currentVariable.value = {
     variableName: '',
     label: '',
-    type: 'string',
+    type: 'string' as VariableType,
     required: false
   }
   variableMode.value = 'create'

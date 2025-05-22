@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '@/config/axios'
 import { removeSystemVariables } from '@/utils/removeSystemVariables'
-import { InvoiceTemplateSchema, type InvoiceTemplate } from '@/schemas/invoiceTemplate.schema'
+import { InvoiceTemplateSchema, type CreateInvoiceTemplate, type InvoiceTemplate } from '@/schemas/invoiceTemplate.schema'
 import { handleAxiosError } from '@/utils/handleAxiosError'
 
 export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
@@ -11,12 +11,16 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   const defaultTemplate = ref<InvoiceTemplate | null>(null)
   const isLoading = ref(false)
 
-  async function fetchAllTemplates() {
+  async function fetchAllTemplates(includeDefault = true) {
     isLoading.value = true
     try {
-      const { data } = await apiClient.get('/invoice-templates')
+      const { data } = await apiClient.get('/invoice-templates', {
+        params: { includeDefault },
+      })
       templates.value = data.map((item: InvoiceTemplate) => InvoiceTemplateSchema.parse(item))
     } catch (error) {
+      console.error('error', error)
+      templates.value = [];
       handleAxiosError(error, 'Erreur lors de la récupération des templates.')
     } finally {
       isLoading.value = false
@@ -29,6 +33,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       const { data } = await apiClient.get(`/invoice-templates/${id}`)
       currentTemplate.value = InvoiceTemplateSchema.parse(data)
     } catch (error) {
+      currentTemplate.value = null;
       handleAxiosError(error, 'Erreur lors de la récupération du template.')
     } finally {
       isLoading.value = false
@@ -42,21 +47,23 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       defaultTemplate.value = parsed
       return parsed 
     } catch (error) {
+      console.error('error', error)
       handleAxiosError(error, 'Erreur lors de la récupération du template par défaut.')
     }
   }
 
-  async function createTemplate(payload: InvoiceTemplate) {
+  async function createTemplate(payload: CreateInvoiceTemplate) {
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.post('/invoice-templates', cleanedPayload)
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
+      console.error('error', error)
       handleAxiosError(error, 'Erreur lors de la création du template.')
     }
   }
 
-  async function updateTemplate(id: string, payload: Partial<InvoiceTemplate>) {
+  async function updateTemplate(id: string, payload: Partial<CreateInvoiceTemplate>) {
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.patch(`/invoice-templates/${id}`, cleanedPayload)

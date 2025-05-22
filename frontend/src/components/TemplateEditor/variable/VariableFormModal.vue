@@ -26,7 +26,7 @@
           <v-select
             v-model="formData.type"
             label="Type"
-            :items="['string', 'number', 'date', 'boolean']"
+            :items="VariableTypeValues"
             required
             :rules="rules.type"
             class="mb-4"
@@ -52,8 +52,8 @@
 <script setup lang="ts" generic="V extends VariableBase">
   import { ref, computed, watch, toRef } from 'vue'
   import { labelRules, requiredBooleanRules, typeRules, variableNameRules } from '@/utils/validationRules'
-  import type { VariableBase } from '@/types';
-
+  import { type VariableBase, VariableTypeValues } from '@/types';
+  
   const props = defineProps<{
     modelValue: boolean
     currentVariable: V

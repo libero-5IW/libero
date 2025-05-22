@@ -1,6 +1,8 @@
 <template>
     <TemplateSelectionModal 
-      v-model="showTemplateModal" 
+      v-model="showTemplateModal"
+      :fetchTemplates="fetchInvoiceTemplates"
+      :isForced="true"
       @templateSelected="handleTemplateSelected"
     />
   
@@ -16,6 +18,7 @@
                 item-value="id"
                 label="Template sélectionné"
                 class="mb-6"
+                disabled
                 @update:modelValue="handleTemplateSelected"
             />
 
@@ -87,7 +90,7 @@
           </v-col>
   
           <v-col cols="12" md="4">
-            <QuoteTemplatePreview
+            <InvoiceTemplatePreview
               :contentHtml="previewHtml"
               :variables="previewVariables"
               fileName="facture"
@@ -105,12 +108,13 @@
   import { useInvoiceStore } from '@/stores/invoice';
   import { useClientStore } from '@/stores/client';
   import { useUserStore } from '@/stores/user';
-  import QuoteTemplatePreview from '@/components/ui/PreviewPdf.vue';
-  import TemplateSelectionModal from '@/components/Invoice/TemplateSelectionModal.vue';
+  import InvoiceTemplatePreview from '@/components/ui/PreviewPdf.vue';
+  import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue';
   import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
-  import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
   import { useToastHandler } from '@/composables/useToastHandler';
-  import { mapTemplateVariablesForFrontend } from '@/utils/mapTemplateVariables';
+  import { mapTemplateVariables } from '@/utils/mapTemplateVariables';
+import type { VariableType } from '@/types';
+import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
   
   const router = useRouter();
   const route = useRoute();
@@ -130,6 +134,7 @@
   const { showToast } = useToastHandler();
   
   const currentUser = computed(() => userStore.user);
+  const defaultTemplate = computed(() => invoiceTemplateStore.defaultTemplate);
   
   const clients = computed(() =>
     clientStore.clients.map(client => ({
@@ -195,6 +200,19 @@
     if (type === 'date') return 'date';
     return 'text';
   }
+
+    async function fetchInvoiceTemplates() {
+    await invoiceTemplateStore.fetchAllTemplates();
+
+    const invoiceTemplateList: { id: string; name: string }[] = 
+      invoiceTemplateStore.templates
+      .map(template => ({
+        id: template.id as string,
+        name: template.name
+      }));
+
+    return invoiceTemplateList;
+  }
   
   async function handleTemplateSelected(templateId: string) {
     selectedTemplateId.value = templateId;
@@ -213,7 +231,10 @@
   
     if (!template) return;
   
-    templateVariables.value = mapTemplateVariablesForFrontend(template.variables);
+    templateVariables.value = mapTemplateVariables( template.variables.map((v) => ({
+        ...v,
+        type: v.type as VariableType,
+      })));
     previewHtml.value = template.contentHtml;
     previewVariables.value = {};
     variables.value = {};

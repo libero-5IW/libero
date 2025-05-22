@@ -15,6 +15,7 @@ async function bootstrap() {
     .setTitle('Libéro API')
     .setDescription('API pour la gestion RH des freelances.')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('doc', app, documentFactory);

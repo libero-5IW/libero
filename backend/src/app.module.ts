@@ -12,6 +12,7 @@ import { ClientModule } from './resources/client/client.module';
 import { AuthModule } from './resources/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './resources/auth/guards/jwt-auth.guard';
+import { QuoteModule } from './resources/quote/quote.module';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { JwtAuthGuard } from './resources/auth/guards/jwt-auth.guard';
     }),
     PrismaModule,
     UserModule,
-    // QuoteModule,
+    QuoteModule,
     QuoteTemplateModule,
     InvoiceTemplateModule,
     ContractModule,

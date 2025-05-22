@@ -1,3 +1,5 @@
+  import {VariableTypeValues} from '@/types'
+
 export function variableNameRules(options: {
     existingNames: string[]
     originalName?: string
@@ -28,7 +30,7 @@ export const labelRules = () => [
 
 export const typeRules = () => [
   (v: string) => !!v || 'Le type est requis',
-  (v: string) => ['string', 'number', 'date', 'boolean'].includes(v) || 'Type invalide',
+  (v: string) => VariableTypeValues.includes(v) || 'Type invalide',
 ]
 
 export const requiredBooleanRules = () => [

@@ -60,8 +60,8 @@
   import ImportVariableModal from '@/components/TemplateEditor/variable/VariableImportModal.vue'
   import VariableFormModal from '@/components/TemplateEditor/variable/VariableFormModal.vue'
   import type { QuoteTemplateVariable } from '@/schemas/quoteTemplate.schema'
-  import TemplateEditor from '@/components/TemplateEditor/Editor.vue'
   import { useQuoteTemplateStore } from '@/stores/quoteTemplate'
+import type { VariableType } from '@/types'
 
   const route = useRoute()
   const quoteTemplate = useQuoteTemplateStore()
@@ -78,7 +78,7 @@
   const currentVariable = ref<QuoteTemplateVariable>({
     variableName: '',
     label: '',
-    type: 'string',
+    type: 'string' as VariableType,
     required: false
   })
 
@@ -93,16 +93,16 @@
     const idParam = route.params.id
     templateId.value = Array.isArray(idParam) ? idParam[0] : idParam || ''
     isEdit.value = !!templateId.value
-
-    const loadedTemplate = isEdit.value
+    
+    isEdit.value
       ? await quoteTemplate.fetchTemplate(templateId.value)
       : await quoteTemplate.fetchDefaultTemplate()
 
-    const data = quoteTemplate.currentTemplate || loadedTemplate
-
+    const data = quoteTemplate.currentTemplate || quoteTemplate.defaultTemplate
+ 
     if (data) {
       Object.assign(template, {
-        id: data.id || '',
+        id: data.id,
         name: data.name,
         contentHtml: data.contentHtml,
         variables: data.variables,
@@ -125,7 +125,7 @@
     currentVariable.value = {
       variableName: '',
       label: '',
-      type: 'string',
+      type: 'string' as VariableType,
       required: false
     }
     variableMode.value = 'create'
@@ -166,6 +166,7 @@
         contentHtml: template.contentHtml,
         variables: template.variables,
       }
+
       const response = templateId.value 
         ? await quoteTemplate.updateTemplate(templateId.value, templateData)
         : await quoteTemplate.createTemplate(templateData)

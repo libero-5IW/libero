@@ -25,6 +25,7 @@
 
   <TemplateSelectionModal 
     v-model="showTemplateModal"
+    :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleTemplateSelected"
   />
 </template>
@@ -34,17 +35,21 @@
 import { ref, computed, onMounted } from 'vue';
 import { useInvoiceStore } from '@/stores/invoice';
 import DataTable from '@/components/Table/DataTable.vue';
-import TemplateSelectionModal from '@/components/Invoice/TemplateSelectionModal.vue'; 
+import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue'; 
 import { useToastHandler } from '@/composables/useToastHandler';
 import type { ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
+import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 
+const invoiceTemplateStore = useInvoiceTemplateStore();
 const invoiceStore = useInvoiceStore();
+
 const { showToast } = useToastHandler();
 const router = useRouter();
 
 const showTemplateModal = ref(false);  
+const invoices = computed(() => invoiceStore.invoices);
 
 const headers: Header[] = [
   { title: 'Numéro', value: 'number', sortable: true },
@@ -53,7 +58,23 @@ const headers: Header[] = [
   { title: 'Actions', value: 'actions', sortable: false },
 ];
 
-const invoices = computed(() => invoiceStore.invoices);
+async function fetchInvoiceTemplates() {
+  await invoiceTemplateStore.fetchAllTemplates();
+
+  const list: { id: string; name: string }[] = [];
+
+  list.push(
+    ...invoiceTemplateStore.templates
+      .filter(t => !!t.id)
+      .map(t => ({
+        id: t.id as string,
+        name: t.name,
+      }))
+  );
+
+  return list;
+}
+
 
 const fetchAllInvoices = async () => {
   await invoiceStore.fetchAllInvoices();

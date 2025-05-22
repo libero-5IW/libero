@@ -2,22 +2,28 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '@/config/axios'
 import { removeSystemVariables } from '@/utils/removeSystemVariables'
-import { QuoteTemplateSchema, type QuoteTemplate } from '@/schemas/quoteTemplate.schema'
+import { QuoteTemplateSchema, type CreateQuoteTemplate, type QuoteTemplate } from '@/schemas/quoteTemplate.schema'
 import { handleAxiosError } from '@/utils/handleAxiosError'
 
 export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
   const templates = ref<QuoteTemplate[]>([])
   const currentTemplate = ref<QuoteTemplate | null>(null)
+  const defaultTemplate = ref<QuoteTemplate | null>(null)
   const isLoading = ref(false)
 
-  async function fetchAllTemplates() {
+  async function fetchAllTemplates(includeDefault = true) {
     isLoading.value = true
     try {
-      const { data } = await apiClient.get('/quote-templates')
+      const { data } = await apiClient.get('/quote-templates', {
+        params: { includeDefault },
+      })
       templates.value = data.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
     } catch (error) {
+      console.log('error', error);
+      templates.value = [];
       handleAxiosError(error, 'Erreur lors de la récupération des templates.')
     } finally {
+      
       isLoading.value = false
     }
   }
@@ -28,6 +34,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       const { data } = await apiClient.get(`/quote-templates/${id}`)
       currentTemplate.value = QuoteTemplateSchema.parse(data)
     } catch (error) {
+      currentTemplate.value = null;
       handleAxiosError(error, 'Erreur lors de la récupération du template.')
     } finally {
       isLoading.value = false
@@ -37,13 +44,14 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
   async function fetchDefaultTemplate() {
     try {
       const { data } = await apiClient.get('/quote-templates/default-template')
-      return QuoteTemplateSchema.parse(data)
+      defaultTemplate.value = QuoteTemplateSchema.parse(data)
     } catch (error) {
+      console.error('error', error);
       handleAxiosError(error, 'Erreur lors de la récupération du template par défaut.')
     }
   }
 
-  async function createTemplate(payload: QuoteTemplate) {
+  async function createTemplate(payload: CreateQuoteTemplate) {
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.post('/quote-templates', cleanedPayload)
@@ -85,6 +93,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     templates,
     currentTemplate,
     isLoading,
+    defaultTemplate,
     fetchAllTemplates,
     fetchTemplate,
     fetchDefaultTemplate,

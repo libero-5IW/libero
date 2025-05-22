@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsUUID, IsObject, IsDateString } from 'class-validator';
+import { CreateInvoiceVariableValueDto } from './create-invoice-variable-value.dto';
 
 export class CreateInvoiceDto {
   @ApiProperty({ example: 'e29a7ef2-9a01-4c3a-8b1f-fb1a74351d6f' })
@@ -14,6 +15,10 @@ export class CreateInvoiceDto {
   @IsUUID()
   userId: string;
 
+  @ApiProperty({ example: '<p>Voici le devis généré…</p>' })
+  @IsString({ message: 'Le HTML généré doit être une chaîne de caractères.' })
+  generatedHtml: string;
+
   @ApiProperty({
     example: {
       invoice_number: '2024-001',
@@ -26,11 +31,11 @@ export class CreateInvoiceDto {
       total_amount: '1500',
       late_penalty: '10%',
       payment_terms: '30 jours',
-      tva_detail: 'TVA non applicable, art. 293B du CGI'
-    }
+      tva_detail: 'TVA non applicable, art. 293B du CGI',
+    },
   })
   @IsObject()
-  variables: Record<string, string>;
+  variablesValues: CreateInvoiceVariableValueDto[];
 
   @ApiProperty({ example: '2024-04-25T00:00:00Z' })
   @IsDateString()

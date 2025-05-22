@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import quoteTemplateRoutes from '@/routes/quoteTemplate'
+import quoteRoutes from '@/routes//quote'
 import invoiceTemplateRoutes from '@/routes/invoiceTemplate'
 import contractTemplateRoutes from './contractTemplate' 
 import invoiceRoutes from './invoice';
@@ -9,6 +10,7 @@ import { useAuthStore } from '@/stores/auth';
 
 const routes: Array<RouteRecordRaw> = [
   ...quoteTemplateRoutes,
+  ...quoteRoutes,
   ...invoiceTemplateRoutes,
   ...contractTemplateRoutes,
   ...invoiceRoutes,

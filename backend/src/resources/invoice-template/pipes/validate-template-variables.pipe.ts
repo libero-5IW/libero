@@ -1,49 +1,69 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
 import { InvoiceTemplateVariableDto } from '../dto/invoice-template-variable.dto';
-import { INVOICE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
-import { DEFAULT_INVOICE_TEMPLATE } from 'src/common/constants/system-templates/defaultInvoiceTemplate';
+import { VariableType } from 'src/common/enums/variable-type.enum';
+import { PrismaService } from 'src/database/prisma/prisma.service';
+import { InvoiceTemplateVariableEntity } from '../entities/invoice-template-variable.entity';
 
 @Injectable()
 export class ValidateTemplateVariablesPipe<
   T extends {
+    id?: string;
     name?: string;
     variables?: InvoiceTemplateVariableDto[];
     contentHtml?: string;
   },
 > implements PipeTransform<T>
 {
-  transform(value: T): T {
-    const { name, variables = [], contentHtml = '' } = value;
+  constructor(private readonly prisma: PrismaService) {}
 
-    if (
-      name &&
-      name.trim().toLowerCase() === DEFAULT_INVOICE_TEMPLATE.name.toLowerCase()
-    ) {
-      throw new BadRequestException(
-        `Vous ne pouvez pas utiliser le nom "${DEFAULT_INVOICE_TEMPLATE.name}" car il est réservé au modèle par défaut.`,
-      );
+  async transform(value: T): Promise<T> {
+    const { id, name, variables = [], contentHtml = '' } = value;
+
+    const existing = await this.prisma.invoiceTemplate.findFirst({
+      where: {
+        name: name?.trim(),
+        NOT: id ? { id } : undefined,
+      },
+    });
+
+    if (existing) {
+      if (name === 'Modèle de base - Facture') {
+        throw new BadRequestException(
+          `Le nom de modèle "${name}" est réservé. Veuillez choisir un autre nom.`,
+        );
+      } else {
+        throw new BadRequestException(
+          `Un modèle avec le nom "${name}" existe déjà. Veuillez choisir un autre nom.`,
+        );
+      }
     }
-    this.ensureUniqueAndNonSystemVariables(variables);
-    this.ensureRequiredVariablesInHtml(variables, contentHtml);
-    this.ensureRequiredVariablesInHtml(INVOICE_VARIABLES_SYSTEM, contentHtml);
+
+    const systemVariables = await this.prisma.invoiceTemplateVariable.findMany({
+      where: { templateId: 'defaultTemplate' },
+    });
+
+    this.ensureUniqueAndNonSystemVariables(variables, systemVariables);
+    this.ensureValidVariableTypes(variables);
+    this.ensureRequiredVariablesInHtml(variables, contentHtml, systemVariables);
 
     return value;
   }
 
   private ensureUniqueAndNonSystemVariables(
     variables: InvoiceTemplateVariableDto[],
+    systemVariables: InvoiceTemplateVariableEntity[],
   ) {
     const seen = new Set<string>();
 
     for (const variable of variables) {
       const variableName = variable.variableName;
-      const isSystemInvoiceVariable = INVOICE_VARIABLES_SYSTEM.some(
+      const isSystem = systemVariables.some(
         (v) => v.variableName === variableName,
       );
 
-      if (seen.has(variableName) || isSystemInvoiceVariable) {
+      if (seen.has(variableName) || isSystem) {
         throw new BadRequestException(
-          `La variable "${variableName}" est définie plusieurs fois.`,
+          `La variable "${variableName}" est définie plusieurs fois ou entre en conflit avec une variable système.`,
         );
       }
 
@@ -51,17 +71,25 @@ export class ValidateTemplateVariablesPipe<
     }
   }
 
+  private ensureValidVariableTypes(variables: InvoiceTemplateVariableDto[]) {
+    const allowedTypes = Object.values(VariableType);
+    for (const variable of variables) {
+      if (!allowedTypes.includes(variable.type as VariableType)) {
+        throw new BadRequestException(
+          `Le type "${variable.type}" de la variable "${variable.variableName}" est invalide. Types autorisés : ${allowedTypes.join(', ')}`,
+        );
+      }
+    }
+  }
+
   private ensureRequiredVariablesInHtml(
     variables: InvoiceTemplateVariableDto[],
     contentHtml: string,
+    systemVariables: InvoiceTemplateVariableEntity[],
   ) {
-    const systemRequiredVariables = INVOICE_VARIABLES_SYSTEM.filter(
-      (v) => v.required,
-    ).map((v) => v.variableName);
-
     const requiredVariables = [
       ...variables.filter((v) => v.required).map((v) => v.variableName),
-      ...systemRequiredVariables,
+      ...systemVariables.filter((v) => v.required).map((v) => v.variableName),
     ];
 
     const missingVariables = requiredVariables.filter(

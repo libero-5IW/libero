@@ -6,28 +6,31 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { QuoteTemplateService } from './quote-template.service';
 import { CreateQuoteTemplateDto } from './dto/create-quote-template.dto';
 import { UpdateQuoteTemplateDto } from './dto/update-quote-template.dto';
 import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe';
-import { DEFAULT_QUOTE_TEMPLATE } from 'src/common/constants/system-templates/defaultQuoteTemplate';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { PrismaService } from 'src/database/prisma/prisma.service';
 
+@ApiBearerAuth()
 @Controller('quote-templates')
 export class QuoteTemplateController {
   constructor(private readonly quoteTemplateService: QuoteTemplateService) {}
 
   @Get('default-template')
   getDefaultTemplate() {
-    return DEFAULT_QUOTE_TEMPLATE;
+    return this.quoteTemplateService.getDefaultTemplate();
   }
 
   @Post()
   create(
     @CurrentUser() user: JwtPayload,
-    @Body(new ValidateTemplateVariablesPipe())
+    @Body(new ValidateTemplateVariablesPipe(new PrismaService()))
     createQuoteTemplateDto: CreateQuoteTemplateDto,
   ) {
     return this.quoteTemplateService.create(
@@ -37,8 +40,12 @@ export class QuoteTemplateController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.quoteTemplateService.findAll(user.userId);
+  findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query('includeDefault') includeDefault: string,
+  ) {
+    const include = includeDefault !== 'false';
+    return this.quoteTemplateService.findAll(user.userId, include);
   }
 
   @Get(':id')
@@ -47,12 +54,18 @@ export class QuoteTemplateController {
   }
 
   @Patch(':id')
-  update(
+  async update(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
-    @Body(new ValidateTemplateVariablesPipe())
+    @Body()
     updateQuoteTemplateDto: UpdateQuoteTemplateDto,
   ) {
+    const pipe = new ValidateTemplateVariablesPipe(new PrismaService());
+    await pipe.transform({
+      ...updateQuoteTemplateDto,
+      id,
+    });
+
     return this.quoteTemplateService.update(
       id,
       user.userId,

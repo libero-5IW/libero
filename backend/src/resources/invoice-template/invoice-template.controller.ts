@@ -6,15 +6,18 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { InvoiceTemplateService } from './invoice-template.service';
 import { CreateInvoiceTemplateDto } from './dto/create-invoice-template.dto';
 import { UpdateInvoiceTemplateDto } from './dto/update-invoice-template.dto';
 import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe';
-import { DEFAULT_INVOICE_TEMPLATE } from 'src/common/constants/system-templates/defaultInvoiceTemplate';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { PrismaService } from 'src/database/prisma/prisma.service';
 
+@ApiBearerAuth()
 @Controller('invoice-templates')
 export class InvoiceTemplateController {
   constructor(
@@ -23,13 +26,13 @@ export class InvoiceTemplateController {
 
   @Get('default-template')
   getDefaultTemplate() {
-    return DEFAULT_INVOICE_TEMPLATE;
+    return this.invoiceTemplateService.getDefaultTemplate();
   }
 
   @Post()
   create(
     @CurrentUser() user: JwtPayload,
-    @Body(new ValidateTemplateVariablesPipe())
+    @Body(new ValidateTemplateVariablesPipe(new PrismaService()))
     createInvoiceTemplateDto: CreateInvoiceTemplateDto,
   ) {
     return this.invoiceTemplateService.create(
@@ -39,8 +42,12 @@ export class InvoiceTemplateController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.invoiceTemplateService.findAll(user.userId);
+  findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query('includeDefault') includeDefault: string,
+  ) {
+    const include = includeDefault !== 'false';
+    return this.invoiceTemplateService.findAll(user.userId, include);
   }
 
   @Get(':id')
@@ -49,12 +56,18 @@ export class InvoiceTemplateController {
   }
 
   @Patch(':id')
-  update(
+  async update(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
-    @Body(new ValidateTemplateVariablesPipe())
+    @Body()
     updateInvoiceTemplateDto: UpdateInvoiceTemplateDto,
   ) {
+    const pipe = new ValidateTemplateVariablesPipe(new PrismaService());
+    await pipe.transform({
+      ...updateInvoiceTemplateDto,
+      id,
+    });
+
     return this.invoiceTemplateService.update(
       id,
       user.userId,

@@ -15,11 +15,6 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<UserEntity[]> {
-    const users = await this.prisma.user.findMany();
-    return plainToInstance(UserEntity, users);
-  }
-
   async findOne(id: string): Promise<UserEntity> {
     const user = await this.getUserOrThrow(id);
     return plainToInstance(UserEntity, user);

@@ -12,7 +12,7 @@ import { generateCopyName } from 'src/common/utils/generate-copy-name.util';
 import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.util';
 import { ContractTemplateVariableDto } from './dto/contract-template-variable.dto';
 import { UserService } from '../user/user.service';
-import { CONTRACT_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
+import { VariableType } from 'src/common/enums/variable-type.enum';
 
 @Injectable()
 export class ContractTemplateService {
@@ -56,13 +56,20 @@ export class ContractTemplateService {
     return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
-  async findAll(userId: string): Promise<ContractTemplateEntity[]> {
+  async findAll(
+    userId: string,
+    includeDefaultTemplate: boolean,
+  ): Promise<ContractTemplateEntity[]> {
+    const whereClause = includeDefaultTemplate
+      ? { OR: [{ userId }, { userId: null }] }
+      : { userId };
+
     const templates = await this.prisma.contractTemplate.findMany({
-      where: { userId },
+      where: whereClause,
       include: { variables: true },
     });
-    const templatesWithSystemVariables = templates.map(
-      this.mergeWithSystemVariables,
+    const templatesWithSystemVariables = await Promise.all(
+      templates.map((t) => this.mergeWithSystemVariables(t)),
     );
 
     return plainToInstance(
@@ -84,7 +91,7 @@ export class ContractTemplateService {
   ): Promise<ContractTemplateEntity> {
     const { name, contentHtml, variables } = updateContractTemplateDto;
 
-    await this.getTemplateOrThrow(id, userId);
+    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
       if (variables?.length) {
@@ -119,7 +126,7 @@ export class ContractTemplateService {
   }
 
   async remove(id: string, userId: string): Promise<ContractTemplateEntity> {
-    await this.getTemplateOrThrow(id, userId);
+    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
 
     const deletedContractTemplate = await this.prisma.contractTemplate.delete({
       where: { id },
@@ -155,13 +162,27 @@ export class ContractTemplateService {
     return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
-  private async getTemplateOrThrow(id: string, userId: string) {
+  async getDefaultTemplate() {
+    return this.prisma.contractTemplate.findUnique({
+      where: { id: 'defaultTemplate' },
+      include: { variables: true },
+    });
+  }
+
+  private async getTemplateOrThrow(
+    id: string,
+    userId: string,
+    options?: { allowDefaultTemplate?: boolean },
+  ) {
     const template = await this.prisma.contractTemplate.findFirst({
       where: { id, userId },
       include: { variables: true },
     });
 
-    if (!template) {
+    if (
+      !template ||
+      (id === 'defaultTemplate' && options?.allowDefaultTemplate === false)
+    ) {
       throw new NotFoundException("Le template du contrat n'a pas été trouvé.");
     }
 
@@ -172,12 +193,12 @@ export class ContractTemplateService {
     return variables.map((v) => ({
       variableName: v.variableName,
       label: v.label,
-      type: v.type,
+      type: v.type as VariableType,
       required: v.required,
     }));
   }
 
   private mergeWithSystemVariables(template: ContractTemplateEntity) {
-    return mergeSystemVariables(template, CONTRACT_VARIABLES_SYSTEM);
+    return mergeSystemVariables(template, 'contractTemplateVariable');
   }
 }

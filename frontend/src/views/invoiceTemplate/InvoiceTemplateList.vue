@@ -20,6 +20,12 @@
         <v-btn icon @click="editTemplate(item.id)">
           <v-icon>mdi-pencil</v-icon>
         </v-btn>
+        <v-btn icon @click="duplicateTemplate(item.id)">
+          <v-icon>mdi-content-duplicate</v-icon>
+        </v-btn>
+        <v-btn icon @click="deleteTemplate(item.id)">
+          <v-icon>mdi-delete</v-icon>
+        </v-btn>
       </template>
     </DataTable>
   </template>
@@ -46,7 +52,7 @@
   const templates = computed(() => invoiceTemplate.templates)
   
   const fetchAllTemplates = async () => {
-    invoiceTemplate.fetchAllTemplates()
+    invoiceTemplate.fetchAllTemplates(false)
   }
   
   const createTemplate = () => {
@@ -55,6 +61,21 @@
   
   const editTemplate = (id: string) => {
     router.push({ name: 'InvoiceTemplateEdit', params: { id } })
+  }
+    
+  const duplicateTemplate = async (id: string) => {
+    const duplicated = await invoiceTemplate.duplicateTemplate(id)
+
+    if(duplicated) {
+      showToast('success', `Duplication effectuée, ${duplicated.name} a été crée.`)
+      fetchAllTemplates()
+    }
+  }
+
+  const deleteTemplate = async (id: string) => {
+    await invoiceTemplate.deleteTemplate(id)
+    fetchAllTemplates()
+    showToast('success', `Le template a été bien supprimé !`)
   }
   
   onMounted(async () => {

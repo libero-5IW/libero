@@ -6,7 +6,6 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUUID,
   ValidateNested,
 } from 'class-validator';
 import { QuoteTemplateVariableDto } from './quote-template-variable.dto';
@@ -28,11 +27,6 @@ export class UpdateQuoteTemplateDto extends PartialType(
   @IsString({ message: 'Le contenu HTML doit être une chaîne de caractères.' })
   @IsNotEmpty({ message: 'Le contenu HTML ne peut pas être vide.' })
   contentHtml?: string;
-
-  @ApiPropertyOptional({ example: '6f83c8cb-df23-4c2f-a7ab-fc6f2c4fd7d2' })
-  @IsOptional()
-  @IsUUID('4', { message: "L'ID utilisateur doit être un UUID valide." })
-  userId?: string;
 
   @ApiPropertyOptional({
     description: 'Variables à remplacer dans le template',

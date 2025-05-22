@@ -6,15 +6,18 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { ContractTemplateService } from './contract-template.service';
 import { CreateContractTemplateDto } from './dto/create-contract-template.dto';
 import { UpdateContractTemplateDto } from './dto/update-contract-template.dto';
 import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe';
-import { DEFAULT_CONTRACT_TEMPLATE } from 'src/common/constants/system-templates/defaultContractTemplate';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { PrismaService } from 'src/database/prisma/prisma.service';
 
+@ApiBearerAuth()
 @Controller('contract-templates')
 export class ContractTemplateController {
   constructor(
@@ -23,13 +26,13 @@ export class ContractTemplateController {
 
   @Get('default-template')
   getDefaultTemplate() {
-    return DEFAULT_CONTRACT_TEMPLATE;
+    return this.contractTemplateService.getDefaultTemplate();
   }
 
   @Post()
   create(
     @CurrentUser() user: JwtPayload,
-    @Body(new ValidateTemplateVariablesPipe())
+    @Body(new ValidateTemplateVariablesPipe(new PrismaService()))
     createContractTemplateDto: CreateContractTemplateDto,
   ) {
     return this.contractTemplateService.create(
@@ -39,8 +42,12 @@ export class ContractTemplateController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.contractTemplateService.findAll(user.userId);
+  findAll(
+    @CurrentUser() user: JwtPayload,
+    @Query('includeDefault') includeDefault: string,
+  ) {
+    const include = includeDefault !== 'false';
+    return this.contractTemplateService.findAll(user.userId, include);
   }
 
   @Get(':id')
@@ -49,12 +56,18 @@ export class ContractTemplateController {
   }
 
   @Patch(':id')
-  update(
+  async update(
     @CurrentUser() user: JwtPayload,
     @Param('id') id: string,
-    @Body(new ValidateTemplateVariablesPipe())
+    @Body()
     updateContractTemplateDto: UpdateContractTemplateDto,
   ) {
+    const pipe = new ValidateTemplateVariablesPipe(new PrismaService());
+    await pipe.transform({
+      ...updateContractTemplateDto,
+      id,
+    });
+
     return this.contractTemplateService.update(
       id,
       user.userId,

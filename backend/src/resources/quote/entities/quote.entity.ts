@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { QuoteTemplateEntity } from '../../quote-template/entities/quote-template.entity';
 import { QuoteVariableValueEntity } from './quote-variable-value.entity';
+import { IsEnum } from 'class-validator';
+import { QuoteStatus } from '../enums/quote-status.enum';
 
 export class QuoteEntity {
   @ApiProperty({ example: '5d8e69a3-8a15-4f96-87fc-76390f7407b2' })
@@ -28,8 +29,11 @@ export class QuoteEntity {
   clientId: string;
 
   @ApiProperty({ example: 'sent' })
+  @IsEnum(QuoteStatus, {
+    message: 'Le statut doit être draft, sent, accepted ou refused.',
+  })
   @Expose()
-  status: string;
+  status: QuoteStatus;
 
   @ApiProperty({ example: '<p>Bonjour Jean, voici votre devis...</p>' })
   @Expose()
@@ -50,11 +54,6 @@ export class QuoteEntity {
   @ApiProperty({ example: '2025-03-26T15:30:00Z' })
   @Expose()
   updatedAt: Date;
-
-  @ApiProperty({ type: () => QuoteTemplateEntity, required: false })
-  @Expose()
-  @Type(() => QuoteTemplateEntity)
-  template?: QuoteTemplateEntity;
 
   @ApiProperty({ type: () => [QuoteVariableValueEntity] })
   @Expose()

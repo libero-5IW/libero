@@ -3,11 +3,20 @@ import { PrismaService } from '../../database/prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
 import { InvoiceTemplateService } from '../invoice-template/invoice-template.service';
 import { generateNextNumber } from 'src/common/utils/generate-number.util';
-import { INVOICE_STATUS } from 'src/common/constants/status/invoice-status.constant';
+import { VariableType } from 'src/common/enums/variable-type.enum';
+import { CreateInvoiceVariableValueDto } from './dto/create-invoice-variable-value.dto';
+import { UserService } from '../user/user.service';
+import { ClientService } from '../client/client.service';
+import { InvoiceEntity } from './entities/invoice.entity';
+import { plainToInstance } from 'class-transformer';
+import { InvoiceTemplateVariableEntity } from '../invoice-template/entities/invoice-template-variable.entity';
+import { InvoiceStatus } from './enums/invoice-status.enum';
 
 @Injectable()
 export class InvoiceService {
   constructor(
+    private readonly userService: UserService,
+    private readonly clientService: ClientService,
     private readonly prisma: PrismaService,
     private readonly invoiceTemplateService: InvoiceTemplateService,
   ) {}
@@ -16,43 +25,51 @@ export class InvoiceService {
     createInvoiceDto: CreateInvoiceDto,
     userId: string,
   ) {
+    const {
+      clientId,
+      templateId,
+      generatedHtml,
+      dueDate,
+      issuedAt,
+      variablesValues,
+    } = createInvoiceDto;
+
+    await this.userService.getUserOrThrow(userId);
+    await this.clientService.getClientOrThrow(clientId, userId);
     const template = await this.invoiceTemplateService.findOne(
-      createInvoiceDto.templateId,
+      templateId,
       userId,
     );
-    if (!template)
-      throw new NotFoundException('Template de facture introuvable');
 
-    let generatedHtml = template.contentHtml;
-    for (const [key, value] of Object.entries(createInvoiceDto.variables)) {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      generatedHtml = generatedHtml.replace(regex, value);
+    let contentHtml = generatedHtml;
+    for (const { variableName, value } of variablesValues) {
+      const regex = new RegExp(`{{${variableName}}}`, 'g');
+      contentHtml = contentHtml.replace(regex, value);
     }
 
-    const lastInvoice = await this.prisma.invoice.findFirst({
-      where: { userId },
-      orderBy: { number: 'desc' },
-    });
-    const nextNumber = lastInvoice ? lastInvoice.number + 1 : 1;
+    const nextNumber = await this.getNextInvoiceNumber(userId);
 
     const invoice = await this.prisma.invoice.create({
       data: {
         number: nextNumber,
         templateId: createInvoiceDto.templateId,
         userId,
-        clientId: createInvoiceDto.clientId,
-        issuedAt: createInvoiceDto.issuedAt,
-        dueDate: createInvoiceDto.dueDate,
-        generatedHtml,
-        status: INVOICE_STATUS.DRAFT,
+        clientId,
+        issuedAt,
+        dueDate,
+        generatedHtml: contentHtml,
+        status: InvoiceStatus.draft,
         variableValues: {
-          create: this.mapVariableData(createInvoiceDto.variables),
+          create: this.mapVariableWithTemplateData(
+            variablesValues,
+            template.variables,
+          ),
         },
       },
       include: { variableValues: true },
     });
 
-    return invoice;
+    return plainToInstance(InvoiceEntity, invoice);
   }
 
   async findById(id: string) {
@@ -83,10 +100,29 @@ export class InvoiceService {
     return generateNextNumber('invoice', userId);
   }
 
-  private mapVariableData(variables: Record<string, string>) {
-    return Object.entries(variables).map(([variableName, value]) => ({
-      variableName,
-      value,
-    }));
+  private mapVariableWithTemplateData(
+    submittedVariables: CreateInvoiceVariableValueDto[],
+    templateVariables: InvoiceTemplateVariableEntity[],
+  ) {
+    const templateVariableMap = new Map(
+      templateVariables.map((variable) => [variable.variableName, variable]),
+    );
+
+    return submittedVariables.map((sub) => {
+      const templateVariable = templateVariableMap.get(sub.variableName);
+      if (!templateVariable) {
+        throw new Error(
+          `Variable ${sub.variableName} non définie dans le template`,
+        );
+      }
+
+      return {
+        variableName: sub.variableName,
+        value: sub.value,
+        label: templateVariable.label,
+        type: templateVariable.type as VariableType,
+        required: templateVariable.required,
+      };
+    });
   }
 }

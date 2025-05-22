@@ -6,5 +6,6 @@ import { UserService } from '../user/user.service';
 @Module({
   controllers: [QuoteTemplateController],
   providers: [QuoteTemplateService, UserService],
+  exports: [QuoteTemplateService],
 })
 export class QuoteTemplateModule {}

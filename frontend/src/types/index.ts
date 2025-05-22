@@ -11,10 +11,21 @@ export type VariableBase = {
     id?: string,
     variableName: string
     label: string
-    type: 'string' | 'number' | 'date' | 'boolean'
+    type: VariableType
     templateId?: string
     required: boolean
 }
+
+export enum VariableType {
+  STRING = 'string',
+  NUMBER = 'number',
+  DATE = 'date',
+  TEXTAREA = 'textarea',
+  EMAIL = 'email',
+  URL = 'url',
+}
+
+export const VariableTypeValues = Object.values(VariableType) as [string, ...string[]];
 
 export type TemplateBase<V extends VariableBase = VariableBase> = {
     id: string

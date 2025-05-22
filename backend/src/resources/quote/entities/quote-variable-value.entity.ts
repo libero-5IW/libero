@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { VariableType } from 'src/common/enums/variable-type.enum';
 
 export class QuoteVariableValueEntity {
   @ApiProperty({ example: 'bb82e27b-3c22-4706-bf77-c983f419ed5f' })
@@ -13,6 +14,18 @@ export class QuoteVariableValueEntity {
   @ApiProperty({ example: 'number_of_pages' })
   @Expose()
   variableName: string;
+
+  @ApiProperty({ example: 'Nombre de pages à imprimer' })
+  @Expose()
+  label: string;
+
+  @ApiProperty({ enum: VariableType, example: VariableType.NUMBER })
+  @Expose()
+  type: VariableType;
+
+  @ApiProperty({ example: true })
+  @Expose()
+  required: boolean;
 
   @ApiProperty({ example: '5' })
   @Expose()

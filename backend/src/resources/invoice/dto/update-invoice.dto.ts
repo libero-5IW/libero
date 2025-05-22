@@ -1,9 +1,17 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateInvoiceDto } from './create-invoice.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsUUID, IsDateString, IsString, IsNumber, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsOptional,
+  IsUUID,
+  IsDateString,
+  IsString,
+  IsNumber,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { InvoiceVariableValueDto } from './invoice-variable-value.dto';
+import { UpdateInvoiceVariableValueDto } from './update-invoice-variable-value.dto';
 
 export class UpdateInvoiceDto extends PartialType(CreateInvoiceDto) {
   @ApiPropertyOptional({ example: 'f21796d5-e7e4-4d5c-8f47-48f6d7c4457b' })
@@ -28,12 +36,18 @@ export class UpdateInvoiceDto extends PartialType(CreateInvoiceDto) {
 
   @ApiPropertyOptional({ example: '2024-04-25T00:00:00Z' })
   @IsOptional()
-  @IsDateString({}, { message: 'La date d\'émission doit être une date valide.' })
+  @IsDateString(
+    {},
+    { message: "La date d'émission doit être une date valide." },
+  )
   issuedAt?: string;
 
   @ApiPropertyOptional({ example: '2024-05-25T00:00:00Z' })
   @IsOptional()
-  @IsDateString({}, { message: 'La date d\'échéance doit être une date valide.' })
+  @IsDateString(
+    {},
+    { message: "La date d'échéance doit être une date valide." },
+  )
   dueDate?: string;
 
   @ApiPropertyOptional({ example: 'template-uuid-1234' })
@@ -53,11 +67,11 @@ export class UpdateInvoiceDto extends PartialType(CreateInvoiceDto) {
 
   @ApiPropertyOptional({
     description: 'Liste des variables de la facture',
-    type: [InvoiceVariableValueDto],
+    type: [UpdateInvoiceVariableValueDto],
   })
   @IsOptional()
   @IsArray({ message: 'Les variables doivent être un tableau.' })
   @ValidateNested({ each: true })
-  @Type(() => InvoiceVariableValueDto)
-  variableValues?: InvoiceVariableValueDto[];
+  @Type(() => UpdateInvoiceVariableValueDto)
+  variableValues?: UpdateInvoiceVariableValueDto[];
 }

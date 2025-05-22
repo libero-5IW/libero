@@ -1,11 +1,12 @@
 import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
+import type { VariableBase, VariableType } from '@/types';
 
-export function mapTemplateVariablesForFrontend(
-  variables: Array<{ variableName: string; label: string; type: string; required: boolean }>
+export function mapTemplateVariables(
+  variables: Array<VariableBase>
 ): InvoiceTemplateVariable[] {
   return variables.map((v, index) => ({
     id: `${index}`, 
     ...v,
-    type: v.type as 'string' | 'number' | 'boolean' | 'date',
+    type: v.type as VariableType,
   }));
 }

@@ -1,9 +1,11 @@
 import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
-import { ValidateInvoiceVariablesPipe } from './pipes/validate-invoice-variables.pipe';
-import { ApiTags } from '@nestjs/swagger';
+import { ValidateInvoiceOnCreatePipe } from './pipes/create-validate-invoice-variables.pipe';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { PrismaService } from 'src/database/prisma/prisma.service';
 
+@ApiBearerAuth()
 @ApiTags('Invoices')
 @Controller('invoices')
 export class InvoiceController {
@@ -11,7 +13,7 @@ export class InvoiceController {
 
   @Post()
   async createInvoice(
-    @Body(new ValidateInvoiceVariablesPipe())
+    @Body(new ValidateInvoiceOnCreatePipe(new PrismaService()))
     createInvoiceDto: CreateInvoiceDto,
   ) {
     return await this.invoiceService.createInvoiceFromTemplate(
@@ -29,6 +31,16 @@ export class InvoiceController {
   async getInvoiceById(@Param('id') id: string) {
     return await this.invoiceService.getInvoiceOrThrow(id);
   }
+
+  // @Put(':id')
+  // update(
+  //   @Param('id') id: string,
+  //   @CurrentUser() user: JwtPayload,
+  //   @Body(new ValidateInvoiceOnUpdatePipe())
+  //   updateQuoteDto: UpdateInvoiceDto,
+  // ) {
+  //   return this.invoiceService.update(id, user.userId, updateQuoteDto);
+  // }
 
   @Get()
   async getAllInvoices() {

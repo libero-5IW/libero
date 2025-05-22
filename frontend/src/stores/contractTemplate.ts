@@ -10,10 +10,12 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
   const currentTemplate = ref<ContractTemplate | null>(null)
   const isLoading = ref(false)
 
-  async function fetchAllTemplates() {
+  async function fetchAllTemplates(includeDefault = true) {
     isLoading.value = true
     try {
-      const { data } = await apiClient.get('/contract-templates')
+      const { data } = await apiClient.get('/contract-templates', {
+        params: { includeDefault },
+      })
       templates.value = data.map((item: ContractTemplate) => ContractTemplateSchema.parse(item))
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la récupération des templates de contrat.')

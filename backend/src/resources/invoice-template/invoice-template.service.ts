@@ -12,7 +12,7 @@ import { generateCopyName } from 'src/common/utils/generate-copy-name.util';
 import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.util';
 import { InvoiceTemplateVariableDto } from './dto/invoice-template-variable.dto';
 import { UserService } from '../user/user.service';
-import { INVOICE_VARIABLES_SYSTEM } from 'src/common/constants/system-variables';
+import { VariableType } from 'src/common/enums/variable-type.enum';
 
 @Injectable()
 export class InvoiceTemplateService {
@@ -54,14 +54,21 @@ export class InvoiceTemplateService {
     return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
   }
 
-  async findAll(userId: string): Promise<InvoiceTemplateEntity[]> {
+  async findAll(
+    userId: string,
+    includeDefaultTemplate: boolean,
+  ): Promise<InvoiceTemplateEntity[]> {
+    const whereClause = includeDefaultTemplate
+      ? { OR: [{ userId }, { userId: null }] }
+      : { userId };
+
     const templates = await this.prisma.invoiceTemplate.findMany({
-      where: { userId },
+      where: whereClause,
       include: { variables: true },
     });
 
-    const templatesWithSystemVariables = templates.map(
-      this.mergeWithSystemVariables,
+    const templatesWithSystemVariables = await Promise.all(
+      templates.map((t) => this.mergeWithSystemVariables(t)),
     );
 
     return plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables);
@@ -80,7 +87,7 @@ export class InvoiceTemplateService {
   ): Promise<InvoiceTemplateEntity> {
     const { name, contentHtml, variables } = updateInvoiceTemplateDto;
 
-    await this.getTemplateOrThrow(id, userId);
+    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
       if (variables?.length) {
@@ -115,7 +122,7 @@ export class InvoiceTemplateService {
   }
 
   async remove(id: string, userId: string): Promise<InvoiceTemplateEntity> {
-    await this.getTemplateOrThrow(id, userId);
+    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
 
     const deletedTemplate = await this.prisma.invoiceTemplate.delete({
       where: { id },
@@ -151,13 +158,27 @@ export class InvoiceTemplateService {
     return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
   }
 
-  private async getTemplateOrThrow(id: string, userId: string) {
+  async getDefaultTemplate() {
+    return this.prisma.invoiceTemplate.findUnique({
+      where: { id: 'defaultTemplate' },
+      include: { variables: true },
+    });
+  }
+
+  private async getTemplateOrThrow(
+    id: string,
+    userId: string,
+    options?: { allowDefaultTemplate?: boolean },
+  ) {
     const template = await this.prisma.invoiceTemplate.findUnique({
       where: { id, userId },
       include: { variables: true },
     });
 
-    if (!template) {
+    if (
+      !template ||
+      (id === 'defaultTemplate' && options?.allowDefaultTemplate === false)
+    ) {
       throw new NotFoundException("Le template de facture n'a pas été trouvé.");
     }
 
@@ -168,12 +189,12 @@ export class InvoiceTemplateService {
     return variables.map((v) => ({
       variableName: v.variableName,
       label: v.label,
-      type: v.type,
+      type: v.type as VariableType,
       required: v.required,
     }));
   }
 
   private mergeWithSystemVariables(template: InvoiceTemplateEntity) {
-    return mergeSystemVariables(template, INVOICE_VARIABLES_SYSTEM);
+    return mergeSystemVariables(template, 'invoiceTemplateVariable');
   }
 }
