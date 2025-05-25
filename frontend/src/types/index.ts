@@ -33,5 +33,15 @@ export type TemplateBase<V extends VariableBase = VariableBase> = {
     contentHtml: string
     userId?: string
     variables: V[]
-  }
+}
+
+export type VariableValue = {
+    id?: string,
+    variableName: string
+    label: string
+    type: VariableType
+    templateId?: string
+    required: boolean
+    value: string
+}
   
