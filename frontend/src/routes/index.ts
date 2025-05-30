@@ -6,6 +6,7 @@ import contractTemplateRoutes from './contractTemplate'
 import invoiceRoutes from './invoice';
 import publicRoutes from '@/routes/public'
 import dashboardRoute from '@/routes/dashboard'
+import profileRoutes from '@/routes/profile'
 import { useAuthStore } from '@/stores/auth';
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 
@@ -19,7 +20,8 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
       ...invoiceTemplateRoutes,
       ...contractTemplateRoutes,
       ...invoiceRoutes,
-      ...dashboardRoute
+      ...dashboardRoute,
+      ...profileRoutes
     ]
   }
 ]
