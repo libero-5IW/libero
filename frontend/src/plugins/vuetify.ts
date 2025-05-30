@@ -69,5 +69,10 @@ export default createVuetify({
       customLight: customLightTheme,
       customDark: customDarkTheme
     },
+    variations: {
+      colors: ['primary', 'secondary', 'accent'],
+      lighten: 5,
+      darken: 5,
+    }
   },
 })
