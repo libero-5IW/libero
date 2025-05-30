@@ -1,5 +1,5 @@
 <template>
-  <main class="m-6">
+  <div class="m-6">
     <HelloWorld msg="coucouuuu" />
     <div v-if="user" class="bg-custom-primary">
       <h1>{{ user.firstName }} {{ user.lastName }}</h1>
@@ -9,25 +9,24 @@
     <v-btn @click="logout">
       deconnexion
     </v-btn>
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">
-  import HelloWorld from '@/components/HelloWorld.vue';
+import HelloWorld from '@/components/HelloWorld.vue';
 import { useAuthStore } from '@/stores/auth';
-  import { useUserStore } from '@/stores/user';
-  import { computed, defineComponent, onMounted } from 'vue';
+import { useUserStore } from '@/stores/user';
+import { computed, onMounted } from 'vue';
 
-  const userStore = useUserStore()
-  const authStore = useAuthStore()
-  const user = computed(() => userStore.user)
+const userStore = useUserStore()
+const authStore = useAuthStore()
+const user = computed(() => userStore.user)
 
-  onMounted(() => {
-    userStore.fetchCurrentUser()
-  })
+onMounted(() => {
+  userStore.fetchCurrentUser()
+})
 
-  const logout = async () => {
-    await authStore.logout();
-  }
-
+const logout = async () => {
+  await authStore.logout();
+}
 </script>

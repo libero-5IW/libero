@@ -7,15 +7,26 @@ import invoiceRoutes from './invoice';
 import publicRoutes from '@/routes/public'
 import dashboardRoute from '@/routes/dashboard'
 import { useAuthStore } from '@/stores/auth';
+import DefaultLayout from '@/layouts/DefaultLayout.vue'
+
+const authenticatedRoutes: Array<RouteRecordRaw> = [
+  {
+    path: '/',
+    component: DefaultLayout,
+    children: [
+      ...quoteTemplateRoutes,
+      ...quoteRoutes,
+      ...invoiceTemplateRoutes,
+      ...contractTemplateRoutes,
+      ...invoiceRoutes,
+      ...dashboardRoute
+    ]
+  }
+]
 
 const routes: Array<RouteRecordRaw> = [
-  ...quoteTemplateRoutes,
-  ...quoteRoutes,
-  ...invoiceTemplateRoutes,
-  ...contractTemplateRoutes,
-  ...invoiceRoutes,
+  ...authenticatedRoutes,
   ...publicRoutes,
-  ...dashboardRoute
 ]
 
 const router = createRouter({
@@ -42,7 +53,5 @@ router.beforeEach(async (to, from, next) => {
 
     next();
 });
-
-
 
 export default router
