@@ -1,5 +1,7 @@
 import { createVuetify, type ThemeDefinition } from 'vuetify'
 import { md3 } from 'vuetify/blueprints'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
 
 const customLightTheme: ThemeDefinition = {
   dark: false,
@@ -43,21 +45,13 @@ const customDarkTheme: ThemeDefinition = {
 
 export default createVuetify({
   blueprint: md3,
+  components,
+  directives,
   theme: {
-    defaultTheme: 'light',
+    defaultTheme: 'customLight',
     themes: {
-      light: {
-        ...md3.theme.themes.light,
-        colors: {
-          ...customLightTheme.colors,
-        }
-      },
-      dark: {
-        ...md3.theme.themes.dark,
-        colors: {
-          ...customDarkTheme.colors,
-        }
-      },
+      customLight: customLightTheme,
+      customDark: customDarkTheme
     },
   },
 })

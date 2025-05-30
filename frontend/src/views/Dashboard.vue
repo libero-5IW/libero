@@ -1,7 +1,7 @@
 <template>
   <main class="m-6">
     <HelloWorld msg="coucouuuu" />
-    <div v-if="user">
+    <div v-if="user" class="bg-custom-primary">
       <h1>{{ user.firstName }} {{ user.lastName }}</h1>
       <p>Email: {{ user.email }}</p>
       <p>Société: {{ user.companyName }}</p>
