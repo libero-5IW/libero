@@ -1,2 +1,11 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+
+:root {
+  font-family: 'Roboto Condensed', 'Roboto', sans-serif;
+}
+
+body {
+  font-family: 'Roboto Condensed', 'Roboto', sans-serif;
+  margin: 0;
+}

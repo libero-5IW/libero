@@ -8,9 +8,9 @@ const customLightTheme: ThemeDefinition = {
   colors: {
     background: '#FAFAFA',
     surface: '#FFFFFF',
-    primary: '#3F51B5',      // Indigo 500
-    secondary: '#7986CB',    // Indigo 300
-    accent: '#FF7043',       // Deep Orange 400
+    primary: '#3F51B5',     
+    secondary: '#7986CB',   
+    accent: '#FF7043',       
     error: '#F44336',
     info: '#2196F3',
     success: '#4CAF50',
@@ -20,6 +20,14 @@ const customLightTheme: ThemeDefinition = {
     'on-primary': '#FFFFFF',
     'on-secondary': '#FFFFFF',
     'on-accent': '#FFFFFF',
+    'text-primary': '#212121',
+    'text-secondary': '#757575',
+    'text-secondary-light': '#D9D9D9',
+    'text-secondary-medium': '#EEEEEE',
+    'secondary-light': "#E8EAF6"
+  },
+  variables: {
+    'sans': 'Roboto Condensed, Roboto, sans-serif',
   }
 }
 
@@ -29,7 +37,7 @@ const customDarkTheme: ThemeDefinition = {
     background: '#121212',
     surface: '#000000',
     primary: '#3F51B5',      // Indigo 500
-    secondary: '#7986CB',    // Indigo 300
+    secondary: '#E8EAF6',    // Indigo 300
     accent: '#FF7043',       // Deep Orange 400
     error: '#F44336',
     info: '#2196F3',
@@ -40,6 +48,14 @@ const customDarkTheme: ThemeDefinition = {
     'on-primary': '#FFFFFF',
     'on-secondary': '#FFFFFF',
     'on-accent': '#FFFFFF',
+    'text-primary': '#E8EAF6',
+    'text-secondary': '#E0E0E0',
+    'text-secondary-light': '#D9D9D9',
+    'text-secondary-medium': '#757575',
+    'secondary-light': '#7986CB',   
+  },
+  variables: {
+    'sans': 'Roboto Condensed, Roboto, sans-serif',
   }
 }
 
