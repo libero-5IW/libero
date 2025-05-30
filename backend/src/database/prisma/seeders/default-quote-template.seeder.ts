@@ -1,9 +1,13 @@
 import { PrismaClient, VariableType } from '@prisma/client';
 
 export async function seedDefaultQuoteTemplate(prisma: PrismaClient) {
+  const user = await prisma.user.findFirst();
+  if (!user) {
+    throw new Error('No user found. Please seed users before seeding quote templates.');
+  }
   const template = {
     id: 'defaultTemplate',
-    userId: null,
+    userId: user.id,
     name: 'Modèle de base - Devis',
     contentHtml: `
         <h1>Devis n°{{quote_number}}</h1>
