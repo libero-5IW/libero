@@ -8,6 +8,7 @@
           :isEdit="isEdit"
           @editor-ready="setEditor"
           :onSave="saveTemplate"
+          :variables="template.variables"
         />
       </v-col>
 

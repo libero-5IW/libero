@@ -3,8 +3,13 @@
         <EditableHeader v-model="template.name" back-route-name="QuoteTemplateList" />
       </v-card>
   
+  
       <v-card flat class="mb-4">
-        <TemplateEditor v-model="template.contentHtml"  @editor-ready="handleEditorReady" />
+        <TemplateEditor 
+          v-model="template.contentHtml" 
+          :variables="variables"
+          @editor-ready="handleEditorReady" 
+        />
       </v-card>
   
       <v-card flat class="text-right mt-4">
@@ -19,11 +24,13 @@
   import EditableHeader from '@/components/TemplateEditor/EditableHeader.vue'
   import TemplateEditor from '@/components/TemplateEditor/Editor.vue'
   import type { Editor } from '@tiptap/vue-3';
+  import type { QuoteTemplateVariable } from '@/schemas/quoteTemplate.schema'
 
   defineProps<{
     template: any
     isEdit: boolean
     onSave: () => void
+    variables: QuoteTemplateVariable[]
   }>()
 
   const emit = defineEmits(['editor-ready'])

@@ -4,7 +4,7 @@
     @update:model-value="$emit('update:modelValue', $event)"
     :permanent="permanent"
     location="left"
-    width="280"
+    width="250"
   >
     <div class="pa-4">
       <img src="@/assets/logo.png" alt="Logo" class="w-1/3 h-auto mx-auto" />
