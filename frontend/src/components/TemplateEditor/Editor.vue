@@ -5,21 +5,75 @@
       class="container mx-auto max-w-4xl my-8"
     >
       <div class="mb-4">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Variables</h2>
+          
+          <div class="flex gap-2">
+            <v-tooltip text="Ajouter une nouvelle variable">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon @click="openVariableFormModal">
+                  <v-icon>mdi-plus</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+
+            <v-tooltip text="Importer une variable existante">
+              <template #activator="{ props }">
+                <v-btn v-bind="props" icon @click="openImportModal">
+                  <v-icon>mdi-import</v-icon>
+                </v-btn>
+              </template>
+            </v-tooltip>
+          </div>
+        </div>
+
+        
+
         <draggable
           :list="variables"
           :group="{ name: 'variables', pull: 'clone', put: false }"
           :clone="cloneVariable"
-          item-key="internal_name"
+          item-key="variableName"
           :sort="false"
           class="d-flex flex-wrap"
         >
-          <template #item="{ element }">
+          <template #item="{ element, index }">
             <v-chip
-              class="ma-1 variable-chip"
+            rounded="pill"
+              class="ma-1 variable-list-chip"
+              :class="{
+                'chip-in-editor': variablesInEditor.has(element.variableName),
+                'chip-not-in-editor': !variablesInEditor.has(element.variableName)
+              }"
               draggable
               @dragstart="onDragStart($event, element)"
             >
               {{ element.label }}
+              
+              <v-tooltip v-if="!isSystemVariable(element)" text="Modifier la variable">
+                <template #activator="{ props }">
+                  <v-icon
+                    v-bind="props"
+                    class="ml-2 edit-icon"
+                    size="small"
+                    @click.stop="openVariableEditModal(index)"
+                  >
+                    mdi-pencil
+                  </v-icon>
+                </template>
+              </v-tooltip>
+              <v-tooltip v-if="!isSystemVariable(element)" text="Supprimer la variable">
+                <template #activator="{ props }">
+                  <v-icon
+                    v-bind="props"
+                    class="ml-2 edit-icon"
+                    size="small"
+                    @click.stop="removeVariable(index)"
+                  >
+                    mdi-delete
+                  </v-icon>
+                </template>
+              </v-tooltip>
             </v-chip>
           </template>
         </draggable>
@@ -41,12 +95,22 @@
   import EditorToolbar from '@/components/TemplateEditor/EditorToolbar.vue'
   import draggable from 'vuedraggable'
   import { Node, mergeAttributes } from '@tiptap/core'
+  import type { VariableBase } from '@/types'
   
   const props = defineProps<{ 
     modelValue: string,
-    variables?: Array<{ variableName: string, label: string }>
+    variables?: VariableBase[]
   }>()
-  const emit = defineEmits(['update:modelValue', 'editor-ready'])
+  const emit = defineEmits<{
+    (e: 'update:modelValue', value: string): void
+    (e: 'editor-ready', editor: Editor): void
+    (e: 'openEditModal', index: number): void
+    (e: 'openRemoveModal', index: number): void
+    (e: 'openImportModal'): void
+    (e: 'openVariableFormModal'): void
+  }>()
+
+  
   const editor = ref<Editor>()
   
   const CustomHardBreak = HardBreak.extend({
@@ -104,7 +168,8 @@
     },
 
     addNodeView() {
-      return ({ HTMLAttributes, getPos, node }) => {
+      return ({ node, getPos }) => {
+
         const dom = document.createElement('span')
         dom.setAttribute('data-type', 'variable')
         dom.setAttribute('data-variable-name', node.attrs.variableName)
@@ -122,8 +187,12 @@
           if (typeof getPos === 'function') {
             const pos = getPos()
             if (pos !== undefined) {
-              editor.value?.chain().focus().deleteRange({ from: pos, to: pos + 1 }).run()
+              editor.value?.chain().focus().setNodeSelection(pos).deleteSelection().run()
+            } else {
+              console.warn('getPos() returned undefined for', node.attrs.variableName)
             }
+          } else {
+            console.warn('getPos is not a function for', node.attrs.variableName)
           }
         }
         dom.appendChild(closeButton)
@@ -159,6 +228,39 @@
       event.dataTransfer.effectAllowed = 'copy'
     }
   }
+
+  function openVariableEditModal(index: number) {
+    emit('openEditModal', index)
+  }
+  
+  function removeVariable(index: number) {
+    emit('openRemoveModal', index)
+  }
+  
+  function openImportModal() {
+    emit('openImportModal')
+  }
+
+  function openVariableFormModal() {
+    emit('openVariableFormModal')
+  }
+
+  function isSystemVariable(variable: VariableBase) {
+    return variable.id && variable.id === 'systemVariable'
+  }
+
+  function getVariablesInEditor(): string[] {
+    if (!editor.value) return [];
+    const html = editor.value.getHTML();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const spans = doc.querySelectorAll('span[data-type="variable"][data-variable-name]');
+    return Array.from(spans)
+      .map(span => span.getAttribute('data-variable-name'))
+      .filter((name): name is string => !!name);
+  }
+
+  const variablesInEditor = computed(() => new Set(getVariablesInEditor()));
 
   onMounted(() => {
     editor.value = new Editor({
@@ -209,7 +311,9 @@
                     })
                     if (node) {
                       tr.insert(pos, node)
-                      dispatch(tr)
+                      if (dispatch) {
+                        dispatch(tr)
+                      }
                       return true
                     }
                     return false
@@ -246,10 +350,17 @@
       }
     }
   )
+  watch(
+    () => editor.value?.getHTML(),
+    () => {
+      // triggers recomputation of variablesInEditor
+    }
+  );
 </script>
 
 <style>
 .variable-chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
   background-color: rgb(var(--v-theme-primary));
@@ -262,10 +373,21 @@
   margin: 0 2px;
 }
 
+.edit-icon {
+  opacity: 0;
+  transition: opacity 0.2s;
+  cursor: pointer;
+}
+
+.variable-chip:hover .edit-icon {
+  opacity: 1;
+}
+
 .close-button {
+  position: relative;
   margin-left: 4px;
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 1; /* Always visible for testing */
   transition: opacity 0.2s;
   font-size: 16px;
   line-height: 1;
@@ -291,6 +413,29 @@
   margin: 0;
   min-height: 1.5em;
 }
+
+/* .variable-list-chip {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  background-color: rgb(var(--v-theme-primary)) !important;
+  color: white !important;
+  padding: 0 12px !important;
+  border-radius: 9999px !important;
+  font-size: 0.875rem !important;
+  height: 32px !important;
+  user-select: none !important;
+  margin: 0 2px !important;
+} */
+
+.chip-in-editor {
+  background-color: rgb(var(--v-theme-text-secondary)) !important;
+  color: white !important;
+}
+
+.chip-not-in-editor {
+  background-color: rgb(var(--v-theme-primary)) !important;
+  color: white !important;
+}
 </style>
-  
-  
+

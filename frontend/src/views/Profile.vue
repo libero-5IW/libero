@@ -9,7 +9,6 @@
 
           <v-form @submit.prevent="saveProfile" v-model="isFormValid">
 
-            <!-- Personal Information -->
             <v-card-text>
               <v-row>
                 <v-col cols="12" md="6">
@@ -38,7 +37,6 @@
                 required
               />
 
-              <!-- Company Information -->
               <v-divider class="my-4" />
               <div class="text-h6 mb-4">Informations de la société</div>
 
@@ -68,7 +66,6 @@
                 label="Numéro TVA"
               />
 
-              <!-- Address -->
               <v-divider class="my-4" />
               <div class="text-h6 mb-4">Adresse</div>
 
@@ -137,7 +134,6 @@ const { showToast } = useToastHandler()
 const isFormValid = ref(false)
 const isLoading = ref(false)
 
-// Form validation rules
 const rules = {
   required: (v: any) => !!v || 'This field is required',
   email: (v: string) => {
@@ -150,7 +146,6 @@ const rules = {
   }
 }
 
-// Profile data
 const profile = reactive({
   firstName: '',
   lastName: '',
@@ -165,16 +160,12 @@ const profile = reactive({
   tvaNumber: ''
 })
 
-// Load user data
 const loadUserData = async () => {
   try {
     isLoading.value = true
-    console.log('Loading user data...')
     const response = await apiClient.get('/users/me')
-    console.log('User data response:', response.data)
     const userData = response.data
     
-    // Update profile with user data
     Object.assign(profile, {
       firstName: userData.firstName,
       lastName: userData.lastName,
@@ -196,13 +187,15 @@ const loadUserData = async () => {
   }
 }
 
-// Save profile changes
 const saveProfile = async () => {
+  if (!isFormValid.value) {
+    showToast('error', 'Veuillez remplir correctement tous les champs obligatoires.')
+    return
+  }
+
   try {
     isLoading.value = true
-    console.log('Saving profile data:', profile)
-    
-    // Create a copy of the profile data to match the DTO structure
+
     const updateData = {
       firstName: profile.firstName,
       lastName: profile.lastName,
@@ -214,23 +207,25 @@ const saveProfile = async () => {
       country: profile.country,
       legalStatus: profile.legalStatus,
       siret: profile.siret,
-      tvaNumber: profile.tvaNumber || undefined // Convert empty string to undefined
+      tvaNumber: profile.tvaNumber || undefined 
     }
 
-    console.log('Sending update data:', updateData)
-    const response = await apiClient.patch('/users/me', updateData)
-    console.log('Update response:', response.data)
-    
+    await apiClient.patch('/users/me', updateData)
     showToast('success', 'Vos informations ont été mises à jour avec succès')
-  } catch (error) {
-    console.error('Error saving profile:', error)
+  } catch (error: any) {
+    if (error.response && error.response.status === 400) {
+      showToast('error', 'Certains champs sont invalides. Veuillez vérifier vos informations.')
+    } else if (error.response && error.response.status === 401) {
+      showToast('error', 'Vous devez être connecté pour modifier votre profil.')
+    } else {
+      showToast('error', 'Erreur lors de la sauvegarde des données')
+    }
     handleAxiosError(error, 'Erreur lors de la sauvegarde des données')
   } finally {
     isLoading.value = false
   }
 }
 
-// Load user data when component is mounted
 loadUserData()
 </script>
 
@@ -238,4 +233,4 @@ loadUserData()
 .v-card {
   border-radius: 12px;
 }
-</style> 
+</style>

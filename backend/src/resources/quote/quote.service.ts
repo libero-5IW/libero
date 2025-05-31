@@ -15,6 +15,7 @@ import { QuoteStatus, VariableType } from '@prisma/client';
 import { generateNextNumber } from 'src/common/utils/generate-number.util';
 import { CreateQuoteVariableValueDto } from './dto/create-quote-variable-value.dto';
 import { QuoteTemplateVariableEntity } from '../quote-template/entities/quote-template-variable.entity';
+import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
 
 @Injectable()
 export class QuoteService {
@@ -40,6 +41,7 @@ export class QuoteService {
       userId,
     );
 
+
     const nextNumber = await this.getNextQuoteNumber(userId);
 
     const quote = await this.prisma.quote.create({
@@ -56,6 +58,7 @@ export class QuoteService {
           create: this.mapVariableWithTemplateData(
             variableValues,
             template.variables,
+            generatedHtml, // Pass the generated HTML here
           ),
         },
       },
@@ -152,26 +155,35 @@ export class QuoteService {
   private mapVariableWithTemplateData(
     submittedVariables: CreateQuoteVariableValueDto[],
     templateVariables: QuoteTemplateVariableEntity[],
+    templateHtml: string, // <-- Add this parameter
   ) {
+    // Extract variable names from the template HTML
+    const variableNamesInHtml = extractVariablesFromHtml(templateHtml);
+
+    // Only keep template variables that are actually present in the HTML
     const templateVariableMap = new Map(
-      templateVariables.map((variable) => [variable.variableName, variable]),
+      templateVariables
+        .filter(variable => variableNamesInHtml.includes(variable.variableName))
+        .map(variable => [variable.variableName, variable]),
     );
 
-    return submittedVariables.map((sub) => {
-      const templateVariable = templateVariableMap.get(sub.variableName);
-      if (!templateVariable) {
-        throw new Error(
-          `Variable ${sub.variableName} non définie dans le template`,
-        );
-      }
+    return submittedVariables
+      .filter(sub => variableNamesInHtml.includes(sub.variableName)) // Only map variables present in HTML
+      .map((sub) => {
+        const templateVariable = templateVariableMap.get(sub.variableName);
+        if (!templateVariable) {
+          throw new Error(
+            `Variable ${sub.variableName} non définie dans le template`,
+          );
+        }
 
-      return {
-        variableName: sub.variableName,
-        value: sub.value,
-        label: templateVariable.label,
-        type: templateVariable.type as VariableType,
-        required: templateVariable.required,
-      };
-    });
+        return {
+          variableName: sub.variableName,
+          value: sub.value,
+          label: templateVariable.label,
+          type: templateVariable.type as VariableType,
+          required: templateVariable.required,
+        };
+      });
   }
 }

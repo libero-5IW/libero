@@ -1,14 +1,16 @@
 <template>
-      <v-card flat class="mb-4">
-        <EditableHeader v-model="template.name" back-route-name="QuoteTemplateList" />
-      </v-card>
+    
   
   
       <v-card flat class="mb-4">
         <TemplateEditor 
           v-model="template.contentHtml" 
           :variables="variables"
-          @editor-ready="handleEditorReady" 
+          @editor-ready="handleEditorReady"
+          @openEditModal="handleOpenEditModal"
+          @openRemoveModal="handleOpenRemoveModal"
+          @openImportModal="handleOpenImportModal"
+          @openVariableFormModal="handleOpenVariableFormModal"
         />
       </v-card>
   
@@ -21,7 +23,6 @@
 </template>
   
 <script setup lang="ts">
-  import EditableHeader from '@/components/TemplateEditor/EditableHeader.vue'
   import TemplateEditor from '@/components/TemplateEditor/Editor.vue'
   import type { Editor } from '@tiptap/vue-3';
   import type { QuoteTemplateVariable } from '@/schemas/quoteTemplate.schema'
@@ -33,10 +34,34 @@
     variables: QuoteTemplateVariable[]
   }>()
 
-  const emit = defineEmits(['editor-ready'])
+  const emit = defineEmits<{
+    (e: 'editor-ready', editor: Editor): void
+    (e: 'openEditModal', index: number): void
+    (e: 'openRemoveModal', index: number): void
+    (e: 'openImportModal'): void
+    (e: 'openVariableFormModal'): void
+  }>()
 
   function handleEditorReady(editorInstance: Editor) {
     emit('editor-ready', editorInstance)
   }
+
+  function handleOpenEditModal(index: number) {
+    emit('openEditModal', index)
+  }
+
+  function handleOpenRemoveModal(index: number) {
+    emit('openRemoveModal', index)
+  }
+
+  function handleOpenImportModal() {
+    emit('openImportModal')
+  }
+
+  function handleOpenVariableFormModal() {
+    emit('openVariableFormModal')
+  }
+
+
 </script>
   
