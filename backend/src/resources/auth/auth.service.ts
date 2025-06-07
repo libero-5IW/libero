@@ -9,12 +9,15 @@ import { plainToInstance } from 'class-transformer';
 import { RegisterDto } from './dto/register.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { speakeasy } from 'speakeasy';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly userService: UserService,
   ) {}
 
   async login(user: UserEntity) {
@@ -60,5 +63,28 @@ export class AuthService {
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async generateTwoFaSecret(email: string): Promise<string> {
+    const secret = speakeasy.generateSecret({ length: 20 }).base32;
+    await this.userService.updateTwoFaSecret(email, secret);
+    return secret;
+  }
+
+  async validateTwoFa(email: string, token: string): Promise<UserEntity> {
+    const user = await this.userService.findByEmail(email);
+    if (!user || !user.secretKey) {
+      throw new UnauthorizedException();
+    }
+    const isValidToken = speakeasy.totp.verify({
+      secret: user.secretKey,
+      encoding: 'base32',
+      token,
+      window: 1,
+    });
+    if (isValidToken) {
+      return user;
+    }
+    throw new UnauthorizedException();
   }
 }

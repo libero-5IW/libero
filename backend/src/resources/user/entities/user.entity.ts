@@ -58,6 +58,10 @@ export class UserEntity {
   @Expose()
   createdAt: Date;
 
+  @ApiProperty({ nullable: true })
+  @Exclude()
+  secretKey: string; 
+
   constructor(partial: Partial<UserEntity>) {
     Object.assign(this, partial);
   }
