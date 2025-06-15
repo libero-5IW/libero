@@ -30,6 +30,7 @@ model User {
   tvaNumber         String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  customLegalStatus String?
 
   quoteTemplates    QuoteTemplate[]
   quotes            Quote[]
@@ -180,6 +181,9 @@ model Invoice {
 
   quote           Quote?   @relation("QuoteToInvoice", fields: [quoteId], references: [id], onDelete: SetNull)
   contract        Contract?
+
+
+
 
   @@unique([userId, number])
 }
