@@ -1,128 +1,168 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../database/prisma/prisma.service';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from 'src/database/prisma/prisma.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
-import { InvoiceTemplateService } from '../invoice-template/invoice-template.service';
-import { generateNextNumber } from 'src/common/utils/generate-number.util';
-import { VariableType } from 'src/common/enums/variable-type.enum';
-import { CreateInvoiceVariableValueDto } from './dto/create-invoice-variable-value.dto';
+import { UpdateInvoiceDto } from './dto/update-invoice.dto';
+import { plainToInstance } from 'class-transformer';
+import { InvoiceEntity } from './entities/invoice.entity';
 import { UserService } from '../user/user.service';
 import { ClientService } from '../client/client.service';
-import { InvoiceEntity } from './entities/invoice.entity';
-import { plainToInstance } from 'class-transformer';
+import { InvoiceTemplateService } from '../invoice-template/invoice-template.service';
+import { InvoiceStatus, VariableType } from '@prisma/client';
+import { generateNextNumber } from 'src/common/utils/generate-number.util';
+import { CreateInvoiceVariableValueDto } from './dto/create-invoice-variable-value.dto';
 import { InvoiceTemplateVariableEntity } from '../invoice-template/entities/invoice-template-variable.entity';
-import { InvoiceStatus } from './enums/invoice-status.enum';
+import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
 
 @Injectable()
 export class InvoiceService {
   constructor(
+    private prisma: PrismaService,
     private readonly userService: UserService,
     private readonly clientService: ClientService,
-    private readonly prisma: PrismaService,
     private readonly invoiceTemplateService: InvoiceTemplateService,
   ) {}
 
-  async createInvoiceFromTemplate(
-    createInvoiceDto: CreateInvoiceDto,
+  async create(
     userId: string,
-  ) {
-    const {
-      clientId,
-      templateId,
-      generatedHtml,
-      dueDate,
-      issuedAt,
-      variablesValues,
-    } = createInvoiceDto;
+    dto: CreateInvoiceDto,
+  ): Promise<InvoiceEntity> {
+    
+    const { clientId, templateId, generatedHtml, dueDate, variableValues } = dto;
 
     await this.userService.getUserOrThrow(userId);
     await this.clientService.getClientOrThrow(clientId, userId);
-    const template = await this.invoiceTemplateService.findOne(
-      templateId,
-      userId,
-    );
 
-    let contentHtml = generatedHtml;
-    for (const { variableName, value } of variablesValues) {
-      const regex = new RegExp(`{{${variableName}}}`, 'g');
-      contentHtml = contentHtml.replace(regex, value);
-    }
-
+    const template = await this.invoiceTemplateService.findOne(templateId, userId);
     const nextNumber = await this.getNextInvoiceNumber(userId);
+    
 
     const invoice = await this.prisma.invoice.create({
       data: {
         number: nextNumber,
-        templateId: createInvoiceDto.templateId,
-        userId,
-        clientId,
-        issuedAt,
-        dueDate,
-        generatedHtml: contentHtml,
+        template: { connect: { id: templateId } },
+        user: { connect: { id: userId } },
+        client: { connect: { id: clientId } },
         status: InvoiceStatus.draft,
+        generatedHtml,
+        dueDate: new Date(dueDate),
+        issuedAt: null,
         variableValues: {
           create: this.mapVariableWithTemplateData(
-            variablesValues,
+            variableValues,
             template.variables,
+            generatedHtml,
           ),
         },
       },
       include: { variableValues: true },
     });
 
+    return plainToInstance(InvoiceEntity, invoice, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+
+  async findAll(userId: string) {
+    const invoices = await this.prisma.invoice.findMany({
+      where: { userId },
+      include: { variableValues: true },
+    });
+
+    return plainToInstance(InvoiceEntity, invoices, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+
+  async findOne(id: string, userId: string) {
+    const invoice = await this.getInvoiceOrThrow(id, userId);
     return plainToInstance(InvoiceEntity, invoice);
   }
 
-  async findById(id: string) {
-    return await this.prisma.invoice.findUnique({
-      where: { id },
-      include: { variableValues: true },
-    });
-  }
+  async update(id: string, userId: string, dto: UpdateInvoiceDto) {
+    const { variableValues, ...otherData } = dto;
+    const existing = await this.getInvoiceOrThrow(id, userId);
 
-  async getInvoiceOrThrow(id: string) {
-    const invoice = await this.prisma.invoice.findUnique({
-      where: { id },
-      include: { variableValues: true },
-    });
-    if (!invoice) {
-      throw new NotFoundException('Facture non trouvée');
+    if (existing.status !== InvoiceStatus.draft) {
+      throw new BadRequestException('Seules les factures en brouillon peuvent être modifiées.');
     }
-    return invoice;
-  }
 
-  async findAll() {
-    return await this.prisma.invoice.findMany({
+    for (const variable of variableValues ?? []) {
+      await this.prisma.invoiceVariableValue.update({
+        where: {
+          invoiceId_variableName: {
+            invoiceId: id,
+            variableName: variable.variableName,
+          },
+        },
+        data: { value: variable.value },
+      });
+    }
+
+    const updated = await this.prisma.invoice.update({
+      where: { id },
+      data: { ...otherData },
       include: { variableValues: true },
     });
+
+    return plainToInstance(InvoiceEntity, updated, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+
+  async remove(id: string, userId: string) {
+    await this.getInvoiceOrThrow(id, userId);
+    const deleted = await this.prisma.invoice.delete({ where: { id } });
+    return plainToInstance(InvoiceEntity, deleted);
   }
 
   async getNextInvoiceNumber(userId: string) {
     return generateNextNumber('invoice', userId);
   }
 
+  private async getInvoiceOrThrow(id: string, userId: string) {
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id, userId },
+      include: { variableValues: true },
+    });
+    if (!invoice) {
+      throw new NotFoundException('Facture non trouvée.');
+    }
+    return invoice;
+  }
+
   private mapVariableWithTemplateData(
-    submittedVariables: CreateInvoiceVariableValueDto[],
-    templateVariables: InvoiceTemplateVariableEntity[],
+    submitted: CreateInvoiceVariableValueDto[],
+    templateVars: InvoiceTemplateVariableEntity[],
+    html: string,
   ) {
-    const templateVariableMap = new Map(
-      templateVariables.map((variable) => [variable.variableName, variable]),
+    const htmlVars = extractVariablesFromHtml(html);
+    const templateMap = new Map(
+      templateVars
+        .filter((v) => htmlVars.includes(v.variableName))
+        .map((v) => [v.variableName, v]),
     );
 
-    return submittedVariables.map((sub) => {
-      const templateVariable = templateVariableMap.get(sub.variableName);
-      if (!templateVariable) {
-        throw new Error(
-          `Variable ${sub.variableName} non définie dans le template`,
-        );
-      }
-
-      return {
-        variableName: sub.variableName,
-        value: sub.value,
-        label: templateVariable.label,
-        type: templateVariable.type as VariableType,
-        required: templateVariable.required,
-      };
-    });
+    return submitted
+      .filter((v) => htmlVars.includes(v.variableName))
+      .map((v) => {
+        const templateVar = templateMap.get(v.variableName);
+        if (!templateVar) {
+          throw new Error(`Variable ${v.variableName} non définie dans le template`);
+        }
+        return {
+          variableName: v.variableName,
+          value: v.value,
+          label: templateVar.label,
+          type: templateVar.type as VariableType,
+          required: templateVar.required,
+        };
+      });
   }
 }

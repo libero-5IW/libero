@@ -3,6 +3,7 @@ import { InvoiceTemplateVariableDto } from '../dto/invoice-template-variable.dto
 import { VariableType } from 'src/common/enums/variable-type.enum';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { InvoiceTemplateVariableEntity } from '../entities/invoice-template-variable.entity';
+import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
 
 @Injectable()
 export class ValidateTemplateVariablesPipe<
@@ -57,13 +58,13 @@ export class ValidateTemplateVariablesPipe<
 
     for (const variable of variables) {
       const variableName = variable.variableName;
-      const isSystem = systemVariables.some(
+      const isSystemInvoiceVariable = systemVariables.some(
         (v) => v.variableName === variableName,
       );
 
-      if (seen.has(variableName) || isSystem) {
+      if (seen.has(variableName) || isSystemInvoiceVariable) {
         throw new BadRequestException(
-          `La variable "${variableName}" est définie plusieurs fois ou entre en conflit avec une variable système.`,
+          `La variable "${variableName}" est définie plusieurs fois.`,
         );
       }
 
@@ -92,8 +93,9 @@ export class ValidateTemplateVariablesPipe<
       ...systemVariables.filter((v) => v.required).map((v) => v.variableName),
     ];
 
+    const variableNamesInHtml = extractVariablesFromHtml(contentHtml);
     const missingVariables = requiredVariables.filter(
-      (name) => !new RegExp(`{{\\s*${name}\\s*}}`).test(contentHtml),
+      (name) => !variableNamesInHtml.includes(name),
     );
 
     if (missingVariables.length) {

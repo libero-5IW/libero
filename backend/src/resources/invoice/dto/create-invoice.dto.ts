@@ -1,47 +1,49 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsUUID, IsObject, IsDateString } from 'class-validator';
+import {
+  IsUUID,
+  IsString,
+  IsDateString,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { CreateInvoiceVariableValueDto } from './create-invoice-variable-value.dto';
 
 export class CreateInvoiceDto {
-  @ApiProperty({ example: 'e29a7ef2-9a01-4c3a-8b1f-fb1a74351d6f' })
-  @IsUUID()
-  templateId: string;
-
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
-  @IsUUID()
-  clientId: string;
-
-  @ApiProperty({ example: '321e4567-e89b-12d3-a456-426614174000' })
-  @IsUUID()
+  @ApiProperty({ example: '6f83c8cb-df23-4c2f-a7ab-fc6f2c4fd7d2' })
+  @IsUUID('4', { message: "L'ID utilisateur doit être un UUID valide." })
   userId: string;
 
-  @ApiProperty({ example: '<p>Voici le devis généré…</p>' })
+  @ApiProperty({ example: '6f83c8cb-df23-4c2f-a7ab-fc6f2c4fd7d2' })
+  @IsUUID('4', { message: "L'ID client doit être un UUID valide." })
+  clientId: string;
+
+  @ApiProperty({
+    example: 'd2f2bff0-8991-42a7-a7ab-c6f2c4fd7d2c',
+    required: false,
+  })
+  @IsUUID('4', { message: "L'ID du template doit être un UUID valide." })
+  templateId: string;
+
+  @ApiProperty({ example: '<p>Voici la facture générée…</p>' })
   @IsString({ message: 'Le HTML généré doit être une chaîne de caractères.' })
   generatedHtml: string;
 
-  @ApiProperty({
-    example: {
-      invoice_number: '2024-001',
-      issue_date: '2024-04-25',
-      due_date: '2024-05-25',
-      freelancer_address: '12 rue de Paris',
-      freelancer_siret: '12345678900011',
-      client_address: '34 avenue des Champs',
-      prestation_description: 'Développement site web',
-      total_amount: '1500',
-      late_penalty: '10%',
-      payment_terms: '30 jours',
-      tva_detail: 'TVA non applicable, art. 293B du CGI',
+  @ApiProperty({ example: '2025-06-15T00:00:00.000Z' })
+  @IsDateString(
+    {},
+    {
+      message: 'La date d\'échéance doit être une date ISO valide.',
     },
+  )
+  dueDate: Date;
+
+  @ApiProperty({
+    description: 'Valeurs des variables de la facture',
+    type: [CreateInvoiceVariableValueDto],
   })
-  @IsObject()
-  variablesValues: CreateInvoiceVariableValueDto[];
-
-  @ApiProperty({ example: '2024-04-25T00:00:00Z' })
-  @IsDateString()
-  issuedAt: string;
-
-  @ApiProperty({ example: '2024-05-25T00:00:00Z' })
-  @IsDateString()
-  dueDate: string;
+  @IsArray({ message: 'Les valeurs de variables doivent être un tableau.' })
+  @ValidateNested({ each: true })
+  @Type(() => CreateInvoiceVariableValueDto)
+  variableValues: CreateInvoiceVariableValueDto[];
 }

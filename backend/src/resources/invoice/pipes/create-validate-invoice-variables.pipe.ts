@@ -1,83 +1,115 @@
 import { BadRequestException, Injectable, PipeTransform } from '@nestjs/common';
-import { CreateInvoiceDto } from '../dto/create-invoice.dto';
 import { PrismaService } from 'src/database/prisma/prisma.service';
-import { InvoiceTemplateVariable } from '@prisma/client';
+import { VariableType } from 'src/common/enums/variable-type.enum';
+import { CreateInvoiceVariableValueDto } from '../dto/create-invoice-variable-value.dto';
+import { InvoiceTemplateVariableDto } from '../../invoice-template/dto/invoice-template-variable.dto';
 
 @Injectable()
-export class ValidateInvoiceOnCreatePipe
-  implements PipeTransform<CreateInvoiceDto>
+export class ValidateInvoiceOnCreatePipe<
+  T extends {
+    templateId?: string;
+    variableValues?: CreateInvoiceVariableValueDto[];
+    contentHtml?: string;
+  },
+> implements PipeTransform<T>
 {
   constructor(private readonly prisma: PrismaService) {}
 
-  async transform(value: CreateInvoiceDto): Promise<CreateInvoiceDto> {
-    const { variablesValues = {} } = value;
+  async transform(value: T): Promise<T> {
+    const { templateId, variableValues = [] } = value;
 
-    const systemVariables = await this.getSystemVariables();
-
-    this.validateRequiredSystemVariables(systemVariables, variablesValues);
-    this.validateDates(variablesValues);
-    this.validateSiret(variablesValues);
-    this.validateTotalAmount(variablesValues);
+    this.ensureTemplateIdProvided(templateId);
+    const templateVariables = await this.getTemplateVariables(templateId!);
+    this.validateVariables(templateVariables, variableValues);
 
     return value;
   }
 
-  private async getSystemVariables(): Promise<InvoiceTemplateVariable[]> {
-    return this.prisma.invoiceTemplateVariable.findMany({
-      where: {
-        templateId: 'defaultTemplate',
-      },
+  private ensureTemplateIdProvided(templateId?: string) {
+    if (!templateId) {
+      throw new BadRequestException("L'identifiant du modèle est requis.");
+    }
+  }
+
+  private async getTemplateVariables(
+    templateId: string,
+  ): Promise<InvoiceTemplateVariableDto[]> {
+    const template = await this.prisma.invoiceTemplate.findUnique({
+      where: { id: templateId },
+      include: { variables: true },
     });
+
+    if (!template) {
+      throw new BadRequestException(
+        'Le modèle de facture spécifié est introuvable.',
+      );
+    }
+
+    const systemVariables = await this.prisma.invoiceTemplateVariable.findMany({
+      where: { templateId: 'defaultTemplate' },
+    });
+
+    return [...template.variables, ...systemVariables];
   }
 
-  private validateRequiredSystemVariables(
-    systemVars: InvoiceTemplateVariable[],
-    providedVars: Record<string, string>,
+  private validateVariables(
+    templateVariables: InvoiceTemplateVariableDto[],
+    submittedVariables: CreateInvoiceVariableValueDto[],
   ) {
-    const required = systemVars
-      .filter((v) => v.required)
-      .map((v) => v.variableName);
-    const missing = required.filter((key) => !(key in providedVars));
+    const valueMap = new Map(
+      submittedVariables.map((v) => [v.variableName, v.value]),
+    );
 
-    if (missing.length > 0) {
-      throw new BadRequestException(
-        `Variables système manquantes : ${missing.join(', ')}`,
-      );
+    for (const variable of templateVariables) {
+      const { variableName, required, type } = variable;
+      const rawValue = valueMap.get(variableName);
+
+      if (required && this.isEmpty(rawValue)) {
+        throw new BadRequestException(
+          `La variable requise "${variableName}" est manquante ou vide.`,
+        );
+      }
+
+      if (!this.isEmpty(rawValue)) {
+        const isValid = this.validateValueType(rawValue!, type as VariableType);
+        if (!isValid) {
+          throw new BadRequestException(
+            `La variable "${variableName}" n'a pas un type valide (${type}).`,
+          );
+        }
+      }
     }
   }
 
-  private validateDates(variables: Record<string, string>) {
-    const issueDate = new Date(variables['issue_date']);
-    const dueDate = new Date(variables['due_date']);
-
-    if (isNaN(issueDate.getTime()) || isNaN(dueDate.getTime())) {
-      throw new BadRequestException('Les dates fournies sont invalides.');
-    }
-
-    if (dueDate <= issueDate) {
-      throw new BadRequestException(
-        'La date d’échéance doit être postérieure à la date d’émission.',
-      );
-    }
+  private isEmpty(value: string | undefined | null): boolean {
+    return value === undefined || value === null || value === '';
   }
 
-  private validateSiret(variables: Record<string, string>) {
-    const siret = variables['freelancer_siret'];
+  private validateValueType(value: string, type: VariableType): boolean {
+    switch (type) {
+      case VariableType.STRING:
+      case VariableType.TEXTAREA:
+        return typeof value === 'string';
 
-    if (!/^\d{14}$/.test(siret)) {
-      throw new BadRequestException(
-        'Le numéro SIRET doit contenir exactement 14 chiffres.',
-      );
-    }
-  }
+      case VariableType.NUMBER:
+        return !isNaN(Number(value));
 
-  private validateTotalAmount(variables: Record<string, string>) {
-    const total = parseFloat(variables['total_amount']);
+      case VariableType.DATE:
+        return !isNaN(Date.parse(value));
 
-    if (isNaN(total) || total <= 0) {
-      throw new BadRequestException(
-        'Le montant total HT doit être un nombre positif.',
-      );
+      case VariableType.EMAIL:
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+      case VariableType.URL:
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+
+      default:
+        return false;
     }
   }
 }

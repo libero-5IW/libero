@@ -25,7 +25,7 @@ export const InvoiceSchema = z.object({
   number: z.number(),
   status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
   generatedHtml: z.string(),
-  issuedAt: z.string(),   
+  issuedAt: z.string().nullable().optional(),
   dueDate: z.string(),
   templateId: z.string().uuid().or(z.literal('defaultTemplate')).nullable(),
   userId: z.string().uuid(),

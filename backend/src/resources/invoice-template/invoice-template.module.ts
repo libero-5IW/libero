@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
 import { InvoiceTemplateService } from './invoice-template.service';
 import { InvoiceTemplateController } from './invoice-template.controller';
-import { PrismaModule } from 'src/database/prisma/prisma.module';
-import { UserModule } from '../user/user.module';
+import { UserService } from '../user/user.service';
 
 @Module({
-  imports: [PrismaModule, UserModule],
   controllers: [InvoiceTemplateController],
-  providers: [InvoiceTemplateService],
+  providers: [InvoiceTemplateService, UserService],
   exports: [InvoiceTemplateService],
 })
 export class InvoiceTemplateModule {}

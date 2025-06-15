@@ -66,7 +66,6 @@ export class InvoiceTemplateService {
       where: whereClause,
       include: { variables: true },
     });
-
     const templatesWithSystemVariables = await Promise.all(
       templates.map((t) => this.mergeWithSystemVariables(t)),
     );
@@ -165,13 +164,16 @@ export class InvoiceTemplateService {
     });
   }
 
-  private async getTemplateOrThrow(
+  async getTemplateOrThrow(
     id: string,
     userId: string,
     options?: { allowDefaultTemplate?: boolean },
   ) {
-    const template = await this.prisma.invoiceTemplate.findUnique({
-      where: { id, userId },
+    const template = await this.prisma.invoiceTemplate.findFirst({
+      where: {
+        id,
+        OR: [{ userId }, { userId: null }],
+      },
       include: { variables: true },
     });
 

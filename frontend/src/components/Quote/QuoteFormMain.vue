@@ -38,6 +38,8 @@ import EditableHeader from '@/components/TemplateEditor/EditableHeader.vue';
 import { useInvoiceStore } from '@/stores/invoice';
 import { useClientStore } from '@/stores/client';  
 import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
+import { useUserStore } from '@/stores/user';
+
 
 const props = defineProps<{
   templateVariables: InvoiceTemplateVariable[];
@@ -51,6 +53,9 @@ const variables = ref<Record<string, string>>({});
 
 const invoiceStore = useInvoiceStore();
 const clientStore = useClientStore();
+
+const userStore = useUserStore();
+const currentUser = computed(() => userStore.user);
 
 const clients = computed(() =>
   clientStore.clients.map(client => ({
@@ -69,7 +74,7 @@ async function onCreateInvoice() {
   const payload = {
     templateId: props.templateId,
     clientId: selectedClientId.value,
-    userId: 'USER_ID_FIXE',  // à remplacer par une vraie valeur 
+    userId: currentUser.value?.id,
     variables: variables.value,
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),  
