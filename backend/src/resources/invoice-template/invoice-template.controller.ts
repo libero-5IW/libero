@@ -12,17 +12,15 @@ import { InvoiceTemplateService } from './invoice-template.service';
 import { CreateInvoiceTemplateDto } from './dto/create-invoice-template.dto';
 import { UpdateInvoiceTemplateDto } from './dto/update-invoice-template.dto';
 import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 
 @ApiBearerAuth()
 @Controller('invoice-templates')
 export class InvoiceTemplateController {
-  constructor(
-    private readonly invoiceTemplateService: InvoiceTemplateService,
-  ) {}
+  constructor(private readonly invoiceTemplateService: InvoiceTemplateService) {}
 
   @Get('default-template')
   getDefaultTemplate() {

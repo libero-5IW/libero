@@ -9,7 +9,7 @@ import {
 import { VariableType } from 'src/common/enums/variable-type.enum';
 
 export class InvoiceTemplateVariableDto {
-  @ApiProperty({ example: 'invoice_number' })
+  @ApiProperty({ example: 'project_title' })
   @IsString({
     message: 'Le nom de la variable doit être une chaîne de caractères.',
   })
@@ -19,16 +19,16 @@ export class InvoiceTemplateVariableDto {
   })
   variableName: string;
 
-  @ApiProperty({ example: 'Numéro de facture' })
+  @ApiProperty({ example: 'Titre du projet' })
   @IsString({ message: 'Le label doit être une chaîne de caractères.' })
   @IsNotEmpty({ message: 'Le label affiché est requis.' })
   label: string;
 
   @ApiProperty({
-    enum: VariableType,
     example: VariableType.STRING,
+    enum: VariableType,
     description:
-      'Type de la variable : string, number, boolean, date, textarea, email, url',
+      'Type de la variable : string, number, boolean, date, textarea, email ou url.',
   })
   @IsEnum(VariableType, {
     message: `Le type de variable doit être l’un des suivants : ${Object.values(VariableType).join(', ')}.`,

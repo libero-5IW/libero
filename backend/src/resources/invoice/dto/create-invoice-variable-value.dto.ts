@@ -1,19 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Matches } from 'class-validator';
+import { IsString } from 'class-validator';
 
 export class CreateInvoiceVariableValueDto {
-  @ApiProperty({ example: 'freelancer_name' })
+  @ApiProperty({ example: 'clientName' })
   @IsString({
     message: 'Le nom de la variable doit être une chaîne de caractères.',
   })
-  @IsNotEmpty({ message: 'Le nom de la variable est requis.' })
-  @Matches(/^[a-zA-Z_][a-zA-Z0-9_]*$/, {
-    message: 'Le nom de variable doit être en camelCase ou snake_case.',
-  })
   variableName: string;
 
-  @ApiProperty({ example: 'John Doe' })
-  @IsString({ message: 'La valeur doit être une chaîne de caractères.' })
-  @IsNotEmpty({ message: 'La valeur de la variable est requise.' })
+  @ApiProperty({ example: 'Jean Dupont' })
+  @IsString({
+    message: 'La valeur de la variable doit être une chaîne de caractères.',
+  })
   value: string;
 }
