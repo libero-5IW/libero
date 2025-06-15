@@ -3,6 +3,7 @@ import { QuoteTemplateVariableDto } from '../dto/quote-template-variable.dto';
 import { VariableType } from 'src/common/enums/variable-type.enum';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { QuoteTemplateVariableEntity } from '../entities/quote-template-variable.entity';
+import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
 
 @Injectable()
 export class ValidateTemplateVariablesPipe<
@@ -92,8 +93,9 @@ export class ValidateTemplateVariablesPipe<
       ...systemVariables.filter((v) => v.required).map((v) => v.variableName),
     ];
 
+    const variableNamesInHtml = extractVariablesFromHtml(contentHtml);
     const missingVariables = requiredVariables.filter(
-      (name) => !new RegExp(`{{\\s*${name}\\s*}}`).test(contentHtml),
+      (name) => !variableNamesInHtml.includes(name),
     );
 
     if (missingVariables.length) {

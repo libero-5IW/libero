@@ -26,15 +26,18 @@ services:
       - ./backend:/app/backend
 
   frontend:
+    # platform: linux/arm64
     build:
       context: frontend/
-    platform: linux/amd64
     ports:
       - "80:5173"
     depends_on:
       - backend
     volumes:
       - ./frontend:/app/frontend
+      - ./frontend/node_modules:/app/frontend/node_modules
+
 
 volumes:
     postgres_data: {}
+    node_modules: {}

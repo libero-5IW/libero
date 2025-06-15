@@ -14,7 +14,7 @@ export const useClientStore = defineStore('client', () => {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/clients');
-      clients.value = data.map(item => ClientSchema.parse(item));
+      clients.value = (data as any[]).map((item: any) => ClientSchema.parse(item));
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la récupération des clients.');
     } finally {
