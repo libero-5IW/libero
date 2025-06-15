@@ -4,6 +4,7 @@ import { seedUsers } from './users.seeder';
 import { seedDefaultQuoteTemplate } from './default-quote-template.seeder';
 import { seedDefaultContractTemplate } from './default-contract-template.seeder';
 import { seedDefaultInvoiceTemplate } from './default-invoice-template.seeder';
+import { seedClients } from './clients.seeder';
 
 const prisma = new PrismaClient();
 
@@ -11,9 +12,14 @@ async function main() {
   console.log('Démarrage du seeding…\n');
 
   await seedUsers(prisma);
+  const user = await prisma.user.findFirst();
+  if (!user) {
+    throw new Error("Aucun utilisateur trouvé pour le seeding des clients.");
+  }
   await seedDefaultQuoteTemplate(prisma);
   await seedDefaultContractTemplate(prisma);
   await seedDefaultInvoiceTemplate(prisma);
+  await seedClients(prisma, user.id);
 
   console.log('\nSeeding terminé avec succès !');
 }
