@@ -6,6 +6,7 @@ import contractTemplateRoutes from './contractTemplate'
 import invoiceRoutes from './invoice';
 import publicRoutes from '@/routes/public'
 import dashboardRoute from '@/routes/dashboard'
+import clientRoutes from '@/routes/client'
 import { useAuthStore } from '@/stores/auth';
 
 const routes: Array<RouteRecordRaw> = [
@@ -15,7 +16,8 @@ const routes: Array<RouteRecordRaw> = [
   ...contractTemplateRoutes,
   ...invoiceRoutes,
   ...publicRoutes,
-  ...dashboardRoute
+  ...dashboardRoute,
+  ...clientRoutes,
 ]
 
 const router = createRouter({

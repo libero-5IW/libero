@@ -5,8 +5,10 @@ init:
 	cd backend && npm install
 	cd frontend && npm install
 	$(DOCKER_COMPOSE) up -d
-	$(DOCKER_COMPOSE) exec backend npm run seed
-
+	sleep 5
+	$(DOCKER_COMPOSE) exec backend npx prisma migrate dev
+	$(DOCKER_COMPOSE) exec backend npx prisma generate
+	$(DOCKER_COMPOSE) exec backend npm run seed 
 # Prisma: run migration and generate types
 migrate:
 	@read -p "Migration name: " name; \
