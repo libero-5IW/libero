@@ -12,6 +12,7 @@ export const useClientStore = defineStore('client', () => {
 
   async function fetchAllClients() {
     isLoading.value = true;
+    isLoading.value = true;
     try {
       const { data } = await apiClient.get('/clients');
       clients.value = data.map(item => ClientSchema.parse(item));
