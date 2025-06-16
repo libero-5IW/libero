@@ -1,4 +1,4 @@
-import { VariableType } from '@/types';
+import { VariableType } from '@/types'
 import { z } from 'zod'
 
 export const InvoiceTemplateVariableSchema = z.object({
@@ -9,13 +9,13 @@ export const InvoiceTemplateVariableSchema = z.object({
       message: 'Le nom de variable doit être en camelCase ou snake_case.',
     }),
   label: z.string().min(1, 'Le label est requis.'),
-  templateId: z.string().uuid().or(z.literal('defaultTemplate')).optional(), 
+  templateId: z.string().uuid().or(z.literal('defaultTemplate')).optional(),
   type: z.nativeEnum(VariableType),
   required: z.boolean(),
 })
 
 export const InvoiceTemplateSchema = z.object({
-  id: z.string().uuid().or(z.literal('defaultTemplate')).optional(), 
+  id: z.string().uuid().or(z.literal('defaultTemplate')).optional(),
   name: z.string().min(1, 'Le nom du template est requis.'),
   userId: z.string().uuid().nullable(),
   contentHtml: z.string().min(1, 'Le contenu HTML est requis.'),
@@ -23,7 +23,6 @@ export const InvoiceTemplateSchema = z.object({
 })
 
 export const CreateInvoiceTemplateSchema = z.object({
-  id: z.string().uuid().or(z.literal('defaultTemplate')).optional(), 
   name: z.string().min(1, 'Le nom du template est requis.'),
   contentHtml: z.string().min(1, 'Le contenu HTML est requis.'),
   variables: z.array(InvoiceTemplateVariableSchema),
