@@ -45,7 +45,7 @@ export class ValidateTemplateVariablesPipe<
 
     this.ensureUniqueAndNonSystemVariables(variables, systemVariables);
     this.ensureValidVariableTypes(variables);
-    this.ensureRequiredVariablesInHtml(variables, contentHtml, systemVariables);
+    this.ensureRequiredVariablesInHtml(variables, contentHtml);
 
     return value;
   }
@@ -86,13 +86,10 @@ export class ValidateTemplateVariablesPipe<
   private ensureRequiredVariablesInHtml(
     variables: QuoteTemplateVariableDto[],
     contentHtml: string,
-    systemVariables: QuoteTemplateVariableEntity[],
   ) {
-    const requiredVariables = [
-      ...variables.filter((v) => v.required).map((v) => v.variableName),
-      ...systemVariables.filter((v) => v.required).map((v) => v.variableName),
-    ];
 
+    const requiredVariables = variables.filter((v) => v.required).map((v) => v.variableName);
+  
     const variableNamesInHtml = extractVariablesFromHtml(contentHtml);
     const missingVariables = requiredVariables.filter(
       (name) => !variableNamesInHtml.includes(name),

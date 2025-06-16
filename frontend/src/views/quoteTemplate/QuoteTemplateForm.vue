@@ -115,11 +115,16 @@
     const data = quoteTemplate.currentTemplate || quoteTemplate.defaultTemplate
  
     if (data) {
+      const systemVars = data.variables?.filter(v => v.templateId === 'defaultTemplate') || []
+      const userVars = data.variables?.filter(v => v.templateId !== 'defaultTemplate') || []
+
       Object.assign(template, {
         id: data.id,
         name: data.name,
         contentHtml: data.contentHtml,
-        variables: data.variables,
+        variables: isEdit.value
+          ? [...userVars.map(v => ({ ...v })), ...systemVars.map(v => ({ ...v }))]
+          : [...systemVars.map(v => ({ ...v }))]
       })
     }
   })
@@ -177,7 +182,7 @@
       const templateData = {
         name: template.name,
         contentHtml: template.contentHtml,
-        variables: template.variables,
+        variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
       }
 
       const response = templateId.value 

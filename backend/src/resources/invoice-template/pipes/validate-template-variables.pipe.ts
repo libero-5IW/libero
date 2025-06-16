@@ -45,7 +45,7 @@ export class ValidateTemplateVariablesPipe<
 
     this.ensureUniqueAndNonSystemVariables(variables, systemVariables);
     this.ensureValidVariableTypes(variables);
-    this.ensureRequiredVariablesInHtml(variables, contentHtml, systemVariables);
+    this.ensureRequiredVariablesInHtml(variables, contentHtml);
 
     return value;
   }
@@ -86,7 +86,6 @@ export class ValidateTemplateVariablesPipe<
   private ensureRequiredVariablesInHtml(
     variables: InvoiceTemplateVariableDto[],
     contentHtml: string,
-    systemVariables: InvoiceTemplateVariableEntity[],
   ) {
 
     const requiredVariables = variables.filter((v) => v.required).map((v) => v.variableName);
