@@ -88,10 +88,8 @@ export class ValidateTemplateVariablesPipe<
     contentHtml: string,
     systemVariables: InvoiceTemplateVariableEntity[],
   ) {
-    const requiredVariables = [
-      ...variables.filter((v) => v.required).map((v) => v.variableName),
-      ...systemVariables.filter((v) => v.required).map((v) => v.variableName),
-    ];
+
+    const requiredVariables = variables.filter((v) => v.required).map((v) => v.variableName);
 
     const variableNamesInHtml = extractVariablesFromHtml(contentHtml);
     const missingVariables = requiredVariables.filter(
