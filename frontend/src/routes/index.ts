@@ -6,6 +6,7 @@ import contractTemplateRoutes from './contractTemplate'
 import invoiceRoutes from './invoice';
 import publicRoutes from '@/routes/public'
 import dashboardRoute from '@/routes/dashboard'
+import clientRoutes from '@/routes/client'
 import profileRoutes from '@/routes/profile'
 import { useAuthStore } from '@/stores/auth';
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
@@ -21,6 +22,7 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
       ...contractTemplateRoutes,
       ...invoiceRoutes,
       ...dashboardRoute,
+      ...clientRoutes,
       ...profileRoutes
     ]
   }
@@ -29,6 +31,7 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
 const routes: Array<RouteRecordRaw> = [
   ...authenticatedRoutes,
   ...publicRoutes,
+  ...clientRoutes,
 ]
 
 const router = createRouter({

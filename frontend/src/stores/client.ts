@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import apiClient from '@/config/axios'
 import { handleAxiosError } from '@/utils/handleAxiosError'
 import { ClientSchema, type Client } from '@/schemas/client.schema'
+import { useAuthStore } from '@/stores/auth'
 
 export const useClientStore = defineStore('client', () => {
   const clients = ref<Client[]>([])
@@ -10,15 +11,14 @@ export const useClientStore = defineStore('client', () => {
   const isLoading = ref(false)
 
   async function fetchAllClients() {
-    isLoading.value = true
+    isLoading.value = true;
     try {
-      const { data } = await apiClient.get('/clients')
-      clients.value = data.map((item: Client) => ClientSchema.parse(item))
+      const { data } = await apiClient.get('/clients');
+      clients.value = (data as any[]).map((item: any) => ClientSchema.parse(item));
     } catch (error) {
-      console.error('Erreur capturée:', error)   
-      handleAxiosError(error, 'Erreur lors de la récupération des clients.')
+      handleAxiosError(error, 'Erreur lors de la récupération des clients.');
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
   
