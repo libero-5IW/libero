@@ -13,6 +13,9 @@ import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.ut
 import { InvoiceTemplateVariableDto } from './dto/invoice-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { VariableType } from 'src/common/enums/variable-type.enum';
+import { Prisma } from '@prisma/client'
+import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util'; 
+
 
 @Injectable()
 export class InvoiceTemplateService {
@@ -25,35 +28,59 @@ export class InvoiceTemplateService {
     userId: string,
     createInvoiceTemplateDto: CreateInvoiceTemplateDto,
   ): Promise<InvoiceTemplateEntity> {
-    const { name, contentHtml, variables = [] } = createInvoiceTemplateDto;
-
+    const { name, contentHtml } = createInvoiceTemplateDto;
+  
     await this.userService.getUserOrThrow(userId);
-
+  
     const existingTemplate = await this.prisma.invoiceTemplate.findFirst({
       where: { userId, name },
     });
-
+  
     if (existingTemplate) {
       throw new BadRequestException('Un template avec ce nom existe déjà.');
     }
-
+  
     const template = await this.prisma.invoiceTemplate.create({
       data: {
         name,
         contentHtml,
         userId,
-        variables: { create: this.mapVariableData(variables) },
-      },
-      include: {
-        variables: true,
       },
     });
-
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
-
-    return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
+  
+    const variableNames = extractVariablesFromHtml(contentHtml);
+  
+    const defaultVariables = await this.prisma.invoiceTemplateVariable.findMany({
+      where: {
+        templateId: 'defaultTemplate',
+        variableName: { in: variableNames },
+      },
+    });
+  
+    if (defaultVariables.length > 0) {
+      const variablesToCreate = defaultVariables.map((v) => ({
+        templateId: template.id,
+        variableName: v.variableName,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+      }));
+  
+      await this.prisma.invoiceTemplateVariable.createMany({
+        data: variablesToCreate,
+      });
+    }
+  
+    const templateWithVars = await this.prisma.invoiceTemplate.findUnique({
+      where: { id: template.id },
+      include: { variables: true },
+    });
+  
+    const mergedTemplate = this.mergeWithSystemVariables(templateWithVars!);
+  
+    return plainToInstance(InvoiceTemplateEntity, mergedTemplate);
   }
-
+  
   async findAll(
     userId: string,
     includeDefaultTemplate: boolean,
@@ -93,13 +120,11 @@ export class InvoiceTemplateService {
         await tx.invoiceTemplateVariable.deleteMany({
           where: { templateId: id },
         });
-
+        
         await tx.invoiceTemplateVariable.createMany({
-          data: this.mapVariableData(variables).map((variable) => ({
-            templateId: id,
-            ...variable,
-          })),
+          data: this.mapVariableData(variables, id),
         });
+               
       }
 
       return tx.invoiceTemplate.update({
@@ -144,17 +169,25 @@ export class InvoiceTemplateService {
         name,
         contentHtml: template.contentHtml,
         userId,
-        variables: { create: this.mapVariableData(template.variables) },
-      },
-      include: {
-        variables: true,
       },
     });
-
+    
+    if (template.variables?.length) {
+      await this.prisma.invoiceTemplateVariable.createMany({
+        data: this.mapVariableData(template.variables, duplicatedTemplate.id),
+      });
+    }
+    
+    const templateWithVars = await this.prisma.invoiceTemplate.findUnique({
+      where: { id: duplicatedTemplate.id },
+      include: { variables: true },
+    });
+    
     const templateWithSystemVariables =
-      this.mergeWithSystemVariables(duplicatedTemplate);
-
+      this.mergeWithSystemVariables(templateWithVars!);
+    
     return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
+    
   }
 
   async getDefaultTemplate() {
@@ -187,15 +220,19 @@ export class InvoiceTemplateService {
     return template;
   }
 
-  private mapVariableData(variables: InvoiceTemplateVariableDto[]) {
+  private mapVariableData(
+    variables: InvoiceTemplateVariableDto[],
+    templateId: string
+  ): Prisma.InvoiceTemplateVariableCreateManyInput[] {
     return variables.map((v) => ({
+      templateId,
       variableName: v.variableName,
       label: v.label,
       type: v.type as VariableType,
       required: v.required,
     }));
   }
-
+  
   private mergeWithSystemVariables(template: InvoiceTemplateEntity) {
     return mergeSystemVariables(template, 'invoiceTemplateVariable');
   }

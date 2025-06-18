@@ -100,27 +100,27 @@ onMounted(async () => {
   templateId.value = Array.isArray(idParam) ? idParam[0] : idParam || ''
   isEdit.value = !!templateId.value
 
-  isEdit.value
-    ? await invoiceTemplate.fetchTemplate(templateId.value)
-    : await invoiceTemplate.fetchDefaultTemplate()
-
-  const data = invoiceTemplate.currentTemplate || invoiceTemplate.defaultTemplate
-
-  if (data) {
-  const systemVars = data.variables?.filter(v => v.templateId === 'defaultTemplate') || []
-  const userVars = data.variables?.filter(v => v.templateId !== 'defaultTemplate') || []
-
-  Object.assign(template, {
-  id: data.id,
-  name: data.name,
-  contentHtml: data.contentHtml,
-  variables: isEdit.value
-    ? [...userVars.map(v => ({ ...v })), ...systemVars.map(v => ({ ...v }))]
-    : [...systemVars.map(v => ({ ...v }))]
-  })
+  if (isEdit.value) {
+    await invoiceTemplate.fetchTemplate(templateId.value)
+  } else {
+    await invoiceTemplate.fetchDefaultTemplate()
   }
 
+  const data = isEdit.value
+    ? invoiceTemplate.currentTemplate
+    : invoiceTemplate.defaultTemplate
+
+  if (data) {
+    const systemVars = data.variables?.filter(v => v.templateId === 'defaultTemplate') || []
+    Object.assign(template, {
+      id: '',
+      name: 'Nouveau modèle de facture',
+      contentHtml: data.contentHtml,
+      variables: [...systemVars.map(v => ({ ...v }))]
+    })
+  }
 })
+
 
 function togglePreviewFullscreen() {
   isPreviewFullscreen.value = !isPreviewFullscreen.value
@@ -149,8 +149,16 @@ function openCreateModal() {
 }
 
 function removeVariable(index: number) {
-  template.variables.splice(index, 1)
+  const removedVar = template.variables[index]?.variableName
+  template.variables = template.variables.filter((_, i) => i !== index)
+  template.variables = [...template.variables]
+
+  const lines = template.contentHtml.split('\n')
+  template.contentHtml = lines
+    .filter(line => !line.includes(`{{${removedVar}}}`))
+    .join('\n')
 }
+
 
 function addImportedVariables(vars: InvoiceTemplateVariable[]) {
   const existingNames = new Set(template.variables.map(v => v.variableName))
@@ -192,17 +200,29 @@ async function saveTemplate() {
   }
 }
 
-function handleVariableSubmit(variable: InvoiceTemplateVariable) {
+async function handleVariableSubmit(variable: InvoiceTemplateVariable) {
   const index = template.variables.findIndex(v =>
     v.variableName === (variableMode.value === 'edit' ? originalVariableName.value : variable.variableName)
   )
 
-  if (variableMode.value === 'edit' && index !== -1) {
-    template.variables[index] = variable
+  if (variableMode.value === 'edit') {
+    if (index !== -1) {
+      if (originalVariableName.value !== variable.variableName) {
+        template.contentHtml = template.contentHtml.replace(
+          new RegExp(`{{\\s*${originalVariableName.value}\\s*}}`, 'g'),
+          `{{${variable.variableName}}}`
+        )
+      }
+      template.variables[index] = variable
+    }
   } else {
     template.variables.push(variable)
+    await saveTemplate() 
   }
 
+  template.variables = [...template.variables]
   showVariableForm.value = false
 }
+
+
 </script>

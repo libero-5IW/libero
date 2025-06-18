@@ -13,6 +13,7 @@ import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.ut
 import { QuoteTemplateVariableDto } from './dto/quote-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { VariableType } from 'src/common/enums/variable-type.enum';
+import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
 
 @Injectable()
 export class QuoteTemplateService {
@@ -25,34 +26,59 @@ export class QuoteTemplateService {
     userId: string,
     createQuoteTemplateDto: CreateQuoteTemplateDto,
   ): Promise<QuoteTemplateEntity> {
-    const { name, contentHtml, variables = [] } = createQuoteTemplateDto;
-
+    const { name, contentHtml } = createQuoteTemplateDto;
+  
     await this.userService.getUserOrThrow(userId);
-
+  
     const existingTemplate = await this.prisma.quoteTemplate.findFirst({
       where: { userId, name },
     });
-
+  
     if (existingTemplate) {
       throw new BadRequestException('Un template avec ce nom existe déjà.');
     }
-
+  
     const template = await this.prisma.quoteTemplate.create({
       data: {
         name,
         contentHtml,
         userId,
-        variables: { create: this.mapVariableData(variables) },
-      },
-      include: {
-        variables: true,
       },
     });
-
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
-
-    return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
+  
+    const variableNames = extractVariablesFromHtml(contentHtml);
+  
+    const defaultVariables = await this.prisma.quoteTemplateVariable.findMany({
+      where: {
+        templateId: 'defaultTemplate',
+        variableName: { in: variableNames },
+      },
+    });
+  
+    if (defaultVariables.length > 0) {
+      const variablesToCreate = defaultVariables.map((v) => ({
+        templateId: template.id,
+        variableName: v.variableName,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+      }));
+  
+      await this.prisma.quoteTemplateVariable.createMany({
+        data: variablesToCreate,
+      });
+    }
+  
+    const templateWithVars = await this.prisma.quoteTemplate.findUnique({
+      where: { id: template.id },
+      include: { variables: true },
+    });
+  
+    const mergedTemplate = this.mergeWithSystemVariables(templateWithVars!);
+  
+    return plainToInstance(QuoteTemplateEntity, mergedTemplate);
   }
+  
 
   async findAll(
     userId: string,
