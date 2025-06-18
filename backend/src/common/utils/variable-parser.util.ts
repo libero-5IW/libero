@@ -1,10 +1,11 @@
-import { JSDOM } from 'jsdom';
-
 export function extractVariablesFromHtml(html: string): string[] {
-  const dom = new JSDOM(html);
-  const document = dom.window.document;
-  const spans = document.querySelectorAll('span[data-type="variable"][data-variable-name]');
-  return Array.from(spans)
-    .map(span => (span as HTMLSpanElement).getAttribute('data-variable-name'))
-    .filter((name): name is string => !!name);
+  const regex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
+  const matches = new Set<string>();
+  let match;
+
+  while ((match = regex.exec(html)) !== null) {
+    matches.add(match[1]);
+  }
+
+  return Array.from(matches);
 }
