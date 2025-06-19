@@ -26,7 +26,7 @@ export class QuoteTemplateService {
     userId: string,
     createQuoteTemplateDto: CreateQuoteTemplateDto,
   ): Promise<QuoteTemplateEntity> {
-    const { name, contentHtml } = createQuoteTemplateDto;
+    const { name, contentHtml, variables = [] } = createQuoteTemplateDto;
   
     await this.userService.getUserOrThrow(userId);
   
@@ -46,27 +46,43 @@ export class QuoteTemplateService {
       },
     });
   
+    if (variables.length > 0) {
+      await this.prisma.quoteTemplateVariable.createMany({
+        data: this.mapVariableData(variables).map(v => ({
+          ...v,
+          templateId: template.id,
+        })),
+      });
+    }
+  
     const variableNames = extractVariablesFromHtml(contentHtml);
   
-    const defaultVariables = await this.prisma.quoteTemplateVariable.findMany({
-      where: {
-        templateId: 'defaultTemplate',
-        variableName: { in: variableNames },
-      },
-    });
-  
-    if (defaultVariables.length > 0) {
-      const variablesToCreate = defaultVariables.map((v) => ({
-        templateId: template.id,
-        variableName: v.variableName,
-        label: v.label,
-        type: v.type,
-        required: v.required,
-      }));
-  
-      await this.prisma.quoteTemplateVariable.createMany({
-        data: variablesToCreate,
+    if (variableNames.length > 0) {
+      const defaultVariables = await this.prisma.quoteTemplateVariable.findMany({
+        where: {
+          templateId: 'defaultTemplate',
+          variableName: { in: variableNames },
+        },
       });
+  
+      const insertedNames = new Set(variables.map(v => v.variableName));
+      const filteredVariables = defaultVariables.filter(
+        v => !insertedNames.has(v.variableName),
+      );
+  
+      if (filteredVariables.length > 0) {
+        const variablesToCreate = filteredVariables.map(v => ({
+          templateId: template.id,
+          variableName: v.variableName,
+          label: v.label,
+          type: v.type,
+          required: v.required,
+        }));
+  
+        await this.prisma.quoteTemplateVariable.createMany({
+          data: variablesToCreate,
+        });
+      }
     }
   
     const templateWithVars = await this.prisma.quoteTemplate.findUnique({
@@ -75,10 +91,8 @@ export class QuoteTemplateService {
     });
   
     const mergedTemplate = this.mergeWithSystemVariables(templateWithVars!);
-  
     return plainToInstance(QuoteTemplateEntity, mergedTemplate);
-  }
-  
+  }  
 
   async findAll(
     userId: string,

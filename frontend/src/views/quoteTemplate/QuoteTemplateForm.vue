@@ -220,10 +220,10 @@ function handleVariableSubmit(variable: QuoteTemplateVariable) {
     }
   } else {
     template.variables.push(variable)
+    template.contentHtml += `\n<strong>${variable.label} :</strong> {{${variable.variableName}}}<br/>`
   }
 
   template.variables = [...template.variables]
   showVariableForm.value = false
 }
 </script>
-
