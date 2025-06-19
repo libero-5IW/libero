@@ -3,7 +3,6 @@ import { InvoiceTemplateVariableDto } from '../dto/invoice-template-variable.dto
 import { VariableType } from 'src/common/enums/variable-type.enum';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { InvoiceTemplateVariableEntity } from '../entities/invoice-template-variable.entity';
-import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
 
 @Injectable()
 export class ValidateTemplateVariablesPipe<
@@ -18,8 +17,7 @@ export class ValidateTemplateVariablesPipe<
   constructor(private readonly prisma: PrismaService) {}
 
   async transform(value: T): Promise<T> {
-    const { id, name, variables = [], contentHtml = '' } = value;
-
+    const { id, name, variables = [], contentHtml } = value;
     const existing = await this.prisma.invoiceTemplate.findFirst({
       where: {
         name: name?.trim(),
@@ -45,7 +43,7 @@ export class ValidateTemplateVariablesPipe<
 
     this.ensureUniqueAndNonSystemVariables(variables, systemVariables);
     this.ensureValidVariableTypes(variables);
-    this.ensureRequiredVariablesInHtml(variables, contentHtml);
+    this.ensureRequiredVariablesInHtml(variables, contentHtml, systemVariables);
 
     return value;
   }
@@ -86,13 +84,15 @@ export class ValidateTemplateVariablesPipe<
   private ensureRequiredVariablesInHtml(
     variables: InvoiceTemplateVariableDto[],
     contentHtml: string,
+    systemVariables: InvoiceTemplateVariableEntity[],
   ) {
+    const requiredVariables = [
+      ...variables.filter((v) => v.required).map((v) => v.variableName),
+      ...systemVariables.filter((v) => v.required).map((v) => v.variableName),
+    ];
 
-    const requiredVariables = variables.filter((v) => v.required).map((v) => v.variableName);
-
-    const variableNamesInHtml = extractVariablesFromHtml(contentHtml);
     const missingVariables = requiredVariables.filter(
-      (name) => !variableNamesInHtml.includes(name),
+      (name) => !new RegExp(`{{\\s*${name}\\s*}}`).test(contentHtml),
     );
 
     if (missingVariables.length) {
