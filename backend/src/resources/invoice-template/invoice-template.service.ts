@@ -48,6 +48,12 @@ export class InvoiceTemplateService {
       },
     });
   
+    if (createInvoiceTemplateDto.variables?.length) {
+      await this.prisma.invoiceTemplateVariable.createMany({
+        data: this.mapVariableData(createInvoiceTemplateDto.variables, template.id),
+      });
+    }
+  
     const variableNames = extractVariablesFromHtml(contentHtml);
   
     const defaultVariables = await this.prisma.invoiceTemplateVariable.findMany({
@@ -58,17 +64,22 @@ export class InvoiceTemplateService {
     });
   
     if (defaultVariables.length > 0) {
-      const variablesToCreate = defaultVariables.map((v) => ({
-        templateId: template.id,
-        variableName: v.variableName,
-        label: v.label,
-        type: v.type,
-        required: v.required,
-      }));
+      const insertedNames = new Set(createInvoiceTemplateDto.variables?.map(v => v.variableName));
+      const filteredVariables = defaultVariables.filter(v => !insertedNames.has(v.variableName));
   
-      await this.prisma.invoiceTemplateVariable.createMany({
-        data: variablesToCreate,
-      });
+      if (filteredVariables.length > 0) {
+        const variablesToCreate = filteredVariables.map((v) => ({
+          templateId: template.id,
+          variableName: v.variableName,
+          label: v.label,
+          type: v.type,
+          required: v.required,
+        }));
+  
+        await this.prisma.invoiceTemplateVariable.createMany({
+          data: variablesToCreate,
+        });
+      }
     }
   
     const templateWithVars = await this.prisma.invoiceTemplate.findUnique({
@@ -77,9 +88,8 @@ export class InvoiceTemplateService {
     });
   
     const mergedTemplate = this.mergeWithSystemVariables(templateWithVars!);
-  
     return plainToInstance(InvoiceTemplateEntity, mergedTemplate);
-  }
+  }  
   
   async findAll(
     userId: string,
@@ -224,6 +234,8 @@ export class InvoiceTemplateService {
     variables: InvoiceTemplateVariableDto[],
     templateId: string
   ): Prisma.InvoiceTemplateVariableCreateManyInput[] {
+    console.log('[MAPPING] Variables à insérer avec templateId =', templateId, variables);
+
     return variables.map((v) => ({
       templateId,
       variableName: v.variableName,

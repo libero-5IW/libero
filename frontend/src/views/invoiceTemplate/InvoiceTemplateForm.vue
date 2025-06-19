@@ -21,7 +21,7 @@
 
       <v-col cols="12" md="4">
         <v-card flat class="sticky-preview" :class="{ 'fullscreen-preview': isPreviewFullscreen }">
-          <QuoteTemplatePreview
+          <InvoiceTemplatePreview
             :contentHtml="template.contentHtml"
             :variables="getLabelVariables(template.variables)"
             fileName="facture"
@@ -60,7 +60,7 @@ import type { Editor } from '@tiptap/vue-3'
 
 import EditableHeader from '@/components/TemplateEditor/EditableHeader.vue'
 import InvoiceTemplateFormMain from '@/components/InvoiceTemplate/InvoiceTemplateFormMain.vue'
-import QuoteTemplatePreview from '@/components/ui/PreviewPdf.vue'
+import InvoiceTemplatePreview from '@/components/ui/PreviewPdf.vue'
 import ImportVariableModal from '@/components/TemplateEditor/variable/VariableImportModal.vue'
 import VariableFormModal from '@/components/TemplateEditor/variable/VariableFormModal.vue'
 
@@ -179,7 +179,14 @@ async function saveTemplate() {
     const payload = {
       name: template.name,
       contentHtml: template.contentHtml,
-      variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
+      variables: template.variables
+        .filter(v => !v.templateId || v.templateId !== 'defaultTemplate')
+        .map(v => ({
+          variableName: v.variableName,
+          label: v.label,
+          type: v.type,
+          required: v.required
+        }))
     }
 
     const response = templateId.value
@@ -199,6 +206,7 @@ async function saveTemplate() {
     console.error('Erreur de sauvegarde :', error)
   }
 }
+
 
 async function handleVariableSubmit(variable: InvoiceTemplateVariable) {
   const index = template.variables.findIndex(v =>
