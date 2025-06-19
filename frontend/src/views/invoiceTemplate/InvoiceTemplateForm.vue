@@ -217,7 +217,7 @@ async function handleVariableSubmit(variable: InvoiceTemplateVariable) {
     }
   } else {
     template.variables.push(variable)
-    await saveTemplate() 
+    template.contentHtml += `\n<strong>${variable.label} :</strong> {{${variable.variableName}}}<br/>`
   }
 
   template.variables = [...template.variables]
