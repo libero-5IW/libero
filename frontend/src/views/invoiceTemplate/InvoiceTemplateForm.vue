@@ -38,7 +38,7 @@
     <ImportVariableModal
       v-model="showImportModal"
       :templates="otherTemplates"
-      @import="addImportedVariables"
+      @import="handleImportVariables"
     />
 
     <VariableFormModal
@@ -160,11 +160,16 @@ function removeVariable(index: number) {
 }
 
 
-function addImportedVariables(vars: InvoiceTemplateVariable[]) {
+function handleImportVariables(vars: InvoiceTemplateVariable[]) {
   const existingNames = new Set(template.variables.map(v => v.variableName))
   const toAdd = vars.filter(v => !existingNames.has(v.variableName))
+
   template.variables.push(...toAdd)
+
+  const htmlSnippets = toAdd.map(v => `<strong>${v.label} :</strong> {{${v.variableName}}}<br/>`)
+  template.contentHtml += '\n' + htmlSnippets.join('\n')
 }
+
 
 function getLabelVariables(vars: InvoiceTemplateVariable[]) {
   const result: Record<string, string> = {}
