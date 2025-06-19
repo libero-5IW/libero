@@ -164,7 +164,7 @@ async function saveTemplate() {
     const templateData = {
       name: template.name,
       contentHtml: template.contentHtml,
-      variables: template.variables,
+      variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
     }
 
     const response = templateId.value
