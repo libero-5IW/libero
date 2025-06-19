@@ -142,27 +142,24 @@ export class InvoiceService {
     templateVars: InvoiceTemplateVariableEntity[],
     html: string,
   ) {
-    const htmlVars = extractVariablesFromHtml(html);
     const templateMap = new Map(
-      templateVars
-        .filter((v) => htmlVars.includes(v.variableName))
-        .map((v) => [v.variableName, v]),
+      templateVars.map((v) => [v.variableName, v]),
     );
-
-    return submitted
-      .filter((v) => htmlVars.includes(v.variableName))
-      .map((v) => {
-        const templateVar = templateMap.get(v.variableName);
-        if (!templateVar) {
-          throw new Error(`Variable ${v.variableName} non définie dans le template`);
-        }
-        return {
-          variableName: v.variableName,
-          value: v.value,
-          label: templateVar.label,
-          type: templateVar.type as VariableType,
-          required: templateVar.required,
-        };
-      });
+  
+    return submitted.map((v) => {
+      const templateVar = templateMap.get(v.variableName);
+      if (!templateVar) {
+        throw new Error(`Variable ${v.variableName} non définie dans le template`);
+      }
+  
+      return {
+        variableName: v.variableName,
+        value: v.value,
+        label: templateVar.label,
+        type: templateVar.type as VariableType,
+        required: templateVar.required,
+      };
+    });
   }
+  
 }
