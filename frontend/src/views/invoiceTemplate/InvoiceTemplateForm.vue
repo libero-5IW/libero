@@ -181,14 +181,7 @@ async function saveTemplate() {
     const payload = {
       name: template.name,
       contentHtml: template.contentHtml,
-      variables: template.variables
-        .filter(v => !v.templateId || v.templateId !== 'defaultTemplate')
-        .map(v => ({
-          variableName: v.variableName,
-          label: v.label,
-          type: v.type,
-          required: v.required
-        }))
+      variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
     }
 
     const response = templateId.value
