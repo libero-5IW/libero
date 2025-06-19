@@ -67,6 +67,10 @@ import VariableFormModal from '@/components/TemplateEditor/variable/VariableForm
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate'
 import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema'
 import type { VariableType } from '@/types'
+import {
+  replaceBracketsWithChips,
+  replaceChipsWithBrackets
+} from '@/composables/useTemplateVariableParser'
 
 const template = reactive({
   id: '',
@@ -114,7 +118,7 @@ onMounted(async () => {
       Object.assign(template, {
         id: data.id,
         name: data.name,
-        contentHtml: data.contentHtml,
+        contentHtml: replaceBracketsWithChips(data.contentHtml, data.variables),
         variables: [...(data.variables || []).map(v => ({ ...v }))]
       })
     }
@@ -180,7 +184,7 @@ async function saveTemplate() {
   try {
     const payload = {
       name: template.name,
-      contentHtml: template.contentHtml,
+      contentHtml: replaceChipsWithBrackets(template.contentHtml ?? ''),
       variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
     }
 
@@ -210,20 +214,11 @@ async function handleVariableSubmit(variable: InvoiceTemplateVariable) {
 
   if (variableMode.value === 'edit') {
     if (index !== -1) {
-      if (originalVariableName.value !== variable.variableName) {
-        template.contentHtml = template.contentHtml.replace(
-          new RegExp(`{{\\s*${originalVariableName.value}\\s*}}`, 'g'),
-          `{{${variable.variableName}}}`
-        )
-      }
       template.variables[index] = variable
     }
   } else {
     template.variables.push(variable)
-    template.contentHtml += `\n<strong>${variable.label} :</strong> {{${variable.variableName}}}<br/>`
   }
-
-  template.variables = [...template.variables]
   showVariableForm.value = false
 }
 

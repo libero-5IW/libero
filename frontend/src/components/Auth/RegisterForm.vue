@@ -257,7 +257,16 @@
       const isFormValid = await formRef.value?.validate();
       if (!isFormValid) return;
       if (!validateForm()) return;
-      const { confirmPassword, ...payload } = form.value;
+      const { confirmPassword, customLegalStatus, ...rest } = form.value;
+
+      const payload: RegisterData = {
+        ...rest,
+        legalStatus:
+          form.value.legalStatus === 'Autre'
+            ? form.value.customLegalStatus.trim()
+            : form.value.legalStatus,
+      };
+
       emit('submit', payload);
     }
 
