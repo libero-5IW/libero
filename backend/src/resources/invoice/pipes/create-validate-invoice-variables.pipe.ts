@@ -64,11 +64,12 @@ export class ValidateInvoiceOnCreatePipe<
       const { variableName, required, type } = variable;
       const rawValue = valueMap.get(variableName);
 
-      if (required && this.isEmpty(rawValue)) {
+      if (required && variableName !== 'invoice_number' && this.isEmpty(rawValue)) {
         throw new BadRequestException(
           `La variable requise "${variableName}" est manquante ou vide.`,
         );
       }
+      
 
       if (!this.isEmpty(rawValue)) {
         const isValid = this.validateValueType(rawValue!, type as VariableType);

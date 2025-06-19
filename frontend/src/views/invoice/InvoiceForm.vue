@@ -132,13 +132,19 @@ async function handleTemplateSelected(templateId: string) {
   const template = await loadAndGetTemplate(templateId);
   if (!template) return;
 
-  templateVariables.value = mapTemplateVariablesWithEnum(template.variables);
+  const filtered = template.variables.filter(
+  (v, i, arr) =>
+    arr.findIndex(x => x.variableName === v.variableName) === i
+);
+
+templateVariables.value = mapTemplateVariablesWithEnum(filtered);
+
   previewHtml.value = template.contentHtml;
 
-  resetVariableValues(template.variables);
-  await fillSystemValues(template.variables);
+  resetVariableValues(filtered);
+  await fillSystemValues(filtered);
   fillPreview();
-}
+  }
 
 async function loadAndGetTemplate(templateId: string) {
   await invoiceTemplateStore.fetchTemplate(templateId);
@@ -152,13 +158,16 @@ function mapTemplateVariablesWithEnum(variables: InvoiceTemplateVariable[]) {
 }
 
 function resetVariableValues(variables: InvoiceTemplateVariable[]) {
-  previewVariables.value = {};
+  const valueMap = new Map<string, string>(
+    variablesValue.value.map(v => [v.variableName, v.value])
+  );
+
   variablesValue.value = variables.map(v => ({
     variableName: v.variableName,
     label: v.label,
     type: v.type as VariableType,
     required: v.required,
-    value: '',
+    value: valueMap.get(v.variableName) ?? '',
     id: v.id,
     templateId: v.templateId,
   }));
@@ -253,8 +262,14 @@ async function onCreateInvoice() {
   }
 
   const missingFields = templateVariables.value.filter(
-    v => v.required && !variablesValue.value.find(val => val.variableName === v.variableName)?.value
-  );
+  v =>
+    v.required &&
+    v.variableName !== 'invoice_number' && 
+    !variablesValue.value.find(val => val.variableName === v.variableName)?.value
+);
+
+
+
   if (missingFields.length > 0) {
     showToast('error', `Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}`);
     return;
@@ -272,13 +287,23 @@ async function onCreateInvoice() {
     status: INVOICE_STATUS.DRAFT,
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + 30 * 86400000).toISOString(),
-    variableValues: variablesValue.value.map(v => ({
-      variableName: v.variableName,
-      value: v.value,
-    })),
+    variableValues: variablesValue.value
+  .filter(v => v.variableName !== 'invoice_number')
+  .map(v => ({
+    variableName: v.variableName,
+    value: v.value,
+  })),
+
     generatedHtml: generateHtmlFromTemplate(previewHtml.value, Object.fromEntries(variablesValue.value.map(v => [v.variableName, v.value]))),
-    variables: Object.fromEntries(variablesValue.value.map(v => [v.variableName, v.value])),
+    variables: Object.fromEntries(
+  variablesValue.value
+    .filter(v => v.variableName !== 'invoice_number')
+    .map(v => [v.variableName, v.value])
+),
   };
+
+  console.log('Payload envoyé à l’API :', payload);
+console.log('VariablesValue avant envoi :', variablesValue.value);
 
   const invoice = await invoiceStore.createInvoice(payload);
 
