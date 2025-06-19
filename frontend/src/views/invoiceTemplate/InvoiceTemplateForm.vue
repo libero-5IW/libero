@@ -45,7 +45,7 @@
       v-model="showVariableForm"
       :current-variable="currentVariable"
       :original-variable-name="originalVariableName"
-      :existing-variable-names="template.variables.map(v => v.variableName)"
+      :existing-variable-names="template.variables.filter(v => !v.templateId).map(v => v.variableName)"
       :mode="variableMode"
       @submit="handleVariableSubmit"
     />
@@ -110,17 +110,16 @@ onMounted(async () => {
     ? invoiceTemplate.currentTemplate
     : invoiceTemplate.defaultTemplate
 
-  if (data) {
-    const systemVars = data.variables?.filter(v => v.templateId === 'defaultTemplate') || []
-    Object.assign(template, {
-      id: '',
-      name: 'Nouveau modèle de facture',
-      contentHtml: data.contentHtml,
-      variables: [...systemVars.map(v => ({ ...v }))]
-    })
-  }
-})
+    if (data) {
+      Object.assign(template, {
+        id: data.id,
+        name: data.name,
+        contentHtml: data.contentHtml,
+        variables: [...(data.variables || []).map(v => ({ ...v }))]
+      })
+    }
 
+})
 
 function togglePreviewFullscreen() {
   isPreviewFullscreen.value = !isPreviewFullscreen.value
@@ -159,7 +158,6 @@ function removeVariable(index: number) {
     .join('\n')
 }
 
-
 function handleImportVariables(vars: InvoiceTemplateVariable[]) {
   const existingNames = new Set(template.variables.map(v => v.variableName))
   const toAdd = vars.filter(v => !existingNames.has(v.variableName))
@@ -169,7 +167,6 @@ function handleImportVariables(vars: InvoiceTemplateVariable[]) {
   const htmlSnippets = toAdd.map(v => `<strong>${v.label} :</strong> {{${v.variableName}}}<br/>`)
   template.contentHtml += '\n' + htmlSnippets.join('\n')
 }
-
 
 function getLabelVariables(vars: InvoiceTemplateVariable[]) {
   const result: Record<string, string> = {}
