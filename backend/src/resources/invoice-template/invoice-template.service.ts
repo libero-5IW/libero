@@ -188,7 +188,6 @@ export class InvoiceTemplateService {
   }
 
   private mapVariableData(variables: InvoiceTemplateVariableDto[]) {
-    console.log('[MAPPING] Variables à insérer avec templateId =', variables);
 
     return variables.map((v) => ({
       variableName: v.variableName,
