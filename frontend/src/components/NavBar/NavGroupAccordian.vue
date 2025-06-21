@@ -20,7 +20,6 @@
       </v-list-item>
     </template>
 
-    <!-- Container for the continuous line -->
     <div class="timeline-container" ref="timelineContainer">
       <svg class="timeline-line" :style="{ height: `${lineHeight}px` }">
         <line 
@@ -33,7 +32,6 @@
       </svg>
     </div>
 
-    <!-- List items with just the dots -->
     <div ref="itemsContainer">
       <v-list-item
         v-for="(item, i) in items"
@@ -82,6 +80,11 @@ const items = [
     title: 'Reports',
     to: '/dashboard/reports',
     icon: 'mdi-file-chart'
+  },
+  {
+    title: 'Clients',
+    to: '/clients',
+    icon: 'mdi-file-chart'
   }
 ]
 
@@ -95,11 +98,9 @@ const updateLineHeight = () => {
 }
 
 onMounted(async () => {
-  // Wait for the next tick to ensure items are rendered
   await nextTick()
   updateLineHeight()
   
-  // Add resize observer to handle any dynamic changes
   const resizeObserver = new ResizeObserver(updateLineHeight)
   if (itemsContainer.value) {
     resizeObserver.observe(itemsContainer.value)
@@ -149,7 +150,6 @@ onMounted(async () => {
   background-color: rgba(var(--v-theme-text-secondary-light), 0.12) !important;
 }
 
-/* Remove default padding from list group items */
 :deep(.v-list-group__items) .v-list-item {
   padding-left: 12px !important;
 }

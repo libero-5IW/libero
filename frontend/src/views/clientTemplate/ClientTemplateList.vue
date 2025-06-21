@@ -20,7 +20,7 @@
       <v-btn icon @click="editClient(item.id)">
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
-      <v-btn icon @click="removeClient(item.id)">
+      <v-btn icon @click="deleteClient(item.id)">
         <v-icon>mdi-delete</v-icon>
       </v-btn>
     </template>
@@ -28,10 +28,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
 import { useClientStore } from '@/stores/client'
 import { useRouter } from 'vue-router'
+import { computed, onMounted } from 'vue'
 import { useToastHandler } from '@/composables/useToastHandler'
+import type { ToastStatus } from '@/types'
 import type { Header } from '@/types/Header'
 import DataTable from '@/components/Table/DataTable.vue'
 
@@ -46,10 +47,10 @@ const headers: Header[] = [
   { title: 'Nom', value: 'lastName', sortable: true },
   { title: 'Email', value: 'email', sortable: true },
   { title: 'Ville', value: 'city', sortable: true },
-  { title: 'Actions', value: 'actions', sortable: false }
+  { title: 'Actions', value: 'actions', sortable: false },
 ]
 
-const fetchAllClients = async () => {
+async function fetchAllClients() {
   await clientStore.fetchAllClients()
 }
 
@@ -61,13 +62,20 @@ const editClient = (id: string) => {
   router.push({ name: 'ClientEdit', params: { id } })
 }
 
-const removeClient = async (id: string) => {
+const deleteClient = async (id: string) => {
   await clientStore.deleteClient(id)
   await fetchAllClients()
-  showToast('success', 'Le client a été supprimé avec succès')
+  showToast('success', 'Client supprimé avec succès.')
 }
 
 onMounted(async () => {
+  const status = history.state?.toastStatus as ToastStatus
+  const message = history.state?.toastMessage as string
+
+  if (message && status) {
+    showToast(status, message)
+  }
+
   await fetchAllClients()
 })
 </script>
