@@ -58,7 +58,7 @@ export class QuoteService {
           create: this.mapVariableWithTemplateData(
             variableValues,
             template.variables,
-            generatedHtml, // Pass the generated HTML here
+            generatedHtml, 
           ),
         },
       },
@@ -141,7 +141,7 @@ export class QuoteService {
     return generateNextNumber('quote', userId);
   }
 
-  async getQuoteOrThrow(id: string, userId: string) {
+  private async getQuoteOrThrow(id: string, userId: string) {
     const quote = await this.prisma.quote.findFirst({
       where: { id, userId },
       include: { variableValues: true },
@@ -155,35 +155,25 @@ export class QuoteService {
   private mapVariableWithTemplateData(
     submittedVariables: CreateQuoteVariableValueDto[],
     templateVariables: QuoteTemplateVariableEntity[],
-    templateHtml: string, // <-- Add this parameter
+    templateHtml: string, 
   ) {
-    // Extract variable names from the template HTML
-    const variableNamesInHtml = extractVariablesFromHtml(templateHtml);
-
-    // Only keep template variables that are actually present in the HTML
-    const templateVariableMap = new Map(
-      templateVariables
-        .filter(variable => variableNamesInHtml.includes(variable.variableName))
-        .map(variable => [variable.variableName, variable]),
+    const templateMap = new Map(
+      templateVariables.map((v) => [v.variableName, v]),
     );
-
-    return submittedVariables
-      .filter(sub => variableNamesInHtml.includes(sub.variableName)) // Only map variables present in HTML
-      .map((sub) => {
-        const templateVariable = templateVariableMap.get(sub.variableName);
-        if (!templateVariable) {
-          throw new Error(
-            `Variable ${sub.variableName} non définie dans le template`,
-          );
-        }
-
-        return {
-          variableName: sub.variableName,
-          value: sub.value,
-          label: templateVariable.label,
-          type: templateVariable.type as VariableType,
-          required: templateVariable.required,
-        };
-      });
+    
+    return submittedVariables.map((v) => {
+      const templateVar = templateMap.get(v.variableName);
+      if (!templateVar) {
+        throw new Error(`Variable ${v.variableName} non définie dans le template`);
+      }
+    
+      return {
+        variableName: v.variableName,
+        value: v.value,
+        label: templateVar.label,
+        type: templateVar.type as VariableType,
+        required: templateVar.required,
+      };
+    });
   }
 }
