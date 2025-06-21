@@ -136,14 +136,17 @@
     selectedTemplateId.value = templateId;
 
     const template = await loadAndGetTemplate(templateId);
-
     if (!template) return;
 
-    templateVariables.value = mapTemplateVariablesWithEnum(template.variables);
+    const filtered = template.variables.filter(
+      (v, i, arr) => arr.findIndex(x => x.variableName === v.variableName) === i
+    );
+
+    templateVariables.value = mapTemplateVariablesWithEnum(filtered);
     previewHtml.value = template.contentHtml;
 
-    resetVariableValues(template.variables);
-    fillSystemValues(template.variables);
+    resetVariableValues(filtered);
+    await fillSystemValues(filtered);
     fillPreview();
   }
 
@@ -159,26 +162,39 @@
   }
 
   function resetVariableValues(variables: QuoteTemplateVariable[]) {
-    previewVariables.value = {};
+    const valueMap = new Map<string, string>(
+      variablesValue.value.map(v => [v.variableName, v.value])
+    );
+
     variablesValue.value = variables.map(v => ({
       variableName: v.variableName,
       label: v.label,
       type: v.type as VariableType,
       required: v.required,
-      value: '',
+      value: valueMap.get(v.variableName) ?? '',
       id: v.id,
       templateId: v.templateId,
     }));
   }
-
   
   async function fillSystemValues(variables: QuoteTemplateVariable[]) {
+
+    const today = new Date().toISOString().split('T')[0];
+    const validUntil = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+
+    updateVariable('issue_date', today);
+    updateVariable('valid_until', validUntil);
+
+    updateVariable('payment_terms', 'Paiement sous 30 jours');
+    updateVariable('late_penalty', 'Pénalités de 10% après échéance');
+    updateVariable('tva_detail', 'TVA de 20% incluse');
+
     if (!currentUser.value?.id) {
       await userStore.fetchCurrentUser();
     }
     
     if (variables.some((v) => v.variableName === 'quote_number')) {
-      const nextNumber = await quoteStore.fetchNextQuoteNumber();
+      const nextNumber = await quoteStore.fetchNextQuoteNumber(currentUser.value!.id);
       if (nextNumber) updateVariable('quote_number', `${nextNumber}`);
     }
     
@@ -261,12 +277,24 @@
     const payload = {
       templateId: selectedTemplateId.value,
       clientId: selectedClientId.value!,
-      validUntil: new Date().toISOString(),
-      variableValues: variablesValue.value.map(v => ({
+      userId: currentUser.value.id, 
+      issuedAt: new Date().toISOString(), 
+      validUntil: new Date(Date.now() + 30 * 86400000).toISOString(), 
+      variableValues: variablesValue.value
+      .filter(v => v.variableName !== 'quote_number')
+      .map(v => ({
         variableName: v.variableName,
         value: v.value,
       })),
-      generatedHtml: generateHtmlFromTemplate(previewHtml.value, Object.fromEntries(variablesValue.value.map(v => [v.variableName, v.value]))),
+      generatedHtml: generateHtmlFromTemplate(
+        previewHtml.value,
+        Object.fromEntries(variablesValue.value.map(v => [v.variableName, v.value]))
+      ),
+      variables: Object.fromEntries(
+        variablesValue.value
+          .filter(v => v.variableName !== 'quote_number')
+          .map(v => [v.variableName, v.value])
+      ),
     };
 
     const quote = await quoteStore.createQuote(payload);

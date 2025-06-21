@@ -34,21 +34,14 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
-  async function createQuote(payload: CreateQuote) {
+  async function createQuote(payload: any) {
     try {
       const { data } = await apiClient.post('/quotes', payload);
-      console.log(
-        'types avant parse:',
-        data.variableValues.map((v: any) => [typeof v.type, v.type])
-      );
-      console.log('data', data);
-      
       return QuoteSchema.parse(data);
     } catch (error) {
-       console.error('❌ Erreur de validation Zod:', error);
-      handleAxiosError(error, 'Erreur lors de la création de la devis.');
+      handleAxiosError(error, 'Erreur lors de la création du devis.');
     }
-  }
+  }  
 
   async function deleteQuote(id: string) {
     try {
@@ -59,9 +52,11 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
-  async function fetchNextQuoteNumber() {
+  async function fetchNextQuoteNumber(userId: string) {
     try {
-      const { data } = await apiClient.get('/quotes/next-number');
+      const { data } = await apiClient.get('/quotes/next-number', {
+        params: { userId },
+      });
       return data;
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la récupération du numéro de devis.');
