@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
-import { InvoiceTemplateVariableEntity } from './invoice-template-variable.entity'; // adapte si besoin le chemin
+import { InvoiceTemplateVariableEntity } from './invoice-template-variable.entity';
 
 export class InvoiceTemplateEntity {
   @ApiProperty({ example: 'd8cf1d4a-9fa4-4560-b77f-15439a001f5b' })
