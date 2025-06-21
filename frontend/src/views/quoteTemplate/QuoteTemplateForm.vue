@@ -43,7 +43,7 @@
     <ImportVariableModal
       v-model="showImportModal"
       :templates="otherTemplates"
-      @import="addImportedVariables"
+      @import="handleImportVariables"
     />
 
     <VariableFormModal
@@ -72,6 +72,10 @@ import VariableFormModal from '@/components/TemplateEditor/variable/VariableForm
 import { useQuoteTemplateStore } from '@/stores/quoteTemplate'
 import type { QuoteTemplateVariable } from '@/schemas/quoteTemplate.schema'
 import type { VariableType } from '@/types'
+import {
+  replaceBracketsWithChips,
+  replaceChipsWithBrackets
+} from '@/composables/useTemplateVariableParser'
 
 const template = reactive({
   id: '',
@@ -116,12 +120,11 @@ onMounted(async () => {
     : quoteTemplate.defaultTemplate
 
   if (data) {
-    const systemVars = data.variables?.filter(v => v.templateId === 'defaultTemplate') || []
     Object.assign(template, {
-      id: '',
-      name: 'Nouveau modèle de devis',
-      contentHtml: data.contentHtml,
-      variables: [...systemVars.map(v => ({ ...v }))]
+      id: data.id,
+      name: data.name,
+      contentHtml: replaceBracketsWithChips(data.contentHtml, data.variables),
+      variables: [...(data.variables || []).map(v => ({ ...v }))]
     })
   }
 })
@@ -154,16 +157,18 @@ function openCreateModal() {
 
 function removeVariable(index: number) {
   const removedVar = template.variables[index]?.variableName
-  template.variables = template.variables.filter((_, i) => i !== index)
-  template.variables = [...template.variables]
+  const dom = new DOMParser().parseFromString(template.contentHtml, 'text/html')
+  const chips = dom.querySelectorAll(`span[data-type="variable"][data-variable-name="${removedVar}"]`)
 
-  const lines = template.contentHtml.split('\n')
-  template.contentHtml = lines
-    .filter(line => !line.includes(`{{${removedVar}}}`))
-    .join('\n')
+  chips.forEach(chip => {
+    chip.replaceWith('')
+  })
+
+  template.contentHtml = dom.body.innerHTML
+  template.variables = template.variables.filter((_, i) => i !== index)
 }
 
-function addImportedVariables(vars: QuoteTemplateVariable[]) {
+function handleImportVariables(vars: QuoteTemplateVariable[]) {
   const existingNames = new Set(template.variables.map(v => v.variableName))
   const toAdd = vars.filter(v => !existingNames.has(v.variableName))
   template.variables.push(...toAdd)
@@ -181,7 +186,7 @@ async function saveTemplate() {
   try {
     const payload = {
       name: template.name,
-      contentHtml: template.contentHtml,
+      contentHtml: replaceChipsWithBrackets(template.contentHtml ?? ''),
       variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
     }
 
@@ -210,20 +215,13 @@ function handleVariableSubmit(variable: QuoteTemplateVariable) {
 
   if (variableMode.value === 'edit') {
     if (index !== -1) {
-      if (originalVariableName.value !== variable.variableName) {
-        template.contentHtml = template.contentHtml.replace(
-          new RegExp(`{{\\s*${originalVariableName.value}\\s*}}`, 'g'),
-          `{{${variable.variableName}}}`
-        )
-      }
       template.variables[index] = variable
     }
   } else {
     template.variables.push(variable)
-    template.contentHtml += `\n<strong>${variable.label} :</strong> {{${variable.variableName}}}<br/>`
   }
 
-  template.variables = [...template.variables]
   showVariableForm.value = false
 }
+
 </script>

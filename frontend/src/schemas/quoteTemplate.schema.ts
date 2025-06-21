@@ -23,7 +23,6 @@ export const QuoteTemplateSchema = z.object({
 })
 
 export const CreateQuoteTemplateSchema = z.object({
-  // id: z.string().uuid().or(z.literal('defaultTemplate')).optional(),
   name: z.string().min(1, 'Le nom du template est requis.'),
   contentHtml: z.string().min(1, 'Le contenu HTML est requis.'),
   variables: z.array(QuoteTemplateVariableSchema),
