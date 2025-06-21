@@ -125,7 +125,7 @@
 
   async function fetchQuoteTemplates() {
     await quoteTemplateStore.fetchAllTemplates();
-
+    console.log('TEMPLATES CHARGÉS:', quoteTemplateStore.templates);
     return quoteTemplateStore.templates.map(template => ({
       id: template.id as string,
       name: template.name
