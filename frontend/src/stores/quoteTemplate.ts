@@ -19,10 +19,9 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       })
       templates.value = data.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
     } catch (error) {
-      templates.value = [];
+      templates.value = []
       handleAxiosError(error, 'Erreur lors de la récupération des templates.')
     } finally {
-      
       isLoading.value = false
     }
   }

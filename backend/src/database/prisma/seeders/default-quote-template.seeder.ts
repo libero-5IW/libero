@@ -7,7 +7,7 @@ export async function seedDefaultQuoteTemplate(prisma: PrismaClient) {
   }
   const template = {
     id: 'defaultTemplate',
-    userId: user.id,
+    userId: null,
     name: 'Modèle de base - Devis',
     contentHtml: `
         <h1>Devis n°{{quote_number}}</h1>
