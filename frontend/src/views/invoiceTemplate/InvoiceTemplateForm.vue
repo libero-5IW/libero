@@ -153,13 +153,17 @@ function openCreateModal() {
 
 function removeVariable(index: number) {
   const removedVar = template.variables[index]?.variableName
-  template.variables = template.variables.filter((_, i) => i !== index)
-  template.variables = [...template.variables]
+  const dom = new DOMParser().parseFromString(template.contentHtml, 'text/html')
+  const chips = dom.querySelectorAll(`span[data-type="variable"][data-variable-name="${removedVar}"]`)
+console.log('chips', chips);
 
-  const lines = template.contentHtml.split('\n')
-  template.contentHtml = lines
-    .filter(line => !line.includes(`{{${removedVar}}}`))
-    .join('\n')
+  chips.forEach(chip => {
+    chip.replaceWith('')
+  })
+
+  template.contentHtml = dom.body.innerHTML;
+
+  template.variables = template.variables.filter((_, i) => i !== index);
 }
 
 function handleImportVariables(vars: InvoiceTemplateVariable[]) {
@@ -167,9 +171,6 @@ function handleImportVariables(vars: InvoiceTemplateVariable[]) {
   const toAdd = vars.filter(v => !existingNames.has(v.variableName))
 
   template.variables.push(...toAdd)
-
-  const htmlSnippets = toAdd.map(v => `<strong>${v.label} :</strong> {{${v.variableName}}}<br/>`)
-  template.contentHtml += '\n' + htmlSnippets.join('\n')
 }
 
 function getLabelVariables(vars: InvoiceTemplateVariable[]) {

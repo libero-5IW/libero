@@ -89,11 +89,11 @@ export class InvoiceTemplateService {
     await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
-      if (variables?.length) {
-        await tx.invoiceTemplateVariable.deleteMany({
-          where: { templateId: id },
-        });
+      await tx.invoiceTemplateVariable.deleteMany({
+        where: { templateId: id },
+      });
 
+      if (variables?.length > 0) {
         await tx.invoiceTemplateVariable.createMany({
           data: this.mapVariableData(variables).map((variable) => ({
             templateId: id,
