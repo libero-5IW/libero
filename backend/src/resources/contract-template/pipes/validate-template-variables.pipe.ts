@@ -17,8 +17,7 @@ export class ValidateTemplateVariablesPipe<
   constructor(private readonly prisma: PrismaService) {}
 
   async transform(value: T): Promise<T> {
-    const { id, name, variables = [], contentHtml = '' } = value;
-
+    const { id, name, variables = [], contentHtml } = value;
     const existing = await this.prisma.contractTemplate.findFirst({
       where: {
         name: name?.trim(),
@@ -38,11 +37,9 @@ export class ValidateTemplateVariablesPipe<
       }
     }
 
-    const systemVariables = await this.prisma.contractTemplateVariable.findMany(
-      {
-        where: { templateId: 'defaultTemplate' },
-      },
-    );
+    const systemVariables = await this.prisma.contractTemplateVariable.findMany({
+      where: { templateId: 'defaultTemplate' },
+    });
 
     this.ensureUniqueAndNonSystemVariables(variables, systemVariables);
     this.ensureValidVariableTypes(variables);
@@ -59,13 +56,13 @@ export class ValidateTemplateVariablesPipe<
 
     for (const variable of variables) {
       const variableName = variable.variableName;
-      const isSystem = systemVariables.some(
+      const isSystemVariable = systemVariables.some(
         (v) => v.variableName === variableName,
       );
 
-      if (seen.has(variableName) || isSystem) {
+      if (seen.has(variableName) || isSystemVariable) {
         throw new BadRequestException(
-          `La variable "${variableName}" est définie plusieurs fois ou entre en conflit avec une variable système.`,
+          `La variable "${variableName}" est définie plusieurs fois.`,
         );
       }
 

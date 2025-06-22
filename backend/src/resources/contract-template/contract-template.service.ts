@@ -16,8 +16,6 @@ import { VariableType } from 'src/common/enums/variable-type.enum';
 
 @Injectable()
 export class ContractTemplateService {
-  DEFAULT_USER_ID = 'e0f77fd1-d9ff-4875-ad81-ebd3338f1a4c';
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
@@ -51,9 +49,9 @@ export class ContractTemplateService {
       },
     });
 
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
+    const mergedTemplate = this.mergeWithSystemVariables(template);
 
-    return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
+    return plainToInstance(ContractTemplateEntity, mergedTemplate);
   }
 
   async findAll(
@@ -72,10 +70,7 @@ export class ContractTemplateService {
       templates.map((t) => this.mergeWithSystemVariables(t)),
     );
 
-    return plainToInstance(
-      ContractTemplateEntity,
-      templatesWithSystemVariables,
-    );
+    return plainToInstance(ContractTemplateEntity, templatesWithSystemVariables);
   }
 
   async findOne(id: string, userId: string): Promise<ContractTemplateEntity> {
@@ -94,11 +89,11 @@ export class ContractTemplateService {
     await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
-      if (variables?.length) {
-        await tx.contractTemplateVariable.deleteMany({
-          where: { templateId: id },
-        });
+      await tx.contractTemplateVariable.deleteMany({
+        where: { templateId: id },
+      });
 
+      if (variables?.length > 0) {
         await tx.contractTemplateVariable.createMany({
           data: this.mapVariableData(variables).map((variable) => ({
             templateId: id,
@@ -128,11 +123,11 @@ export class ContractTemplateService {
   async remove(id: string, userId: string): Promise<ContractTemplateEntity> {
     await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
 
-    const deletedContractTemplate = await this.prisma.contractTemplate.delete({
+    const deletedTemplate = await this.prisma.contractTemplate.delete({
       where: { id },
     });
 
-    return plainToInstance(ContractTemplateEntity, deletedContractTemplate);
+    return plainToInstance(ContractTemplateEntity, deletedTemplate);
   }
 
   async duplicate(id: string, userId: string): Promise<ContractTemplateEntity> {
@@ -169,13 +164,16 @@ export class ContractTemplateService {
     });
   }
 
-  private async getTemplateOrThrow(
+  async getTemplateOrThrow(
     id: string,
     userId: string,
     options?: { allowDefaultTemplate?: boolean },
   ) {
     const template = await this.prisma.contractTemplate.findFirst({
-      where: { id, userId },
+      where: {
+        id,
+        OR: [{ userId }, { userId: null }],
+      },
       include: { variables: true },
     });
 
@@ -183,7 +181,7 @@ export class ContractTemplateService {
       !template ||
       (id === 'defaultTemplate' && options?.allowDefaultTemplate === false)
     ) {
-      throw new NotFoundException("Le template du contrat n'a pas été trouvé.");
+      throw new NotFoundException("Le template de contrat n'a pas été trouvé.");
     }
 
     return template;

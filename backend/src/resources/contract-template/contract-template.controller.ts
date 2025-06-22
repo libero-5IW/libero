@@ -12,17 +12,15 @@ import { ContractTemplateService } from './contract-template.service';
 import { CreateContractTemplateDto } from './dto/create-contract-template.dto';
 import { UpdateContractTemplateDto } from './dto/update-contract-template.dto';
 import { ValidateTemplateVariablesPipe } from './pipes/validate-template-variables.pipe';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 
 @ApiBearerAuth()
 @Controller('contract-templates')
 export class ContractTemplateController {
-  constructor(
-    private readonly contractTemplateService: ContractTemplateService,
-  ) {}
+  constructor(private readonly contractTemplateService: ContractTemplateService) {}
 
   @Get('default-template')
   getDefaultTemplate() {
