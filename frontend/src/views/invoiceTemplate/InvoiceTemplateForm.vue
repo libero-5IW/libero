@@ -222,5 +222,4 @@ async function handleVariableSubmit(variable: InvoiceTemplateVariable) {
   showVariableForm.value = false
 }
 
-
 </script>

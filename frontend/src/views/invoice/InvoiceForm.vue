@@ -18,6 +18,15 @@
             class="mb-6"
           />
 
+          <v-text-field
+            v-if="invoiceNumberVariable"
+            :model-value="invoiceNumberVariable.value"
+            :label="invoiceNumberVariable.label || 'Numéro de la facture'"
+            readonly
+            class="mb-4"
+            :style="{ pointerEvents: 'none', opacity: 0.6 }"
+          />
+
           <v-card flat class="mb-4 pa-4">
             <TemplateVariableSection
               title="Informations du Freelance"
@@ -87,7 +96,6 @@ const showTemplateModal = ref(false);
 const selectedTemplateId = ref<string | null>(null);
 const selectedClientId = defineModel<string>('selectedClientId');
 const previewHtml = ref('');
-const previewVariables = ref<Record<string, string>>({});
 const templateVariables = ref<InvoiceTemplateVariable[]>([]);
 const variablesValue = ref<VariableValue[]>([]);
 
@@ -95,6 +103,16 @@ const currentUser = computed(() => userStore.user);
 const currentTemplate = computed(() => invoiceTemplateStore.currentTemplate);
 const clients = computed(() => clientStore.clients);
 const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+const invoiceNumberVariable = computed(() =>
+  variablesValue.value.find((v) => v.variableName === 'invoice_number')
+);
+const previewVariables = computed(() => {
+  const result: Record<string, string> = {};
+  variablesValue.value.forEach(v => {
+    result[v.variableName] = v.value || `<em class="text-gray-500">${v.label}</em>`;
+  });
+  return result;
+});
 
 onMounted(initialize);
 
@@ -144,7 +162,6 @@ templateVariables.value = mapTemplateVariablesWithEnum(filtered);
 
   resetVariableValues(filtered);
   await fillSystemValues(filtered);
-  fillPreview();
   }
 
 async function loadAndGetTemplate(templateId: string) {
@@ -207,13 +224,6 @@ function updateVariable(name: string, newValue: string) {
   if (v) v.value = newValue;
 }
 
-function fillPreview() {
-  templateVariables.value.forEach(v => {
-    const val = variablesValue.value.find(val => val.variableName === v.variableName)?.value;
-    previewVariables.value[v.variableName] = val || `<em class="text-gray-500">${v.label}</em>`;
-  });
-}
-
 const canCreate = computed(() => {
   const hasTemplate = !!selectedTemplateId.value;
   const hasClient = !!selectedClientId.value;
@@ -244,8 +254,7 @@ const clientVariables = computed(() =>
 const otherVariables = computed(() =>
   orderedTemplateVariables.value.filter(v =>
     !v.variableName.startsWith('freelancer_') &&
-    !v.variableName.startsWith('client_') &&
-    v.variableName !== 'invoice_number'
+    !v.variableName.startsWith('client_')
   )
 );
 
@@ -266,7 +275,6 @@ async function onCreateInvoice() {
   const missingFields = templateVariables.value.filter(
   v =>
     v.required &&
-    v.variableName !== 'invoice_number' && 
     !variablesValue.value.find(val => val.variableName === v.variableName)?.value
 );
 
@@ -288,18 +296,15 @@ async function onCreateInvoice() {
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
     variableValues: variablesValue.value
-  .filter(v => v.variableName !== 'invoice_number')
-  .map(v => ({
-    variableName: v.variableName,
-    value: v.value,
-  })),
-
-    generatedHtml: generateHtmlFromTemplate(previewHtml.value, Object.fromEntries(variablesValue.value.map(v => [v.variableName, v.value]))),
-    variables: Object.fromEntries(
-  variablesValue.value
-    .filter(v => v.variableName !== 'invoice_number')
-    .map(v => [v.variableName, v.value])
-),
+      .map(v => ({
+        variableName: v.variableName,
+        value: v.value,
+      })),
+      generatedHtml: previewHtml.value,
+      variables: Object.fromEntries(
+      variablesValue.value
+      .map(v => [v.variableName, v.value])
+    ),
   };
 
   const invoice = await invoiceStore.createInvoice(payload);
@@ -315,11 +320,4 @@ async function onCreateInvoice() {
   }
 }
 
-function generateHtmlFromTemplate(templateHtml: string, vars: Record<string, string>): string {
-  let html = templateHtml;
-  for (const [key, value] of Object.entries(vars)) {
-    html = html.replace(new RegExp(`{{${key}}}`, 'g'), value);
-  }
-  return html;
-}
 </script>

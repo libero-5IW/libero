@@ -30,23 +30,27 @@
   const fileName = props.fileName + '.pdf'
   
   const previewHtml = computed(() => {
-    let html = props.contentHtml
-    const parser = new DOMParser()
-    const doc = parser.parseFromString(html, 'text/html')
-    
-    // Find all variable spans
-    const variableSpans = doc.querySelectorAll('span[data-type="variable"]')
-    variableSpans.forEach(span => {
-      const variableName = span.getAttribute('data-variable-name')
-      if (variableName && variableName in props.variables) {
-        // Replace the span with the variable value
-        const replacement = document.createElement('span')
-        replacement.innerHTML = props.variables[variableName]
-        span.parentNode?.replaceChild(replacement, span)
-      }
-    })
-    
-    return doc.body.innerHTML
+  let html = props.contentHtml
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(html, 'text/html')
+
+  const variableSpans = doc.querySelectorAll('span[data-type="variable"]')
+  variableSpans.forEach(span => {
+    const variableName = span.getAttribute('data-variable-name')
+    if (variableName && variableName in props.variables) {
+      const replacement = document.createElement('span')
+      replacement.innerHTML = props.variables[variableName]
+      span.parentNode?.replaceChild(replacement, span)
+    }
+  })
+
+  html = doc.body.innerHTML
+  for (const [key, value] of Object.entries(props.variables)) {
+    const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g')
+    html = html.replace(regex, value)
+  }
+
+  return html
   })
   
   function downloadPdf() {
