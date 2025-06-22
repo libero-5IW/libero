@@ -287,7 +287,6 @@
     const payload = {
       templateId: selectedTemplateId.value,
       clientId: selectedClientId.value!,
-      userId: currentUser.value.id, 
       issuedAt: new Date().toISOString(), 
       validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
       variableValues: variablesValue.value
