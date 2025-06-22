@@ -1,4 +1,4 @@
-import { VariableType } from '@/types';
+import { VariableType } from '@/types'
 import { z } from 'zod'
 
 export const ContractTemplateVariableSchema = z.object({
@@ -17,10 +17,17 @@ export const ContractTemplateVariableSchema = z.object({
 export const ContractTemplateSchema = z.object({
   id: z.string().uuid().or(z.literal('defaultTemplate')).optional(),
   name: z.string().min(1, 'Le nom du template est requis.'),
-  contentHtml: z.string().min(1, 'Le contenu HTML est requis.'),
   userId: z.string().uuid().nullable(),
+  contentHtml: z.string().min(1, 'Le contenu HTML est requis.'),
+  variables: z.array(ContractTemplateVariableSchema),
+})
+
+export const CreateContractTemplateSchema = z.object({
+  name: z.string().min(1, 'Le nom du template est requis.'),
+  contentHtml: z.string().min(1, 'Le contenu HTML est requis.'),
   variables: z.array(ContractTemplateVariableSchema),
 })
 
 export type ContractTemplate = z.infer<typeof ContractTemplateSchema>
+export type CreateContractTemplate = z.infer<typeof CreateContractTemplateSchema>
 export type ContractTemplateVariable = z.infer<typeof ContractTemplateVariableSchema>
