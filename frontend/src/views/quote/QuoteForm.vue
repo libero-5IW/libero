@@ -81,6 +81,8 @@
   import { useToastHandler } from '@/composables/useToastHandler';
   import { mapTemplateVariables } from '@/utils/mapTemplateVariables';
   import type { VariableValue, VariableType } from '@/types';
+  import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
+  import { extractUsedVariableNames } from '@/utils/extractUsedVariables';
 
   const router = useRouter();
   const route = useRoute();
@@ -145,8 +147,12 @@
     const template = await loadAndGetTemplate(templateId);
     if (!template) return;
 
+    const usedVariableNames = extractUsedVariableNames(template.contentHtml);
+
     const filtered = template.variables.filter(
-      (v, i, arr) => arr.findIndex(x => x.variableName === v.variableName) === i
+      (v, i, arr) =>
+        usedVariableNames.includes(v.variableName) &&
+        arr.findIndex(x => x.variableName === v.variableName) === i
     );
 
     templateVariables.value = mapTemplateVariablesWithEnum(filtered);
@@ -287,17 +293,16 @@
     const payload = {
       templateId: selectedTemplateId.value,
       clientId: selectedClientId.value!,
-      issuedAt: new Date().toISOString(), 
+      status: QUOTE_STATUS.DRAFT,
+      issuedAt: new Date().toISOString(),
       validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
-      variableValues: variablesValue.value
-      .map(v => ({
+      variableValues: variablesValue.value.map(v => ({
         variableName: v.variableName,
         value: v.value,
       })),
       generatedHtml: previewHtml.value,
       variables: Object.fromEntries(
-        variablesValue.value
-          .map(v => [v.variableName, v.value])
+        variablesValue.value.map(v => [v.variableName, v.value])
       ),
     };
 

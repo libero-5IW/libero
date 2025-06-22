@@ -7,19 +7,20 @@ export class ContractTemplateEntity {
   @Expose()
   id: string;
 
-  @ApiProperty({ example: 'Modèle de contrat freelance' })
+  @ApiProperty({ example: 'Modèle de contrat pour prestation web' })
   @Expose()
   name: string;
 
   @ApiProperty({
-    example: '<p>Bonjour {{client_name}}, voici votre contrat...</p>',
+    example:
+      '<p>Bonjour {{client_name}}, voici votre contrat pour {{prestation}}...</p>',
   })
   @Expose()
   contentHtml: string;
 
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
-  userId: string;
+  userId?: string;
 
   @ApiProperty({ type: () => [ContractTemplateVariableEntity] })
   @Expose()

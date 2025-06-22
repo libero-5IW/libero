@@ -11,11 +11,11 @@ export class ContractTemplateVariableEntity {
   @Expose()
   templateId: string;
 
-  @ApiProperty({ example: 'mission_title' })
+  @ApiProperty({ example: 'number_of_days' })
   @Expose()
   variableName: string;
 
-  @ApiProperty({ example: 'Titre de la mission' })
+  @ApiProperty({ example: 'Nombre de jours travaillés' })
   @Expose()
   label: string;
 
@@ -28,7 +28,7 @@ export class ContractTemplateVariableEntity {
   @Expose()
   type: string;
 
-  @ApiProperty({ example: true })
+  @ApiProperty({ example: false })
   @Expose()
   required: boolean;
 }

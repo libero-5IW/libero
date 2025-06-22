@@ -6,5 +6,6 @@ import { UserService } from '../user/user.service';
 @Module({
   controllers: [ContractTemplateController],
   providers: [ContractTemplateService, UserService],
+  exports: [ContractTemplateService],
 })
 export class ContractTemplateModule {}
