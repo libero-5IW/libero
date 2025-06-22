@@ -35,11 +35,13 @@ import { reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useClientStore } from '@/stores/client'
 import { useAuthStore } from '@/stores/auth'
+import { useToastHandler } from '@/composables/useToastHandler'
 
 const router = useRouter()
 const route = useRoute()
 const clientStore = useClientStore()
 const authStore = useAuthStore()
+const { showToast } = useToastHandler()
 
 const isEdit = computed(() => !!route.params.id)
 
@@ -63,7 +65,7 @@ onMounted(async () => {
 
 const onSubmit = async () => {
   if (!authStore.user?.userId) {
-    alert('Utilisateur non connecté')
+    showToast('error', 'Utilisateur non connecté.')
     return
   }
 

@@ -3,7 +3,6 @@ import quoteTemplateRoutes from '@/routes/quoteTemplate'
 import quoteRoutes from '@/routes//quote'
 import invoiceTemplateRoutes from '@/routes/invoiceTemplate'
 import contractTemplateRoutes from './contractTemplate' 
-import clientTemplateRoutes from '@/routes/clientTemplate'
 import invoiceRoutes from './invoice';
 import publicRoutes from '@/routes/public'
 import dashboardRoute from '@/routes/dashboard'
@@ -23,7 +22,6 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
       ...contractTemplateRoutes,
       ...invoiceRoutes,
       ...dashboardRoute,
-      ...clientTemplateRoutes,
       ...clientRoutes,
       ...profileRoutes
     ]

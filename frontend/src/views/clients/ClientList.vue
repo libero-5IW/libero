@@ -50,7 +50,11 @@ const headers: Header[] = [
 ]
 
 const fetchAllClients = async () => {
-  await clientStore.fetchAllClients()
+  try {
+    await clientStore.fetchAllClients()
+  } catch (error) {
+    showToast('error', 'Erreur lors du chargement des clients.')
+  }
 }
 
 const createClient = () => {
@@ -62,9 +66,13 @@ const editClient = (id: string) => {
 }
 
 const removeClient = async (id: string) => {
-  await clientStore.deleteClient(id)
-  await fetchAllClients()
-  showToast('success', 'Le client a été supprimé avec succès')
+  try {
+    await clientStore.deleteClient(id)
+    await fetchAllClients()
+    showToast('success', 'Le client a été supprimé avec succès.')
+  } catch (error) {
+    showToast('error', 'Une erreur est survenue lors de la suppression.')
+  }
 }
 
 onMounted(async () => {
