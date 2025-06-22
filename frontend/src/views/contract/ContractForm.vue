@@ -79,6 +79,8 @@
   import type { VariableValue, VariableType } from '@/types';
   import type { ContractTemplateVariable } from '@/schemas/contractTemplate.schema';
   import { CONTRACT_STATUS } from '@/constants/status/contract-status.constant';
+  import { extractUsedVariableNames } from '@/utils/extractUsedVariables';
+
   
   const route = useRoute();
   const router = useRouter();
@@ -143,19 +145,24 @@
   }
   
   async function handleTemplateSelected(templateId: string) {
-    selectedTemplateId.value = templateId;
-    const template = await loadAndGetTemplate(templateId);
-    if (!template) return;
-  
-    const filtered = template.variables.filter(
-      (v, i, arr) => arr.findIndex(x => x.variableName === v.variableName) === i
-    );
-  
-    templateVariables.value = mapTemplateVariablesWithEnum(filtered);
-    previewHtml.value = template.contentHtml;
-    resetVariableValues(filtered);
-    await fillSystemValues(filtered);
-  }
+  selectedTemplateId.value = templateId;
+  const template = await loadAndGetTemplate(templateId);
+  if (!template) return;
+
+  const usedVariableNames = extractUsedVariableNames(template.contentHtml)
+
+  const filtered = template.variables.filter(
+    (v, i, arr) =>
+      usedVariableNames.includes(v.variableName) && 
+      arr.findIndex(x => x.variableName === v.variableName) === i
+  )
+
+  templateVariables.value = mapTemplateVariablesWithEnum(filtered);
+  previewHtml.value = template.contentHtml;
+  resetVariableValues(filtered);
+  await fillSystemValues(filtered);
+}
+
   
   async function loadAndGetTemplate(templateId: string) {
     await contractTemplateStore.fetchTemplate(templateId);
@@ -276,6 +283,7 @@
     const payload = {
       templateId: selectedTemplateId.value,
       clientId: selectedClientId.value!,
+      status: CONTRACT_STATUS.DRAFT,
       issuedAt: new Date().toISOString(),
       validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
       variableValues: variablesValue.value.map(v => ({
@@ -284,6 +292,7 @@
       })),
       generatedHtml: previewHtml.value,
     };
+
   
     const contract = await contractStore.createContract(payload);
   
