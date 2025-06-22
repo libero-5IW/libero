@@ -1,8 +1,20 @@
-import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Put,
+} from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
-import { ValidateInvoiceOnCreatePipe } from './pipes/create-validate-invoice-variables.pipe';
+import { UpdateInvoiceDto } from './dto/update-invoice.dto';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ValidateInvoiceOnCreatePipe } from './pipes/create-validate-invoice-variables.pipe';
+import { ValidateInvoiceOnUpdatePipe } from './pipes/update-validate-invoice.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 
 @ApiBearerAuth()
@@ -12,38 +24,41 @@ export class InvoiceController {
   constructor(private readonly invoiceService: InvoiceService) {}
 
   @Post()
-  async createInvoice(
+  create(
+    @CurrentUser() user: JwtPayload,
     @Body(new ValidateInvoiceOnCreatePipe(new PrismaService()))
     createInvoiceDto: CreateInvoiceDto,
   ) {
-    return await this.invoiceService.createInvoiceFromTemplate(
-      createInvoiceDto,
-      createInvoiceDto.userId,
-    );
+    return this.invoiceService.create(user.userId, createInvoiceDto);
+  }
+
+  @Get()
+  findAll(@CurrentUser() user: JwtPayload) {
+    return this.invoiceService.findAll(user.userId);
   }
 
   @Get('next-number')
-  async getNextInvoiceNumber(@Query('userId') userId: string) {
-    return await this.invoiceService.getNextInvoiceNumber(userId);
+  getNextInvoiceNumber(@CurrentUser() user: JwtPayload) {
+    return this.invoiceService.getNextInvoiceNumber(user.userId);
   }
 
   @Get(':id')
-  async getInvoiceById(@Param('id') id: string) {
-    return await this.invoiceService.getInvoiceOrThrow(id);
+  findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.invoiceService.findOne(id, user.userId);
   }
 
-  // @Put(':id')
-  // update(
-  //   @Param('id') id: string,
-  //   @CurrentUser() user: JwtPayload,
-  //   @Body(new ValidateInvoiceOnUpdatePipe())
-  //   updateQuoteDto: UpdateInvoiceDto,
-  // ) {
-  //   return this.invoiceService.update(id, user.userId, updateQuoteDto);
-  // }
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+    @Body(new ValidateInvoiceOnUpdatePipe())
+    updateInvoiceDto: UpdateInvoiceDto,
+  ) {
+    return this.invoiceService.update(id, user.userId, updateInvoiceDto);
+  }
 
-  @Get()
-  async getAllInvoices() {
-    return await this.invoiceService.findAll();
+  @Delete(':id')
+  remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.invoiceService.remove(id, user.userId);
   }
 }

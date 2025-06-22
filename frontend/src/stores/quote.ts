@@ -37,16 +37,9 @@ export const useQuoteStore = defineStore('quote', () => {
   async function createQuote(payload: CreateQuote) {
     try {
       const { data } = await apiClient.post('/quotes', payload);
-      console.log(
-        'types avant parse:',
-        data.variableValues.map((v: any) => [typeof v.type, v.type])
-      );
-      console.log('data', data);
-      
       return QuoteSchema.parse(data);
     } catch (error) {
-       console.error('❌ Erreur de validation Zod:', error);
-      handleAxiosError(error, 'Erreur lors de la création de la devis.');
+      handleAxiosError(error, 'Erreur lors de la création du devis.');
     }
   }
 
@@ -67,8 +60,8 @@ export const useQuoteStore = defineStore('quote', () => {
       handleAxiosError(error, 'Erreur lors de la récupération du numéro de devis.');
       return null;
     }
-  }  
-  
+  }
+ 
   return {
     quotes,
     currentQuote,

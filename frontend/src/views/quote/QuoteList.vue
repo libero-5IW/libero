@@ -52,7 +52,7 @@ const showTemplateModal = ref(false);
 const quotes = computed(() => quoteStore.quotes);
 
 const headers: Header[] = [
-  { title: 'Devis numéro', value: 'number', sortable: true },
+  { title: 'Numéro', value: 'number', sortable: true },
   { title: 'Statut', value: 'status', sortable: true },
   { title: 'Date d\'émission', value: 'issuedAt', sortable: true },
   { title: 'Actions', value: 'actions', sortable: false },

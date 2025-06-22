@@ -246,7 +246,7 @@
   }
 
   function isSystemVariable(variable: VariableBase) {
-    return variable.id && variable.id === 'systemVariable'
+    return variable?.templateId === 'defaultTemplate'
   }
 
   function getVariablesInEditor(): string[] {

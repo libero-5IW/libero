@@ -18,6 +18,15 @@
             class="mb-6"
           />
 
+          <v-text-field
+            v-if="quoteNumberVariable"
+            :model-value="quoteNumberVariable.value"
+            :label="quoteNumberVariable.label || 'Numéro du devis'"
+            readonly
+            class="mb-4"
+            :style="{ pointerEvents: 'none', opacity: 0.6 }"
+          />
+
           <v-card flat class="mb-4 pa-4">
             <TemplateVariableSection
               title="Informations du Freelance"
@@ -86,9 +95,9 @@
   const templateVariables = ref<QuoteTemplateVariable[]>([]);
   const variablesValue = ref<VariableValue[]>([]);
   const previewHtml = ref<string>('');
-  const previewVariables = ref<Record<string, string>>({});
   const selectedClientId = defineModel<string>('selectedClientId');
   const { showToast } = useToastHandler();
+  const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
 
   const currentUser = computed(() => userStore.user);
   const currentTemplate = computed(() => quoteTemplateStore.currentTemplate);
@@ -102,7 +111,6 @@
       const templateId = selectedTemplateId.value || templateIdFromQuery;
 
       await clientStore.fetchAllClients();
-      console.log('clients', clients.value);
       
       if (!templateId) {
         showTemplateModal.value = true;
@@ -125,7 +133,6 @@
 
   async function fetchQuoteTemplates() {
     await quoteTemplateStore.fetchAllTemplates();
-
     return quoteTemplateStore.templates.map(template => ({
       id: template.id as string,
       name: template.name
@@ -136,15 +143,17 @@
     selectedTemplateId.value = templateId;
 
     const template = await loadAndGetTemplate(templateId);
-
     if (!template) return;
 
-    templateVariables.value = mapTemplateVariablesWithEnum(template.variables);
+    const filtered = template.variables.filter(
+      (v, i, arr) => arr.findIndex(x => x.variableName === v.variableName) === i
+    );
+
+    templateVariables.value = mapTemplateVariablesWithEnum(filtered);
     previewHtml.value = template.contentHtml;
 
-    resetVariableValues(template.variables);
-    fillSystemValues(template.variables);
-    fillPreview();
+    resetVariableValues(filtered);
+    await fillSystemValues(filtered);
   }
 
   async function loadAndGetTemplate(templateId: string) {
@@ -159,20 +168,33 @@
   }
 
   function resetVariableValues(variables: QuoteTemplateVariable[]) {
-    previewVariables.value = {};
+    const valueMap = new Map<string, string>(
+      variablesValue.value.map(v => [v.variableName, v.value])
+    );
+
     variablesValue.value = variables.map(v => ({
       variableName: v.variableName,
       label: v.label,
       type: v.type as VariableType,
       required: v.required,
-      value: '',
+      value: valueMap.get(v.variableName) ?? '',
       id: v.id,
       templateId: v.templateId,
     }));
   }
-
   
   async function fillSystemValues(variables: QuoteTemplateVariable[]) {
+
+    const today = new Date().toISOString().split('T')[0];
+    const validUntil = new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString().split('T')[0];
+
+    updateVariable('issue_date', today);
+    updateVariable('valid_until', validUntil);
+
+    updateVariable('payment_terms', 'Paiement sous 30 jours');
+    updateVariable('late_penalty', 'Pénalités de 10% après échéance');
+    updateVariable('tva_detail', 'TVA de 20% incluse');
+
     if (!currentUser.value?.id) {
       await userStore.fetchCurrentUser();
     }
@@ -191,13 +213,6 @@
     const v = variablesValue.value.find(v => v.variableName === name);
     if (v) v.value = newValue;
   }
-  
-  function fillPreview() {
-    templateVariables.value.forEach((v) => {
-      previewVariables.value[v.variableName] =
-        variablesValue.value.find(val => val.variableName === v.variableName)?.value || `<em class="text-gray-500">${v.label}</em>`;
-    });
-  }
 
   const canCreate = computed(() => {
     const hasTemplate = !!selectedTemplateId.value;
@@ -210,6 +225,14 @@
     return hasTemplate && hasClient && hasUser && allRequiredFilled;
   });
 
+  const previewVariables = computed(() => {
+    const result: Record<string, string> = {};
+    variablesValue.value.forEach(v => {
+      result[v.variableName] = v.value || `<em class="text-gray-500">${v.label}</em>`;
+    });
+    return result;
+  });
+
   const orderedTemplateVariables = computed(() => {
     return [...templateVariables.value].sort((a, b) => {
       const indexA = previewHtml.value.indexOf(`{{${a.variableName}}}`);
@@ -217,6 +240,10 @@
       return indexA - indexB;
     });
   });
+
+  const quoteNumberVariable = computed(() =>
+  variablesValue.value.find((v) => v.variableName === 'quote_number')
+  );
 
   const freelancerVariables = computed(() =>
     orderedTemplateVariables.value.filter((v) =>
@@ -234,8 +261,7 @@
     orderedTemplateVariables.value.filter(
       (v) =>
         !v.variableName.startsWith('freelancer_') &&
-        !v.variableName.startsWith('client_') &&
-        v.variableName !== 'quote_number'
+        !v.variableName.startsWith('client_')
     )
   );
 
@@ -261,12 +287,18 @@
     const payload = {
       templateId: selectedTemplateId.value,
       clientId: selectedClientId.value!,
-      validUntil: new Date().toISOString(),
-      variableValues: variablesValue.value.map(v => ({
+      issuedAt: new Date().toISOString(), 
+      validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
+      variableValues: variablesValue.value
+      .map(v => ({
         variableName: v.variableName,
         value: v.value,
       })),
-      generatedHtml: generateHtmlFromTemplate(previewHtml.value, Object.fromEntries(variablesValue.value.map(v => [v.variableName, v.value]))),
+      generatedHtml: previewHtml.value,
+      variables: Object.fromEntries(
+        variablesValue.value
+          .map(v => [v.variableName, v.value])
+      ),
     };
 
     const quote = await quoteStore.createQuote(payload);
@@ -280,15 +312,6 @@
         },
       });
     }
-  }
-
-  function generateHtmlFromTemplate(templateHtml: string, vars: Record<string, string>): string {
-    let html = templateHtml;
-    for (const [key, value] of Object.entries(vars)) {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      html = html.replace(regex, value);
-    }
-    return html;
   }
 
   watch(selectedClientId, (newClientId) => {

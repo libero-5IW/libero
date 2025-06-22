@@ -7,9 +7,17 @@
   
         <v-card-text>
           <v-select
+            v-model="selectedType"
+            :items="typeOptions"
+            label="Type de modèle"
+            class="mb-4"
+          />
+
+          <v-select
+            v-if="selectedType"
             v-model="selectedTemplateId"
             :items="templateOptions"
-            label="Modèle de devis, contrat et facture"
+            label="Modèle"
             item-title="name"
             item-value="id"
             class="mb-4"
@@ -22,7 +30,8 @@
               v-for="v in availableVariables"
               :key="v.variableName"
               v-model="selectedVariables"
-              :label="`${v.label} ({{${v.variableName}}})`"
+              :label="`${v.label} (${v.variableName})`"
+
               :value="v"
             />
           </div>
@@ -45,8 +54,16 @@
 <script setup lang="ts" generic="V extends VariableBase, T extends TemplateBase<V>">
     import { computed, ref, toRef, watch } from 'vue'
     import type { TemplateBase, VariableBase } from '@/types';
-    import type { QuoteTemplate, QuoteTemplateVariable } from '@/schemas/quoteTemplate.schema'
-    
+    import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate'
+    import { useContractTemplateStore } from '@/stores/contractTemplate'
+    import { useQuoteTemplateStore } from '@/stores/quoteTemplate'
+
+    const selectedType = ref<'invoice' | 'contract' | 'quote' | ''>('');
+    const typeOptions = ['invoice', 'contract', 'quote'];
+    const templateOptions = ref<{ id: string; name: string; variables: V[] }[]>([])
+    const contractTemplateStore = useContractTemplateStore()
+    const quoteTemplateStore = useQuoteTemplateStore()
+
     const props = defineProps<{
       modelValue: boolean
       templates: T[]
@@ -57,17 +74,17 @@
       (e: 'import', variables: V[]): void
     }>()
     
-    const selectedTemplateId = ref<string>('')
-    const selectedVariables = ref<V[]>([])
-    const templateOptions = computed(() => props.templates as { id: string; name: string }[])
+      const selectedVariables = ref<V[]>([])
     
     const model = computed({
       get: () => props.modelValue,
       set: (value) => emit('update:modelValue', value),
     })
 
+    const selectedTemplateId = ref<string | null>(null)
+    
     const selectedTemplate = computed(() =>
-      props.templates.find((template) => template.id === selectedTemplateId.value)
+    templateOptions.value.find(t => t.id === selectedTemplateId.value) || null
     )
 
     const availableVariables = computed(() => selectedTemplate.value?.variables || [])
@@ -87,5 +104,26 @@
       emit('import', selectedVariables.value as V[])
       close()
     }
+
+    const invoiceTemplateStore = useInvoiceTemplateStore()
+
+    watch(selectedType, async (type) => {
+      selectedTemplateId.value = ''
+      selectedVariables.value = []
+
+      if (!type) return
+
+      if (type === 'invoice') {
+        await invoiceTemplateStore.fetchAllTemplates()
+        templateOptions.value = invoiceTemplateStore.templates as T[]
+      } else if (type === 'contract') {
+        await contractTemplateStore.fetchAllTemplates()
+        templateOptions.value = contractTemplateStore.templates as T[]
+      } else if (type === 'quote') {
+        await quoteTemplateStore.fetchAllTemplates()
+        templateOptions.value = quoteTemplateStore.templates as T[]
+      }
+    })
+
 </script>
   

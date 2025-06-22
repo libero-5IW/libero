@@ -92,16 +92,16 @@ export class ValidateTemplateVariablesPipe<
       ...variables.filter((v) => v.required).map((v) => v.variableName),
       ...systemVariables.filter((v) => v.required).map((v) => v.variableName),
     ];
-
-    const variableNamesInHtml = extractVariablesFromHtml(contentHtml);
+  
     const missingVariables = requiredVariables.filter(
-      (name) => !variableNamesInHtml.includes(name),
+      (name) => !new RegExp(`{{\\s*${name}\\s*}}`).test(contentHtml),
     );
-
+  
     if (missingVariables.length) {
       throw new BadRequestException(
         `Le contenu HTML ne contient pas les variables requises suivantes : ${missingVariables.join(', ')}`,
       );
     }
   }
+
 }

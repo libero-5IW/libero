@@ -1,48 +1,51 @@
 <template>
-  <v-container fluid>
-    <v-row dense>
+  <v-card flat class="mb-4">
+    <EditableHeader v-model="template.name" back-route-name="InvoiceTemplateList" />
+  </v-card>
 
+  <v-container fluid>
+    <v-row>
       <v-col cols="12" md="8">
         <InvoiceTemplateFormMain
           :template="template"
           :isEdit="isEdit"
-          @editor-ready="setEditor"
           :onSave="saveTemplate"
+          :variables="template.variables"
+          @editor-ready="setEditor"
+          @openEditModal="openEditModal"
+          @openRemoveModal="removeVariable"
+          @openImportModal="showImportModal = true"
+          @openVariableFormModal="openCreateModal"
         />
       </v-col>
 
       <v-col cols="12" md="4">
-        <QuoteTemplateSidebar
-          :variables="template.variables"
-          @openEditModal="openEditModal"
-          @openRemoveModal="removeVariable" 
-          @openImportModal="showImportModal = true"
-          @openVariableFormModal="openCreateModal"
-          @addVariableToEditor="insertVariableInEditor"
-        />
-
-        <v-divider class="mt-8 mb-8" />
-
-        <QuoteTemplatePreview
-          :contentHtml="template.contentHtml"
-          :variables="getLabelVariables(template.variables)"
-          fileName="facture"
-        />
+        <v-card flat class="sticky-preview" :class="{ 'fullscreen-preview': isPreviewFullscreen }">
+          <InvoiceTemplatePreview
+            :contentHtml="template.contentHtml"
+            :variables="getLabelVariables(template.variables)"
+            fileName="facture"
+          />
+          <div class="d-flex justify-center pa-2">
+            <v-btn icon @click="togglePreviewFullscreen">
+              <v-icon>{{ isPreviewFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}</v-icon>
+            </v-btn>
+          </div>
+        </v-card>
       </v-col>
-
     </v-row>
 
     <ImportVariableModal
       v-model="showImportModal"
       :templates="otherTemplates"
-      @import="addImportedVariables"
+      @import="handleImportVariables"
     />
 
     <VariableFormModal
       v-model="showVariableForm"
       :current-variable="currentVariable"
       :original-variable-name="originalVariableName"
-      :existing-variable-names="template.variables.map(variable => variable.variableName)"
+      :existing-variable-names="template.variables.filter(v => !v.templateId).map(v => v.variableName)"
       :mode="variableMode"
       @submit="handleVariableSubmit"
     />
@@ -52,23 +55,22 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import router from '@/routes'
-import type { Editor } from '@tiptap/vue-3'
 import { useRoute } from 'vue-router'
+import type { Editor } from '@tiptap/vue-3'
 
+import EditableHeader from '@/components/TemplateEditor/EditableHeader.vue'
 import InvoiceTemplateFormMain from '@/components/InvoiceTemplate/InvoiceTemplateFormMain.vue'
-import QuoteTemplateSidebar from '@/components/TemplateEditor/Sidebar.vue'
-import QuoteTemplatePreview from '@/components/ui/PreviewPdf.vue'
+import InvoiceTemplatePreview from '@/components/ui/PreviewPdf.vue'
 import ImportVariableModal from '@/components/TemplateEditor/variable/VariableImportModal.vue'
 import VariableFormModal from '@/components/TemplateEditor/variable/VariableFormModal.vue'
 
-import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema'
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate'
+import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema'
 import type { VariableType } from '@/types'
-
-const route = useRoute()
-const invoiceTemplate = useInvoiceTemplateStore()
-const templateId = ref<string | null>(null)
-const isEdit = ref(false)
+import {
+  replaceBracketsWithChips,
+  replaceChipsWithBrackets
+} from '@/composables/useTemplateVariableParser'
 
 const template = reactive({
   id: '',
@@ -76,6 +78,12 @@ const template = reactive({
   contentHtml: '',
   variables: [] as InvoiceTemplateVariable[]
 })
+
+const route = useRoute()
+const invoiceTemplate = useInvoiceTemplateStore()
+const templateId = ref<string | null>(null)
+const isEdit = ref(false)
+const isPreviewFullscreen = ref(false)
 
 const currentVariable = ref<InvoiceTemplateVariable>({
   variableName: '',
@@ -96,21 +104,30 @@ onMounted(async () => {
   templateId.value = Array.isArray(idParam) ? idParam[0] : idParam || ''
   isEdit.value = !!templateId.value
 
-  isEdit.value
-    ? await invoiceTemplate.fetchTemplate(templateId.value)
-    : await invoiceTemplate.fetchDefaultTemplate()
-
-  const data = invoiceTemplate.currentTemplate ||  invoiceTemplate.defaultTemplate
-
-  if (data) {
-    Object.assign(template, {
-      id: data.id,
-      name: data.name,
-      contentHtml: data.contentHtml,
-      variables: data.variables,
-    })
+  if (isEdit.value) {
+    await invoiceTemplate.fetchTemplate(templateId.value)
+  } else {
+    await invoiceTemplate.fetchDefaultTemplate()
   }
+
+  const data = isEdit.value
+    ? invoiceTemplate.currentTemplate
+    : invoiceTemplate.defaultTemplate
+
+    if (data) {
+      Object.assign(template, {
+        id: data.id,
+        name: data.name,
+        contentHtml: replaceBracketsWithChips(data.contentHtml, data.variables),
+        variables: [...(data.variables || []).map(v => ({ ...v }))]
+      })
+    }
+
 })
+
+function togglePreviewFullscreen() {
+  isPreviewFullscreen.value = !isPreviewFullscreen.value
+}
 
 function setEditor(editorInstance: Editor) {
   editorRef.value = editorInstance
@@ -135,25 +152,29 @@ function openCreateModal() {
 }
 
 function removeVariable(index: number) {
-  template.variables.splice(index, 1)
+  const removedVar = template.variables[index]?.variableName
+  const dom = new DOMParser().parseFromString(template.contentHtml, 'text/html')
+  const chips = dom.querySelectorAll(`span[data-type="variable"][data-variable-name="${removedVar}"]`)
+
+  chips.forEach(chip => {
+    chip.replaceWith('')
+  })
+
+  template.contentHtml = dom.body.innerHTML;
+
+  template.variables = template.variables.filter((_, i) => i !== index);
 }
 
-function addImportedVariables(vars: InvoiceTemplateVariable[]) {
-  const existingNames = new Set(template.variables.map(variable => variable.variableName))
-  const toAdd = vars.filter(variable => !existingNames.has(variable.variableName))
+function handleImportVariables(vars: InvoiceTemplateVariable[]) {
+  const existingNames = new Set(template.variables.map(v => v.variableName))
+  const toAdd = vars.filter(v => !existingNames.has(v.variableName))
+
   template.variables.push(...toAdd)
-}
-
-function insertVariableInEditor(index: number) {
-  const variable = template.variables[index]
-  if (editorRef.value && variable) {
-    editorRef.value.commands.insertContent(`{{${variable.variableName}}}`)
-  }
 }
 
 function getLabelVariables(vars: InvoiceTemplateVariable[]) {
   const result: Record<string, string> = {}
-  vars.forEach((v) => {
+  vars.forEach(v => {
     result[v.variableName] = `<em class="text-gray-500">${v.label}</em>`
   })
   return result
@@ -161,40 +182,44 @@ function getLabelVariables(vars: InvoiceTemplateVariable[]) {
 
 async function saveTemplate() {
   try {
-    const templateData = {
+    const payload = {
       name: template.name,
-      contentHtml: template.contentHtml,
-      variables: template.variables,
+      contentHtml: replaceChipsWithBrackets(template.contentHtml ?? ''),
+      variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
     }
 
-    const response = templateId.value 
-      ? await invoiceTemplate.updateTemplate(templateId.value, templateData)
-      : await invoiceTemplate.createTemplate(templateData)
+    const response = templateId.value
+      ? await invoiceTemplate.updateTemplate(templateId.value, payload)
+      : await invoiceTemplate.createTemplate(payload)
 
     if (response) {
       router.push({
         path: '/invoice-template',
-        state: { toastStatus : 'success', toastMessage: `Le template ${response?.name} a bien été sauvegardé.` }
-      });
+        state: {
+          toastStatus: 'success',
+          toastMessage: `Le template ${response.name} a bien été sauvegardé.`
+        }
+      })
     }
-
   } catch (error) {
     console.error('Erreur de sauvegarde :', error)
   }
 }
 
-function handleVariableSubmit(variable: InvoiceTemplateVariable) {
-  const index = template.variables.findIndex(
-    v => v.variableName === (variableMode.value === 'edit' ? originalVariableName.value : variable.variableName)
+
+async function handleVariableSubmit(variable: InvoiceTemplateVariable) {
+  const index = template.variables.findIndex(v =>
+    v.variableName === (variableMode.value === 'edit' ? originalVariableName.value : variable.variableName)
   )
 
   if (variableMode.value === 'edit') {
     if (index !== -1) {
-      template.variables[index] = variable  
+      template.variables[index] = variable
     }
   } else {
     template.variables.push(variable)
   }
   showVariableForm.value = false
 }
+
 </script>

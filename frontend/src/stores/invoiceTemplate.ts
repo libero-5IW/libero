@@ -19,8 +19,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       })
       templates.value = data.map((item: InvoiceTemplate) => InvoiceTemplateSchema.parse(item))
     } catch (error) {
-      console.error('error', error)
-      templates.value = [];
+      templates.value = []
       handleAxiosError(error, 'Erreur lors de la récupération des templates.')
     } finally {
       isLoading.value = false
@@ -33,7 +32,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       const { data } = await apiClient.get(`/invoice-templates/${id}`)
       currentTemplate.value = InvoiceTemplateSchema.parse(data)
     } catch (error) {
-      currentTemplate.value = null;
+      currentTemplate.value = null
       handleAxiosError(error, 'Erreur lors de la récupération du template.')
     } finally {
       isLoading.value = false
@@ -43,11 +42,8 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   async function fetchDefaultTemplate() {
     try {
       const { data } = await apiClient.get('/invoice-templates/default-template')
-      const parsed = InvoiceTemplateSchema.parse(data)
-      defaultTemplate.value = parsed
-      return parsed 
+      defaultTemplate.value = InvoiceTemplateSchema.parse(data)
     } catch (error) {
-      console.error('error', error)
       handleAxiosError(error, 'Erreur lors de la récupération du template par défaut.')
     }
   }
@@ -58,12 +54,11 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       const { data } = await apiClient.post('/invoice-templates', cleanedPayload)
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
-      console.error('error', error)
       handleAxiosError(error, 'Erreur lors de la création du template.')
     }
   }
-
-  async function updateTemplate(id: string, payload: Partial<CreateInvoiceTemplate>) {
+  
+  async function updateTemplate(id: string, payload: Partial<InvoiceTemplate>) {
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.patch(`/invoice-templates/${id}`, cleanedPayload)
@@ -71,7 +66,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la mise à jour du template.')
     }
-  }
+  }    
 
   async function deleteTemplate(id: string) {
     try {
@@ -94,6 +89,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   return {
     templates,
     currentTemplate,
+    defaultTemplate,
     isLoading,
     fetchAllTemplates,
     fetchTemplate,
@@ -102,6 +98,5 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
     updateTemplate,
     deleteTemplate,
     duplicateTemplate,
-    defaultTemplate,
   }
 })

@@ -7,15 +7,15 @@ export class InvoiceTemplateVariableEntity {
   @Expose()
   id: string;
 
-  @ApiProperty({ example: 'e29a7ef2-9a01-4c3a-8b1f-fb1a74351d6f' })
+  @ApiProperty({ example: 'd8cf1d4a-9fa4-4560-b77f-15439a001f5b' })
   @Expose()
   templateId: string;
 
-  @ApiProperty({ example: 'invoice_number' })
+  @ApiProperty({ example: 'number_of_days' })
   @Expose()
   variableName: string;
 
-  @ApiProperty({ example: 'Numéro de facture' })
+  @ApiProperty({ example: 'Nombre de jours travaillés' })
   @Expose()
   label: string;
 
@@ -28,7 +28,7 @@ export class InvoiceTemplateVariableEntity {
   @Expose()
   type: string;
 
-  @ApiProperty({ example: true })
+  @ApiProperty({ example: false })
   @Expose()
   required: boolean;
 }

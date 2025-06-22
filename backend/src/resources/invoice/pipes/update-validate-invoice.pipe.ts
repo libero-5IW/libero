@@ -17,12 +17,14 @@ export class ValidateInvoiceOnUpdatePipe<
 
       if (
         required &&
+        variableName !== 'invoice_number' &&
         (rawValue === undefined || rawValue === null || rawValue === '')
       ) {
         throw new BadRequestException(
           `La variable requise "${variableName}" est manquante ou vide.`,
         );
       }
+      
 
       if (rawValue !== undefined && rawValue !== null && rawValue !== '') {
         const isValid = this.validateValueType(rawValue, type, variableName);

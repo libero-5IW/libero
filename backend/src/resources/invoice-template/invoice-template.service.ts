@@ -49,9 +49,9 @@ export class InvoiceTemplateService {
       },
     });
 
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
+    const mergedTemplate = this.mergeWithSystemVariables(template);
 
-    return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
+    return plainToInstance(InvoiceTemplateEntity, mergedTemplate);
   }
 
   async findAll(
@@ -66,7 +66,6 @@ export class InvoiceTemplateService {
       where: whereClause,
       include: { variables: true },
     });
-
     const templatesWithSystemVariables = await Promise.all(
       templates.map((t) => this.mergeWithSystemVariables(t)),
     );
@@ -90,11 +89,11 @@ export class InvoiceTemplateService {
     await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
-      if (variables?.length) {
-        await tx.invoiceTemplateVariable.deleteMany({
-          where: { templateId: id },
-        });
+      await tx.invoiceTemplateVariable.deleteMany({
+        where: { templateId: id },
+      });
 
+      if (variables?.length > 0) {
         await tx.invoiceTemplateVariable.createMany({
           data: this.mapVariableData(variables).map((variable) => ({
             templateId: id,
@@ -165,13 +164,16 @@ export class InvoiceTemplateService {
     });
   }
 
-  private async getTemplateOrThrow(
+  async getTemplateOrThrow(
     id: string,
     userId: string,
     options?: { allowDefaultTemplate?: boolean },
   ) {
-    const template = await this.prisma.invoiceTemplate.findUnique({
-      where: { id, userId },
+    const template = await this.prisma.invoiceTemplate.findFirst({
+      where: {
+        id,
+        OR: [{ userId }, { userId: null }],
+      },
       include: { variables: true },
     });
 
@@ -186,6 +188,7 @@ export class InvoiceTemplateService {
   }
 
   private mapVariableData(variables: InvoiceTemplateVariableDto[]) {
+
     return variables.map((v) => ({
       variableName: v.variableName,
       label: v.label,

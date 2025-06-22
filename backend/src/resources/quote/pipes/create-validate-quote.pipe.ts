@@ -64,7 +64,8 @@ export class ValidateQuoteOnCreatePipe<
       const { variableName, required, type } = variable;
       const rawValue = valueMap.get(variableName);
 
-      if (required && this.isEmpty(rawValue)) {
+      if (required && this.isEmpty(rawValue))        
+      {
         throw new BadRequestException(
           `La variable requise "${variableName}" est manquante ou vide.`,
         );
