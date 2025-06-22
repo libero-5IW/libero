@@ -21,6 +21,7 @@ async function main() {
   await seedDefaultQuoteTemplate(prisma);
   await seedDefaultContractTemplate(prisma);
   await seedDefaultInvoiceTemplate(prisma);
+  await seedClients(prisma, user.id);
 
   console.log('\nSeeding terminé avec succès !');
 }
