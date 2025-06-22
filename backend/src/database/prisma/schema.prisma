@@ -181,9 +181,6 @@ model Invoice {
   quote           Quote?   @relation("QuoteToInvoice", fields: [quoteId], references: [id], onDelete: SetNull)
   contract        Contract?
 
-
-
-
   @@unique([userId, number])
 }
 

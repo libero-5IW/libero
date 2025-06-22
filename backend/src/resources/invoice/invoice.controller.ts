@@ -38,8 +38,8 @@ export class InvoiceController {
   }
 
   @Get('next-number')
-  async getNextInvoiceNumber(@CurrentUser() user: JwtPayload) {
-    return await this.invoiceService.getNextInvoiceNumber(user.userId);
+  getNextInvoiceNumber(@CurrentUser() user: JwtPayload) {
+    return this.invoiceService.getNextInvoiceNumber(user.userId);
   }
 
   @Get(':id')

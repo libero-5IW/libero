@@ -52,6 +52,7 @@ import { useClientStore } from '@/stores/client';
 import { useUserStore } from '@/stores/user';
 import TemplateVariableSection from '@/components/DocumentForm/TemplateVariableSection.vue';
 import type { VariableValue } from '@/types';
+import type { CreateQuote } from '@/schemas/quote.schema';
 
 
 const props = defineProps<{
@@ -74,19 +75,17 @@ const currentUser = computed(() => userStore.user);
 const clients = computed(() => clientStore.clients);
 
 async function onCreateQuote() {
-  const payload = {
-    templateId: props.templateId,
-    clientId: selectedClientId.value,
-    userId: currentUser.value?.id,
-    issuedAt: new Date().toISOString(),
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    variableValues: variablesValue.value.map(v => ({
-      variableName: v.variableName,
-      value: v.value,
-    })),
-    variables: Object.fromEntries(
-      variablesValue.value.map(v => [v.variableName, v.value])
-    ),
+
+  const payload: CreateQuote = {
+  templateId: props.templateId,
+  clientId: selectedClientId.value,
+  issuedAt: new Date().toISOString(),
+  validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  generatedHtml: '', 
+  variableValues: variablesValue.value.map(v => ({
+    variableName: v.variableName,
+    value: v.value,
+  })),
   };
 
   const quote = await quoteStore.createQuote(payload);

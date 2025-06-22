@@ -34,14 +34,14 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
-  async function createQuote(payload: any) {
+  async function createQuote(payload: CreateQuote) {
     try {
       const { data } = await apiClient.post('/quotes', payload);
       return QuoteSchema.parse(data);
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la création du devis.');
     }
-  }  
+  }
 
   async function deleteQuote(id: string) {
     try {
@@ -52,18 +52,16 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
-  async function fetchNextQuoteNumber(userId: string) {
+  async function fetchNextQuoteNumber() {
     try {
-      const { data } = await apiClient.get('/quotes/next-number', {
-        params: { userId },
-      });
+      const { data } = await apiClient.get('/quotes/next-number');
       return data;
     } catch (error) {
       handleAxiosError(error, 'Erreur lors de la récupération du numéro de devis.');
       return null;
     }
-  }  
-  
+  }
+ 
   return {
     quotes,
     currentQuote,

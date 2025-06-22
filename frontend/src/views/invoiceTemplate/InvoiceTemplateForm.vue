@@ -155,7 +155,6 @@ function removeVariable(index: number) {
   const removedVar = template.variables[index]?.variableName
   const dom = new DOMParser().parseFromString(template.contentHtml, 'text/html')
   const chips = dom.querySelectorAll(`span[data-type="variable"][data-variable-name="${removedVar}"]`)
-console.log('chips', chips);
 
   chips.forEach(chip => {
     chip.replaceWith('')
