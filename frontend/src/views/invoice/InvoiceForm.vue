@@ -291,7 +291,6 @@ async function onCreateInvoice() {
   const payload = {
     templateId: selectedTemplateId.value,
     clientId: selectedClientId.value!,
-    userId: user.id,
     status: INVOICE_STATUS.DRAFT,
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
