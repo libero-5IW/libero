@@ -72,7 +72,7 @@ export class ClientService {
       const clientWithSameEmail = await this.prisma.client.findUnique({
         where: {
           userId_email: {
-            userId: updateClientDto.userId,
+            userId,
             email: updateClientDto.email,
           },
         },
@@ -87,7 +87,10 @@ export class ClientService {
 
     const updatedClient = await this.prisma.client.update({
       where: { id },
-      data: updateClientDto,
+      data: {
+        ...updateClientDto,
+        userId
+      },
     });
 
     return plainToInstance(ClientEntity, updatedClient);

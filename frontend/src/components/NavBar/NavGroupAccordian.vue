@@ -1,34 +1,34 @@
 <template>
-  <v-list-group value="dashboard">
-    <template v-slot:activator="{ props, isActive }">
+  <v-list-group :value="groupValue">
+    <template v-slot:activator="{ props, isOpen }">
       <v-list-item
         v-bind="props"
         :class="{
-          'bg-secondary-light': true,
-          'border-r-4 border-primary': true,
-          'text-primary': isActive
+          'bg-secondary-light': isOpen,
+          'border-r-4 border-primary': isOpen,
+          'text-primary': isOpen
         }"
       >
         <template v-slot:prepend>
           <v-icon
-            icon="mdi-view-dashboard"
+            :icon="mainIcon"
             color="primary"
             :class="{ 'text-primary': isActive }"
           />
         </template>
-        <v-list-item-title class="text-primary">Dashboard</v-list-item-title>
+        <v-list-item-title class="text-primary">{{ mainTitle }}</v-list-item-title>
       </v-list-item>
     </template>
 
     <!-- Container for the continuous line -->
-    <div class="timeline-container" ref="timelineContainer">
-      <svg class="timeline-line" :style="{ height: `${lineHeight}px` }">
+    <div class="absolute left-4 w-6 z-0" ref="timelineContainer">
+      <svg class="absolute top-0 w-full" :style="{ height: `${lineHeight}px` }">
         <line 
           x1="12" 
           y1="24" 
           x2="12" 
           :y2="lineHeight - 24" 
-          class="connecting-line" 
+          class="stroke-[2] stroke-[rgb(var(--v-theme-text-secondary-light))]" 
         />
       </svg>
     </div>
@@ -39,25 +39,25 @@
         v-for="(item, i) in items"
         :key="i"
         :to="item.to"
-        :value="item.title"
-        class="mx-1 my-2"
+        :value="item.to"
+        class="mx-1 my-2 "
         :class="{
-          'item-active-bg': $route.path === item.to
+          'bg-[rgba(var(--v-theme-text-secondary-light),_0.12)]': route.path === item.to
         }"
       >
         <template v-slot:prepend>
-          <div class="dot-container">
+          <div class="relative w-6 h-12 mr-3 -mt-2 -mb-2 z-[1]">
             <svg width="24" height="48">
               <circle cx="12" cy="24" r="4" :class="{
-                'dot': true,
-                'dot-active': $route.path === item.to
+                'fill-[rgb(var(--v-theme-primary))]': route.path === item.to,
+                'fill-[rgb(var(--v-theme-text-secondary-light))]': route.path !== item.to
               }" />
             </svg>
           </div>
         </template>
         <v-list-item-title :class="{
-          'text-primary': $route.path === item.to,
-          'text-text-secondary': $route.path !== item.to
+          'text-primary': route.path === item.to,
+          'text-text-secondary': route.path !== item.to
         }">{{ item.title }}</v-list-item-title>
       </v-list-item>
     </div>
@@ -65,25 +65,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, computed } from 'vue'
+import { useRoute } from 'vue-router'
 
-const items = [
-  {
-    title: 'Overview',
-    to: '/dashboard',
-    icon: 'mdi-chart-box'
-  },
-  {
-    title: 'Quote',
-    to: '/quote-template',
-    icon: 'mdi-chart-line'
-  },
-  {
-    title: 'Reports',
-    to: '/dashboard/reports',
-    icon: 'mdi-file-chart'
-  }
-]
+interface NavigationItem {
+  title: string
+  to: string
+  icon?: string
+}
+
+interface Props {
+  groupValue: string
+  mainTitle: string
+  mainIcon: string
+  items: NavigationItem[]
+}
+
+const route = useRoute()
+const isActive = computed(() =>
+  props.items.some((item) => route.path === item.to)
+)
+
+const props = withDefaults(defineProps<Props>(), {
+  groupValue: 'navigation',
+  mainIcon: 'mdi-menu',
+  items: () => []
+})
 
 const itemsContainer = ref<HTMLElement | null>(null)
 const lineHeight = ref(0)
@@ -95,11 +102,9 @@ const updateLineHeight = () => {
 }
 
 onMounted(async () => {
-  // Wait for the next tick to ensure items are rendered
   await nextTick()
   updateLineHeight()
   
-  // Add resize observer to handle any dynamic changes
   const resizeObserver = new ResizeObserver(updateLineHeight)
   if (itemsContainer.value) {
     resizeObserver.observe(itemsContainer.value)
@@ -108,49 +113,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.timeline-container {
-  position: absolute;
-  left: 16px;
-  width: 24px;
-  z-index: 0;
-}
-
-.timeline-line {
-  width: 100%;
-  position: absolute;
-  top: 0;
-}
-
-.dot-container {
-  width: 24px;
-  height: 48px;
-  position: relative;
-  margin-right: 12px;
-  margin-top: -8px;
-  margin-bottom: -8px;
-  z-index: 1;
-}
-
-.connecting-line {
-  stroke: rgb(var(--v-theme-text-secondary-light));
-  stroke-width: 2;
-}
-
-.dot {
-  fill: rgb(var(--v-theme-text-secondary-light));
-  transition: fill 0.2s ease;
-}
-
-.dot-active {
-  fill: rgb(var(--v-theme-primary));
-}
-
-.item-active-bg {
-  background-color: rgba(var(--v-theme-text-secondary-light), 0.12) !important;
-}
-
 /* Remove default padding from list group items */
 :deep(.v-list-group__items) .v-list-item {
   padding-left: 12px !important;
 }
-</style> 
+</style>
