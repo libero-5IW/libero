@@ -94,6 +94,7 @@ const variablesValue = ref<VariableValue[]>([]);
 const currentUser = computed(() => userStore.user);
 const currentTemplate = computed(() => invoiceTemplateStore.currentTemplate);
 const clients = computed(() => clientStore.clients);
+const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
 
 onMounted(initialize);
 
@@ -182,7 +183,7 @@ async function fillSystemValues(variables: InvoiceTemplateVariable[]) {
   if (!user) return;
 
   if (variables.some(v => v.variableName === 'invoice_number')) {
-    const nextNumber = await invoiceStore.fetchNextInvoiceNumber(user.id);
+    const nextNumber = await invoiceStore.fetchNextInvoiceNumber();
     if (nextNumber) updateVariable('invoice_number', `${nextNumber}`);
   }
 
@@ -191,7 +192,8 @@ async function fillSystemValues(variables: InvoiceTemplateVariable[]) {
   updateVariable('freelancer_siret', user.siret ?? '');
 
   const today = new Date().toISOString().split('T')[0];
-  const due = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+  const due = new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString().split('T')[0];
+
   updateVariable('issue_date', today);
   updateVariable('due_date', due);
 
@@ -268,8 +270,6 @@ async function onCreateInvoice() {
     !variablesValue.value.find(val => val.variableName === v.variableName)?.value
 );
 
-
-
   if (missingFields.length > 0) {
     showToast('error', `Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}`);
     return;
@@ -286,7 +286,7 @@ async function onCreateInvoice() {
     userId: user.id,
     status: INVOICE_STATUS.DRAFT,
     issuedAt: new Date().toISOString(),
-    dueDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+    dueDate: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
     variableValues: variablesValue.value
   .filter(v => v.variableName !== 'invoice_number')
   .map(v => ({
@@ -301,9 +301,6 @@ async function onCreateInvoice() {
     .map(v => [v.variableName, v.value])
 ),
   };
-
-  console.log('Payload envoyé à l’API :', payload);
-console.log('VariablesValue avant envoi :', variablesValue.value);
 
   const invoice = await invoiceStore.createInvoice(payload);
 

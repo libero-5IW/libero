@@ -13,9 +13,11 @@ async function main() {
 
   await seedUsers(prisma);
   const user = await prisma.user.findFirst();
-  if (!user) {
-    throw new Error("Aucun utilisateur trouvé pour le seeding des clients.");
+
+  if (!user) { 
+    await seedClients(prisma, user.id); 
   }
+  
   await seedDefaultQuoteTemplate(prisma);
   await seedDefaultContractTemplate(prisma);
   await seedDefaultInvoiceTemplate(prisma);

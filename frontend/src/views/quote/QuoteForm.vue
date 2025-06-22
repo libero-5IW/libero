@@ -89,6 +89,7 @@
   const previewVariables = ref<Record<string, string>>({});
   const selectedClientId = defineModel<string>('selectedClientId');
   const { showToast } = useToastHandler();
+  const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
 
   const currentUser = computed(() => userStore.user);
   const currentTemplate = computed(() => quoteTemplateStore.currentTemplate);
@@ -102,7 +103,6 @@
       const templateId = selectedTemplateId.value || templateIdFromQuery;
 
       await clientStore.fetchAllClients();
-      console.log('clients', clients.value);
       
       if (!templateId) {
         showTemplateModal.value = true;
@@ -125,7 +125,6 @@
 
   async function fetchQuoteTemplates() {
     await quoteTemplateStore.fetchAllTemplates();
-    console.log('TEMPLATES CHARGÉS:', quoteTemplateStore.templates);
     return quoteTemplateStore.templates.map(template => ({
       id: template.id as string,
       name: template.name
@@ -180,7 +179,7 @@
   async function fillSystemValues(variables: QuoteTemplateVariable[]) {
 
     const today = new Date().toISOString().split('T')[0];
-    const validUntil = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+    const validUntil = new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString().split('T')[0];
 
     updateVariable('issue_date', today);
     updateVariable('valid_until', validUntil);
@@ -194,7 +193,7 @@
     }
     
     if (variables.some((v) => v.variableName === 'quote_number')) {
-      const nextNumber = await quoteStore.fetchNextQuoteNumber(currentUser.value!.id);
+      const nextNumber = await quoteStore.fetchNextQuoteNumber();
       if (nextNumber) updateVariable('quote_number', `${nextNumber}`);
     }
     
@@ -279,7 +278,7 @@
       clientId: selectedClientId.value!,
       userId: currentUser.value.id, 
       issuedAt: new Date().toISOString(), 
-      validUntil: new Date(Date.now() + 30 * 86400000).toISOString(), 
+      validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
       variableValues: variablesValue.value
       .filter(v => v.variableName !== 'quote_number')
       .map(v => ({

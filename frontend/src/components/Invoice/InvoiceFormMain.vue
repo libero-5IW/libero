@@ -53,6 +53,7 @@ import { useClientStore } from '@/stores/client';
 import { useUserStore } from '@/stores/user';
 import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
 import type { VariableValue } from '@/types';
+import type { CreateInvoice } from '@/schemas/invoice.schema';
 
 const props = defineProps<{
   templateVariables: InvoiceTemplateVariable[];
@@ -102,19 +103,16 @@ const otherVariables = computed(() =>
 );
 
 async function onCreateInvoice() {
-  const payload = {
+  const payload: CreateInvoice = {
     templateId: props.templateId,
     clientId: selectedClientId.value,
-    userId: currentUser.value?.id,
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    generatedHtml: '', 
     variableValues: variablesValue.value.map(v => ({
       variableName: v.variableName,
       value: v.value,
     })),
-    variables: Object.fromEntries(
-      variablesValue.value.map(v => [v.variableName, v.value])
-    ),
   };
 
   const invoice = await invoiceStore.createInvoice(payload);

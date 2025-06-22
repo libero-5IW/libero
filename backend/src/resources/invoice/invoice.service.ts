@@ -87,34 +87,49 @@ export class InvoiceService {
   async update(id: string, userId: string, dto: UpdateInvoiceDto) {
     const { variableValues, ...otherData } = dto;
     const existing = await this.getInvoiceOrThrow(id, userId);
-
+  
     if (existing.status !== InvoiceStatus.draft) {
       throw new BadRequestException('Seules les factures en brouillon peuvent être modifiées.');
     }
-
-    for (const variable of variableValues ?? []) {
-      await this.prisma.invoiceVariableValue.update({
-        where: {
-          invoiceId_variableName: {
-            invoiceId: id,
-            variableName: variable.variableName,
-          },
-        },
-        data: { value: variable.value },
+  
+    const template = await this.invoiceTemplateService.findOne(existing.templateId, userId);
+  
+    const preparedVariables = this.mapVariableWithTemplateData(
+      variableValues ?? [],
+      template.variables,
+      existing.generatedHtml,
+    );
+  
+    const updatedInvoice = await this.prisma.$transaction(async (tx) => {
+      await tx.invoiceVariableValue.deleteMany({
+        where: { invoiceId: id },
       });
-    }
-
-    const updated = await this.prisma.invoice.update({
-      where: { id },
-      data: { ...otherData },
-      include: { variableValues: true },
+  
+      if (preparedVariables.length > 0) {
+        await tx.invoiceVariableValue.createMany({
+          data: preparedVariables.map((v) => ({
+            invoiceId: id,
+            variableName: v.variableName,
+            value: v.value,
+            label: v.label,
+            type: v.type,
+            required: v.required,
+          })),
+        });
+      }
+  
+      return tx.invoice.update({
+        where: { id },
+        data: { ...otherData },
+        include: { variableValues: true },
+      });
     });
-
-    return plainToInstance(InvoiceEntity, updated, {
+  
+    return plainToInstance(InvoiceEntity, updatedInvoice, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
-  }
+  }  
 
   async remove(id: string, userId: string) {
     await this.getInvoiceOrThrow(id, userId);
