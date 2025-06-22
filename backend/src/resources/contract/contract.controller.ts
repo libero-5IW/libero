@@ -3,45 +3,62 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
+  Put,
 } from '@nestjs/common';
 import { ContractService } from './contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ValidateContractOnCreatePipe } from './pipes/create-validate-contract-variables.pipe'
+import { ValidateContractOnUpdatePipe } from './pipes/update-validate-contract.pipe';
+import { PrismaService } from 'src/database/prisma/prisma.service';
 
 @ApiBearerAuth()
-@Controller('contract')
+@ApiTags('Contracts')
+@Controller('contracts')
 export class ContractController {
   constructor(private readonly contractService: ContractService) {}
 
   @Post()
-  create(@Body() createContractDto: CreateContractDto) {
-    return this.contractService.create(createContractDto);
+  create(
+    @CurrentUser() user: JwtPayload,
+    @Body(new ValidateContractOnCreatePipe(new PrismaService()))
+    createContractDto: CreateContractDto,
+  ) {
+    return this.contractService.create(user.userId, createContractDto);
   }
 
   @Get()
-  findAll() {
-    return this.contractService.findAll();
+  findAll(@CurrentUser() user: JwtPayload) {
+    return this.contractService.findAll(user.userId);
+  }
+
+  @Get('next-number')
+  getNextContractNumber(@CurrentUser() user: JwtPayload) {
+    return this.contractService.getNextContractNumber(user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.contractService.findOne(+id);
+  findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.contractService.findOne(id, user.userId);
   }
 
-  @Patch(':id')
+  @Put(':id')
   update(
     @Param('id') id: string,
-    @Body() updateContractDto: UpdateContractDto,
+    @CurrentUser() user: JwtPayload,
+    @Body(new ValidateContractOnUpdatePipe())
+    updateContractDto: UpdateContractDto,
   ) {
-    return this.contractService.update(+id, updateContractDto);
+    return this.contractService.update(id, user.userId, updateContractDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.contractService.remove(+id);
+  remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.contractService.remove(id, user.userId);
   }
 }
