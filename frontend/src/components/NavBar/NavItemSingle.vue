@@ -11,13 +11,13 @@
     <template v-slot:prepend>
       <v-icon
         :icon="icon"
-        :class="route.path === to ? 'text-primary' : 'text-text-secondary'"
+        :class="route.path === to ? 'text-primary' : 'text-secondary'"
       />
     </template>
     <v-list-item-title
       :class="{
         'text-primary': route.path === to,
-        'text-text-secondary': route.path !== to
+        'text-secondary': route.path !== to
       }"
     >
       {{ title }}
