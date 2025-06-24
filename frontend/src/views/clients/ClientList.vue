@@ -75,7 +75,4 @@ const removeClient = async (id: string) => {
   }
 }
 
-onMounted(async () => {
-  await fetchAllClients()
-})
 </script>

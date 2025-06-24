@@ -8,14 +8,14 @@
           </h2>
 
           <v-form @submit.prevent="onSubmit">
-            <v-text-field v-model="form.firstName" label="Prénom" required />
-            <v-text-field v-model="form.lastName" label="Nom" required />
+            <v-text-field v-model="form.firstName" label="Prénom" type="text" required />
+            <v-text-field v-model="form.lastName" label="Nom" type="text" required />
             <v-text-field v-model="form.email" label="Email" type="email" />
-            <v-text-field v-model="form.phoneNumber" label="Téléphone" />
-            <v-text-field v-model="form.addressLine" label="Adresse" />
-            <v-text-field v-model="form.postalCode" label="Code postal" />
-            <v-text-field v-model="form.city" label="Ville" />
-            <v-text-field v-model="form.country" label="Pays" />
+            <v-text-field v-model="form.phoneNumber" label="Téléphone" type="tel"/>
+            <v-text-field v-model="form.addressLine" label="Adresse" type="text" />
+            <v-text-field v-model="form.postalCode" label="Code postal" type="text" />
+            <v-text-field v-model="form.city" label="Ville" type="text" />
+            <v-text-field v-model="form.country" label="Pays" type="text" />
 
             <div class="d-flex justify-end mt-6">
               <v-btn text @click="cancel">Annuler</v-btn>
@@ -82,7 +82,7 @@ const onSubmit = async () => {
 
   await clientStore.fetchAllClients()
   router.push({
-    name: 'ClientTemplateList',
+    name: 'ClientList',
     state: {
       toastStatus: 'success',
       toastMessage: `Client ${form.firstName} ${form.lastName} ${isEdit.value ? 'modifié' : 'créé'} avec succès.`,
@@ -91,6 +91,6 @@ const onSubmit = async () => {
 }
 
 const cancel = () => {
-  router.push({ name: 'ClientTemplateList' })
+  router.push({ name: 'ClientList' })
 }
 </script>
