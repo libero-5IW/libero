@@ -52,15 +52,59 @@
 
   return html
   })
-  
-  function downloadPdf() {
-    if (!previewRef.value) return
-    loading.value = true
-    html2pdf()
-      .from(previewRef.value)
-      .set({ filename: fileName, html2canvas: { scale: 2 } })
-      .save()
-      .finally(() => (loading.value = false))
-  }
+
+  function getPdfOnlyStyle() {
+  return `
+    <style>
+      @page {
+        margin: 0;
+        size: A4;
+      }
+
+      body {
+        font-family: sans-serif;
+        font-size: 12px;
+        color: #333;
+      }
+
+      .pdf-page {
+        padding: 25mm 20mm;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  `
+}
+
+function downloadPdf() {
+  if (!previewRef.value) return
+  loading.value = true
+
+  const clone = previewRef.value.cloneNode(true) as HTMLElement
+
+  const wrapper = document.createElement('div')
+  wrapper.className = 'pdf-page'
+  wrapper.appendChild(clone)
+
+  const styleWrapper = document.createElement('div')
+  styleWrapper.innerHTML = getPdfOnlyStyle()
+  wrapper.prepend(styleWrapper)
+
+  html2pdf()
+    .from(wrapper)
+    .set({
+      filename: fileName,
+      html2canvas: { scale: 2 },
+      margin: 0,
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    })
+    .save()
+    .finally(() => {
+      loading.value = false
+    })
+}
+
+
   </script>
   
