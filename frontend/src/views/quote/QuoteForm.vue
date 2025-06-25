@@ -267,7 +267,8 @@
     orderedTemplateVariables.value.filter(
       (v) =>
         !v.variableName.startsWith('freelancer_') &&
-        !v.variableName.startsWith('client_')
+        !v.variableName.startsWith('client_') &&
+        v.variableName !== 'quote_number'
     )
   );
 
