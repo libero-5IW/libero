@@ -246,7 +246,8 @@
   const otherVariables = computed(() =>
     orderedTemplateVariables.value.filter(v =>
       !v.variableName.startsWith('freelancer_') &&
-      !v.variableName.startsWith('client_')
+      !v.variableName.startsWith('client_') &&
+      v.variableName !== 'contract_number'
     )
   );
   

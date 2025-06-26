@@ -183,7 +183,8 @@ function resetVariableValues(variables: InvoiceTemplateVariable[]) {
     variablesValue.value.map(v => [v.variableName, v.value])
   );
 
-  variablesValue.value = variables.map(v => ({
+  variablesValue.value = variables
+  .map(v => ({
     variableName: v.variableName,
     label: v.label,
     type: v.type as VariableType,
@@ -257,7 +258,8 @@ const clientVariables = computed(() =>
 const otherVariables = computed(() =>
   orderedTemplateVariables.value.filter(v =>
     !v.variableName.startsWith('freelancer_') &&
-    !v.variableName.startsWith('client_')
+    !v.variableName.startsWith('client_')&&
+    v.variableName !== 'invoice_number'
   )
 );
 
