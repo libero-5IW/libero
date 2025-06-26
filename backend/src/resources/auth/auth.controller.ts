@@ -61,6 +61,7 @@ export class AuthController {
       userId: dbUser.id,
       email: dbUser.email,
       isTwoFactorEnabled: dbUser.isTwoFactorEnabled,
+      legalStatus: dbUser.legalStatus
       // add any other fields you want to expose
     };
   }
