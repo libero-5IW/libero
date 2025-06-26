@@ -54,10 +54,14 @@ export class AuthController {
   }
 
   @Get('me')
-  getAuthInfo(@CurrentUser() user: JwtPayload) {
+  async getAuthInfo(@CurrentUser() user: any) {
+    // user.userId comes from your JWT payload
+    const dbUser = await this.userService.findOne(user.userId);
     return {
-      userId: user.userId,
-      email: user.email,
+      userId: dbUser.id,
+      email: dbUser.email,
+      isTwoFactorEnabled: dbUser.isTwoFactorEnabled,
+      // add any other fields you want to expose
     };
   }
 }
