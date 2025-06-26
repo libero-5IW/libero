@@ -18,7 +18,7 @@ export class TwoFactorAuthController {
     const qrCode = await this.twoFAService.generateQrCode(secret.otpauth_url);
 
     // Save secret temporarily to user (not enabled yet)
-    await this.usersService.setTwoFactorSecret(user.id, secret.base32);
+    await this.usersService.setTwoFactorSecret(user.userId, secret.base32);
 
     return { qrCode, secret: secret.base32 };
   }
@@ -26,11 +26,11 @@ export class TwoFactorAuthController {
   @UseGuards(JwtAuthGuard)
   @Post('enable')
   async enable(@Req() req, @Body('token') token: string) {
-    const user = await this.usersService.findOne(req.user.id);
+    const user = await this.usersService.findOne(req.user.userId);
     const isValid = this.twoFAService.verifyToken(user.twoFactorSecret, token);
 
     if (isValid) {
-      await this.usersService.enableTwoFactor(req.user.id);
+      await this.usersService.enableTwoFactor(req.user.userId);
     }
     return { valid: isValid };
   }
@@ -39,7 +39,7 @@ export class TwoFactorAuthController {
   @Post('disable')
   async disable(@Req() req, @Body('password') password: string) {
     // Optionally verify password before disabling
-    await this.usersService.disableTwoFactor(req.user.id);
+    await this.usersService.disableTwoFactor(req.user.userId);
     return { success: true };
   }
 }

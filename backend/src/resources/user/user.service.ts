@@ -91,6 +91,7 @@ export class UserService {
   }
 
   async setTwoFactorSecret(userId: string, secret: string) {
+    if (!userId) throw new Error('userId is required');
     return this.prisma.user.update({
       where: { id: userId },
       data: { twoFactorSecret: secret },

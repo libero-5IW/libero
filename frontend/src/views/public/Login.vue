@@ -54,9 +54,12 @@ import { useAuthStore } from '@/stores/auth';
 import type { LoginData } from '@/schemas/user.schema';
 import type { ToastStatus } from '@/types';
 import axios from 'axios';
+import apiClient from '@/config/axios';
+import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
 const { showToast } = useToastHandler();
+const router = useRouter();
 
 const form = reactive({ email: '', password: '' });
 const loading = computed(() => authStore.loading);
@@ -76,13 +79,13 @@ onMounted(async () => {
 
 const handleLogin = async (form: LoginData) => {
   try {
-    const res = await axios.post('/auth/login', form);
+    const res = await apiClient.post('/auth/login', form);
     if (res.data.twoFactorRequired) {
       twoFARequired.value = true;
       userId.value = res.data.userId;
     } else {
       // handle normal login (store JWT, redirect, etc.)
-      await authStore.finishLogin(res.data);
+      await authStore.login(form);
     }
   } catch (err: any) {
     showToast('error', err.response?.data?.message || 'Erreur de connexion');
@@ -91,12 +94,21 @@ const handleLogin = async (form: LoginData) => {
 
 const handle2FAVerify = async () => {
   try {
-    const res = await axios.post('/auth/2fa/verify', {
+    const res = await apiClient.post('/auth/2fa/verify', {
       userId: userId.value,
       token: twoFAToken.value,
     });
-    // handle login (store JWT, redirect, etc.)
-    await authStore.finishLogin(res.data);
+    // 1. Store the token
+    const token = res.data.token;
+    localStorage.setItem('token', token);
+
+    // 2. Fetch user info
+    const me = await apiClient.get('/auth/me');
+    authStore.user = me.data;
+    authStore.isAuthenticated = true;
+
+    // 3. Redirect
+    router.push('/dashboard');
   } catch (err: any) {
     showToast('error', err.response?.data?.message || 'Code 2FA invalide');
   }
