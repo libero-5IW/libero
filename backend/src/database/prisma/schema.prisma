@@ -30,7 +30,8 @@ model User {
   tvaNumber         String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
+  twoFactorSecret   String?  @db.VarChar(255)
+  isTwoFactorEnabled Boolean @default(false)
   quoteTemplates    QuoteTemplate[]
   quotes            Quote[]
   invoiceTemplates  InvoiceTemplate[]

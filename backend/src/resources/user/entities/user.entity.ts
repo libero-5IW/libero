@@ -58,9 +58,19 @@ export class UserEntity {
   @Expose()
   createdAt: Date;
 
-  @ApiProperty({ nullable: true })
-  @Exclude()
-  secretKey: string; 
+  @ApiProperty({
+    example: false,
+    description: '2FA activé ?',
+    default: false,
+  })
+  isTwoFactorEnabled: boolean;
+
+  @ApiProperty({
+    example: null,
+    description: 'Secret 2FA (base32). Null si 2FA est désactivé.',
+    nullable: true,
+  })
+  twoFactorSecret?: string | null;
 
   constructor(partial: Partial<UserEntity>) {
     Object.assign(this, partial);

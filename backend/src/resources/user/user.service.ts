@@ -89,4 +89,25 @@ export class UserService {
     }
     return user;
   }
+
+  async setTwoFactorSecret(userId: string, secret: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { twoFactorSecret: secret },
+    });
+  }
+
+  async enableTwoFactor(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isTwoFactorEnabled: true },
+    });
+  }
+
+  async disableTwoFactor(userId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isTwoFactorEnabled: false, twoFactorSecret: null },
+    });
+  }
 }

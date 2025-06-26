@@ -10,6 +10,7 @@ import { RegisterDto } from './dto/register.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { UserService } from '../user/user.service';
+import { TwoFactorAuthService } from './2fa/2fa.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly twoFAService: TwoFactorAuthService,
   ) {}
 
   async login(user: UserEntity) {
@@ -62,5 +64,12 @@ export class AuthService {
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async validateTwoFa(email: string, token: string): Promise<boolean> {
+    const user = await this.findByEmail(email);
+    if (!user || !user.twoFactorSecret) return false;
+
+    return this.twoFAService.verifyToken(user.twoFactorSecret, token);
   }
 }
