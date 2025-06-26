@@ -8,8 +8,8 @@ RUN npm install
 
 COPY . .
 
-RUN npm install -g vite
-
-CMD sh -c "npm run dev"
-
+#RUN npm install -g vite
 EXPOSE 5173
+
+CMD ["npm", "run", "dev"]
+
