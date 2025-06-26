@@ -12,9 +12,13 @@ async function main() {
   console.log('Démarrage du seeding…\n');
 
   await seedUsers(prisma);
+
+  const users = await prisma.user.findMany();
+
+  for (const user of users) {
+    await seedClients(prisma, user.id);
+  }
   
-  const user = await prisma.user.findFirst();
-  await seedClients(prisma, user.id); 
   await seedDefaultQuoteTemplate(prisma);
   await seedDefaultContractTemplate(prisma);
   await seedDefaultInvoiceTemplate(prisma);
