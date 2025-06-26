@@ -117,8 +117,6 @@
             </v-card-actions>
           </v-form>
 
-          <h2 class="text-xl font-bold mt-8 mb-4">Sécurité</h2>
-          <TwoFactorSetup />
         </v-card>
       </v-col>
     </v-row>
@@ -131,7 +129,6 @@ import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/config/axios'
 import { handleAxiosError } from '@/utils/handleAxiosError'
 import { useToastHandler } from '@/composables/useToastHandler'
-import TwoFactorSetup from '@/components/Auth/TwoFactorSetup.vue'
 
 const authStore = useAuthStore()
 const { showToast } = useToastHandler()
