@@ -65,6 +65,15 @@ export const useContractStore = defineStore('contract', () => {
     }
   }
 
+  async function updateContract(id: string, payload: Partial<Contract>) {
+    try {
+      const { data } = await apiClient.put(`/contracts/${id}`, payload);
+      return ContractSchema.parse(data);
+    } catch (error) {
+      handleAxiosError(error, 'Erreur lors de la modification du contrat.');
+    }
+  }
+
   return {
     contracts,
     currentContract,
@@ -74,5 +83,6 @@ export const useContractStore = defineStore('contract', () => {
     createContract,
     deleteContract,
     fetchNextContractNumber,
+    updateContract
   };
 });

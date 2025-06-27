@@ -2,7 +2,7 @@
     <TemplateSelectionModal
       v-model="showTemplateModal"
       :fetchTemplates="fetchContractTemplates"
-      :isForced="true"
+      :isForced="!isEditMode"
       @templateSelected="handleTemplateSelected"
     />
   
@@ -45,9 +45,23 @@
                 :variablesValue="variablesValue"
               />
   
-              <v-btn color="primary" @click="onCreateContract" :disabled="!canCreate">
+              <v-btn
+                v-if="!isEditMode"
+                color="primary"
+                @click="onCreateContract"
+                :disabled="!canCreate"
+              >
                 <v-icon start>mdi-content-save</v-icon>
                 Créer le contrat
+              </v-btn>
+
+              <v-btn
+                v-else
+                color="primary"
+                @click="onUpdateContract"
+              >
+                <v-icon start>mdi-content-save</v-icon>
+                Enregistrer
               </v-btn>
             </v-card>
           </v-col>
@@ -98,6 +112,8 @@
   const templateVariables = ref<ContractTemplateVariable[]>([]);
   const variablesValue = ref<VariableValue[]>([]);
   const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+  const contractId = computed(() => route.params.id as string | undefined);
+  const isEditMode = computed(() => !!contractId.value);
   
   const currentUser = computed(() => userStore.user);
   const currentTemplate = computed(() => contractTemplateStore.currentTemplate);
@@ -116,25 +132,58 @@
   onMounted(initialize);
   
   async function initialize() {
-    const templateIdFromQuery = route.query.templateId as string | undefined;
-    const templateId = selectedTemplateId.value || templateIdFromQuery;
-  
-    await clientStore.fetchAllClients();
-  
-    if (!templateId) {
+  const templateIdFromQuery = route.query.templateId as string | undefined;
+  const templateId = selectedTemplateId.value || templateIdFromQuery;
+
+  await clientStore.fetchAllClients();
+
+  if (!templateId && !isEditMode.value) {
+    showTemplateModal.value = true;
+    return;
+  }
+
+  if (isEditMode.value && contractId.value) {
+    await contractStore.fetchContract(contractId.value);
+    const contract = contractStore.currentContract;
+
+    if (contract) {
+      selectedClientId.value = contract.clientId;
+      selectedTemplateId.value = contract.templateId ?? null;
+      previewHtml.value = contract.generatedHtml;
+
+      variablesValue.value = contract.variableValues.map(v => ({
+        id: v.id,
+        variableName: v.variableName,
+        value: v.value,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+        contractId: contract.id,
+      }));
+
+      if (contract.templateId) {
+        await contractTemplateStore.fetchTemplate(contract.templateId);
+        await handleTemplateSelected(contract.templateId);
+      }
+
+      return;
+    }
+  }
+
+  if (templateId) {
+    await contractTemplateStore.fetchTemplate(templateId);
+
+    if (!contractTemplateStore.currentTemplate) {
       showTemplateModal.value = true;
       return;
     }
-  
-    await contractTemplateStore.fetchTemplate(templateId);
-  
-    if (!contractTemplateStore.currentTemplate) {
-      showTemplateModal.value = true;
-    } else {
-      selectedTemplateId.value = templateId;
-      handleTemplateSelected(templateId);
-    }
+
+    selectedTemplateId.value = templateId;
+    await handleTemplateSelected(templateId);
+  } else if (!isEditMode.value) {
+    showTemplateModal.value = true;
   }
+}
   
   async function fetchContractTemplates() {
     await contractTemplateStore.fetchAllTemplates();
@@ -307,5 +356,40 @@
       });
     }
   }
+
+  async function onUpdateContract() {
+    if (!contractId.value) return;
+
+    const payload = {
+      templateId: selectedTemplateId.value!,
+      clientId: selectedClientId.value!,
+      issuedAt: new Date().toISOString(),
+      validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
+      generatedHtml: previewHtml.value,
+      variableValues: variablesValue.value.map(v => ({
+        id: v.id!,
+        variableName: v.variableName,
+        value: v.value,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+        contractId: contractId.value!,
+      })),
+    };
+
+    const updated = await contractStore.updateContract(contractId.value, payload);
+
+    if (updated) {
+      router.push({
+        path: '/contract',
+        state: {
+          toastStatus: 'success',
+          toastMessage: `Le contrat #${updated.number} a été modifié avec succès.`,
+        },
+      });
+    }
+}
+
+
 </script>
   
