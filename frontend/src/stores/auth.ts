@@ -5,7 +5,7 @@ import apiClient from '@/config/axios';
 import { cleanAllStates } from '@/composables/useStateCleaner';
 import { type ApiCurrentUser, ApiCurrentUserSchema, type LoginData, type RegisterData } from '@/schemas/user.schema';
 import { handleAxiosError } from '@/utils/handleAxiosError';
-
+// force push
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
 
