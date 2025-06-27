@@ -149,7 +149,6 @@ onMounted(async () => {
     await invoiceStore.fetchInvoice(invoiceId.value);
     const invoice = invoiceStore.currentInvoice;
 
-
     if (invoice) {
       Object.assign(form.value, {
       templateId: invoice.templateId ?? '',

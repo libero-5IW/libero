@@ -48,7 +48,7 @@
               :variablesValue="variablesValue"
             />
 
-            <v-btn color="primary" @click="onCreateQuote" :disabled="!canCreate">
+            <v-btn v-if="!isEditMode" color="primary" @click="onCreateQuote" :disabled="!canCreate">
               <v-icon start>mdi-content-save</v-icon>
               Créer le devis
             </v-btn>
@@ -64,6 +64,10 @@
         </v-col>
       </v-row>
     </v-container>
+
+    <v-btn v-if="isEditMode" color="primary" @click="saveQuote">
+      Enregistrer
+    </v-btn>
   </div>
 </template>
 
@@ -83,6 +87,7 @@
   import type { VariableValue, VariableType } from '@/types';
   import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
   import { extractUsedVariableNames } from '@/utils/extractUsedVariables';
+  import type { CreateQuote } from '@/schemas/quote.schema';
 
   const router = useRouter();
   const route = useRoute();
@@ -96,10 +101,23 @@
   const selectedTemplateId = ref<string | null>(null);
   const templateVariables = ref<QuoteTemplateVariable[]>([]);
   const variablesValue = ref<VariableValue[]>([]);
+
+  const form = ref<CreateQuote>({
+    templateId: '',
+    generatedHtml: '',
+    validUntil: '',
+    clientId: '',
+    variableValues: [],
+    issuedAt: undefined,
+    status: QUOTE_STATUS.DRAFT,
+  });
+
   const previewHtml = ref<string>('');
   const selectedClientId = defineModel<string>('selectedClientId');
   const { showToast } = useToastHandler();
   const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+  const quoteId = computed(() => route.params.id as string | undefined);
+  const isEditMode = computed(() => !!quoteId.value);
 
   const currentUser = computed(() => userStore.user);
   const currentTemplate = computed(() => quoteTemplateStore.currentTemplate);
@@ -107,28 +125,73 @@
 
   onMounted(initialize);
 
-  async function initialize() {
-    try {
-      const templateIdFromQuery = route.query.templateId as string | undefined;
-      const templateId = selectedTemplateId.value || templateIdFromQuery;
+  onMounted(async () => {
+    await initialize();
 
-      await clientStore.fetchAllClients();
-      
-      if (!templateId) {
-        showTemplateModal.value = true;
-        return;
+    if (isEditMode.value && quoteId.value) {
+      await quoteStore.fetchQuote(quoteId.value);
+      const quote = quoteStore.currentQuote;
+      if (!quote) return;
+
+      Object.assign(form.value, {
+        templateId: quote.templateId ?? '',
+        generatedHtml: quote.generatedHtml,
+        validUntil: quote.validUntil,
+        clientId: quote.clientId,
+        issuedAt: quote.issuedAt,
+        variableValues: quote.variableValues.map(v => ({
+          id: v.id,
+          variableName: v.variableName,
+          value: v.value,
+          label: v.label,
+          type: v.type,
+          required: v.required,
+          quoteId: quote.id,
+        }))
+      });
+
+      selectedClientId.value = quote.clientId;
+      selectedTemplateId.value = quote.templateId;
+
+      if (quote.templateId) {
+        await quoteTemplateStore.fetchTemplate(quote.templateId);
+        await handleTemplateSelected(quote.templateId);
       }
 
+      variablesValue.value = quote.variableValues.map(v => ({
+        id: v.id,
+        variableName: v.variableName,
+        value: v.value,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+        quoteId: quote.id,
+      }));
+    }
+  });
+
+  async function initialize() {
+    const templateIdFromQuery = route.query.templateId as string | undefined;
+    const templateId = selectedTemplateId.value || templateIdFromQuery;
+
+    await clientStore.fetchAllClients();
+
+    if (!templateId && !isEditMode.value) {
+      showTemplateModal.value = true;
+      return;
+    }
+
+    if (templateId) {
       await quoteTemplateStore.fetchTemplate(templateId);
 
       if (!quoteTemplateStore.currentTemplate) {
         showTemplateModal.value = true;
-      } else {
-        selectedTemplateId.value = templateId;
+        return;
       }
 
-      handleTemplateSelected(templateId);
-    } catch (error) {
+      selectedTemplateId.value = templateId;
+      await handleTemplateSelected(templateId);
+    } else if (!isEditMode.value) {
       showTemplateModal.value = true;
     }
   }
@@ -220,6 +283,40 @@
     if (v) v.value = newValue;
   }
 
+  async function saveQuote() {
+    if (!isEditMode.value || !quoteId.value) return;
+
+    const payload = {
+      templateId: selectedTemplateId.value!,
+      clientId: selectedClientId.value!,
+      issuedAt: form.value.issuedAt ?? new Date().toISOString(),
+      validUntil: form.value.validUntil,
+      generatedHtml: previewHtml.value,
+      variableValues: variablesValue.value.map(v => ({
+        id: v.id!,
+        variableName: v.variableName,
+        value: v.value,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+        quoteId: quoteId.value!,
+      })),
+    };
+
+    const updated = await quoteStore.updateQuote(quoteId.value, payload);
+
+    if (updated) {
+      router.push({
+        path: '/quote',
+        state: {
+          toastStatus: 'success',
+          toastMessage: `Le devis #${updated.number} a été modifié avec succès.`,
+        },
+      });
+    }
+  }
+
+
   const canCreate = computed(() => {
     const hasTemplate = !!selectedTemplateId.value;
     const hasClient = !!selectedClientId.value;
@@ -273,16 +370,18 @@
   );
 
   async function onCreateQuote() {
-    if (!currentUser.value) {
-      showToast('error',`Utilisateur non chargé !` );
+    const user = currentUser.value;
+    if (!user) {
+      showToast('error', 'Utilisateur non chargé !');
       return;
     }
 
     const missingFields = templateVariables.value.filter(
       v => v.required && !variablesValue.value.find(val => val.variableName === v.variableName)?.value
     );
+
     if (missingFields.length > 0) {
-      showToast('error',`Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}` );
+      showToast('error', `Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}`);
       return;
     }
 
@@ -291,20 +390,17 @@
       return;
     }
 
-    const payload = {
+    const payload: CreateQuote = {
       templateId: selectedTemplateId.value,
       clientId: selectedClientId.value!,
-      status: QUOTE_STATUS.DRAFT,
-      issuedAt: new Date().toISOString(),
+      issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
+      generatedHtml: previewHtml.value,
+      status: QUOTE_STATUS.DRAFT,
       variableValues: variablesValue.value.map(v => ({
         variableName: v.variableName,
         value: v.value,
       })),
-      generatedHtml: previewHtml.value,
-      variables: Object.fromEntries(
-        variablesValue.value.map(v => [v.variableName, v.value])
-      ),
     };
 
     const quote = await quoteStore.createQuote(payload);

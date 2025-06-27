@@ -8,6 +8,7 @@ const routes: Array<RouteRecordRaw> = [
     children: [
       { path: '', name: 'ContractList', component: ContractList },
       { path: 'new', name: 'ContractForm', component: ContractForm },
+      { path: ':id/edit', name: 'ContractEdit', component: ContractForm, props: true },
     ]
   }
 ]

@@ -20,6 +20,9 @@
       <v-btn icon @click="viewQuote(item.id)">
         <v-icon>mdi-eye</v-icon>
       </v-btn>
+      <v-btn icon @click="editQuote(item.id)">
+        <v-icon>mdi-pencil</v-icon>
+      </v-btn>
     </template>
   </DataTable>
 
@@ -90,6 +93,10 @@ const handleTemplateSelected = (templateId: string) => {
     name: 'QuoteForm', 
     query: { templateId }   
   });
+};
+
+const editQuote = (id: string) => {
+  router.push({ name: 'QuoteEdit', params: { id } });
 };
 
 onMounted(async () => {

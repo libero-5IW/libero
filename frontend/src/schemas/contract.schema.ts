@@ -48,7 +48,7 @@ export const ContractVariableValueSchema = z.object({
 export const ContractSchema = z.object({
   id: z.string().uuid(),
   number: z.number(),
-  status: z.enum(['draft', 'signed', 'expired', 'cancelled']),
+  status: z.enum(['draft', 'sent', 'signed', 'declined', 'expired', 'cancelled']),
   generatedHtml: z.string(),
   issuedAt: z.string().nullable().optional(),
   validUntil: z.string(),
