@@ -45,7 +45,7 @@ const headers: Header[] = [
   { title: 'Prénom', value: 'firstName', sortable: true },
   { title: 'Nom', value: 'lastName', sortable: true },
   { title: 'Email', value: 'email', sortable: true },
-  { title: 'Ville', value: 'city', sortable: true },
+  { title: 'Téléphone', value: 'phoneNumber', sortable: true },
   { title: '', value: 'actions', sortable: false }
 ]
 
@@ -74,5 +74,4 @@ const removeClient = async (id: string) => {
     showToast('error', 'Une erreur est survenue lors de la suppression.')
   }
 }
-
 </script>

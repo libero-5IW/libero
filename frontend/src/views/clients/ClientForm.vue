@@ -93,7 +93,7 @@ const { showToast } = useToastHandler()
 
 const formRef = ref()
 
-const isEdit = computed(() => !!route.params.id)
+const isEdit = ref(!!route.params.id)
 
 const form = reactive({
   firstName: '',
@@ -152,12 +152,14 @@ const onSubmit = async () => {
       showToast('error', 'Client enregistré, mais erreur lors de la mise à jour de la liste.')
     }
 
+    const editStatus = isEdit.value
+
     router.push({ 
       name: 'ClientList' }).then(() => {
       nextTick(() => {
         showToast(
           'success',
-          `Client ${form.firstName} ${form.lastName} ${isEdit.value ? 'modifié' : 'créé'} avec succès.`
+          `Client ${form.firstName} ${form.lastName} ${editStatus ? 'modifié' : 'créé'} avec succès.`
         )
       })
     })
