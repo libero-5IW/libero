@@ -7,7 +7,7 @@
     width="250"
     class="transition-transform duration-300 ease-in-out"
   >
-    <div class="d-flex flex-column h-100" style="height: 100%;">
+    <div class="d-flex flex-column h-100 h-full">
       <div>
         <div class="p-4">
           <img src="@/assets/logo.png" alt="Logo" class="w-1/3 h-auto mx-auto" />

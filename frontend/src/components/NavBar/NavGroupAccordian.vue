@@ -22,7 +22,7 @@
 
     <!-- Container for the continuous line -->
     <div class="absolute left-4 w-6 z-0" ref="timelineContainer">
-      <svg class="absolute top-0 w-full" :style="{ height: `${lineHeight}px` }">
+      <svg class="absolute top-0 w-full" :class="[`h-[${lineHeight}px]`]">
         <line 
           x1="12" 
           y1="24" 

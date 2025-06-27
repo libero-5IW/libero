@@ -46,7 +46,7 @@
         <v-card v-if="qrCode" class="pa-4 mt-4 twofa-qr-card" outlined>
           <div class="text-center mb-2">
             <p class="mb-2">Scannez ce QR code avec Google Authenticator ou Authy :</p>
-            <img :src="qrCode" alt="QR Code 2FA" class="mx-auto" style="max-width: 180px;" />
+            <img :src="qrCode" alt="QR Code 2FA" class="mx-auto max-w-[180px]" />
           </div>
           <v-text-field
             v-model="token"

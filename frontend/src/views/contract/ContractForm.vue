@@ -22,8 +22,7 @@
               :model-value="contractNumberVariable.value"
               :label="contractNumberVariable.label || 'Numéro du contrat'"
               readonly
-              class="mb-4"
-              :style="{ pointerEvents: 'none', opacity: 0.6 }"
+              class="mb-4 pointer-events-none opacity-60"
             />
   
             <v-card flat class="mb-4 pa-4">

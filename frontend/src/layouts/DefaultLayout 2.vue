@@ -17,9 +17,8 @@
         density="compact"
         color="text-secondary"
         hide-details
-        class="search-field mx-2"
+        class="search-field mx-2 max-w-[150px] rounded-lg shadow-sm"
         bg-color="secondary-lighten-5"
-        style="max-width: 150px"
       />
 
       <v-btn icon class="ml-2">
@@ -70,8 +69,5 @@ const drawer = ref(true)
 </script>
 
 <style scoped>
-.search-field :deep(.v-field) {
-  border-radius: 8px !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-}
+/* Removed: .search-field :deep(.v-field) { border-radius: 8px !important; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important; } */
 </style> 
