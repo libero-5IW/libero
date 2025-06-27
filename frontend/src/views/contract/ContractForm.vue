@@ -44,7 +44,7 @@
                 :variables="otherVariables"
                 :variablesValue="variablesValue"
               />
-  
+
               <v-btn
                 v-if="!isEditMode"
                 color="primary"
@@ -114,7 +114,18 @@
   const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
   const contractId = computed(() => route.params.id as string | undefined);
   const isEditMode = computed(() => !!contractId.value);
-  
+  const today = new Date().toISOString().split('T')[0];
+  const endDate = new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString().split('T')[0];
+
+  const issueDateVariable = computed(() =>
+  variablesValue.value.find(v => v.variableName === 'issue_date')
+  );
+  const endDateVariable = computed(() =>
+  variablesValue.value.find(v =>
+    v.variableName === 'end_date'
+  )
+  );
+
   const currentUser = computed(() => userStore.user);
   const currentTemplate = computed(() => contractTemplateStore.currentTemplate);
   const clients = computed(() => clientStore.clients);

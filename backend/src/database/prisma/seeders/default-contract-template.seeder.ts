@@ -10,6 +10,8 @@ export async function seedDefaultContractTemplate(prisma: PrismaClient) {
         <p><strong>Freelance :</strong> {{freelancer_name}}, {{freelancer_address}}</p>
         <p><strong>Client :</strong> {{client_name}}, {{client_address}}</p>
         <p><strong>Prestation :</strong> {{prestation_description}}</p>
+        <p><strong>Date d’émission :</strong> {{issue_date}}</p>
+        <p><strong>Date de fin :</strong> {{end_date}}</p>
         <p><strong>Montant :</strong> {{total_amount}} € HT</p>
         <p><strong>Modalités de paiement :</strong> {{payment_terms}}</p>
         <p><strong>Signature Freelance :</strong> {{freelancer_signature}}</p>
@@ -44,6 +46,18 @@ export async function seedDefaultContractTemplate(prisma: PrismaClient) {
         variableName: 'prestation_description',
         label: 'Description de la prestation',
         type: VariableType.string,
+        required: true,
+      },
+      {
+        variableName: 'issue_date',
+        label: 'Date d’émission',
+        type: VariableType.date,
+        required: true,
+      },
+      {
+        variableName: 'end_date',
+        label: 'Date de fin de contrat',
+        type: VariableType.date,
         required: true,
       },
       {
