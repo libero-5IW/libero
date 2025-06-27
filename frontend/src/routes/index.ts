@@ -46,7 +46,7 @@ router.beforeEach(async (to, from, next) => {
 
     const requiresAuth = to.meta.requiresAuth ?? true;
 
-    if (!authStore.isAuthenticated && !authStore.authAlreadyChecked) {
+    if (requiresAuth && !authStore.isAuthenticated && !authStore.authAlreadyChecked) {
       await authStore.verifyAuth();
     }
   
