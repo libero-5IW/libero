@@ -7,15 +7,63 @@
             {{ isEdit ? 'Modifier un client' : 'Créer un client' }}
           </h2>
 
-          <v-form @submit.prevent="onSubmit">
-            <v-text-field v-model="form.firstName" label="Prénom" type="text" required />
-            <v-text-field v-model="form.lastName" label="Nom" type="text" required />
-            <v-text-field v-model="form.email" label="Email" type="email" />
-            <v-text-field v-model="form.phoneNumber" label="Téléphone" type="tel"/>
-            <v-text-field v-model="form.addressLine" label="Adresse" type="text" />
-            <v-text-field v-model="form.postalCode" label="Code postal" type="text" />
-            <v-text-field v-model="form.city" label="Ville" type="text" />
-            <v-text-field v-model="form.country" label="Pays" type="text" />
+          <v-form ref="formRef" @submit.prevent="onSubmit">
+            <v-text-field
+              v-model="form.firstName"
+              label="Prénom"
+              type="text"
+              :rules="[rules.required]"
+              required
+            />
+            <v-text-field
+              v-model="form.lastName"
+              label="Nom"
+              type="text"
+              :rules="[rules.required]"
+              required
+            />
+            <v-text-field
+              v-model="form.email"
+              label="Email"
+              type="email"
+              :rules="[rules.required, rules.email]"
+              required
+            />
+            <v-text-field
+              v-model="form.phoneNumber"
+              label="Téléphone"
+              type="tel"
+              :rules="[rules.required]"
+              required
+            />
+            <v-text-field
+              v-model="form.addressLine"
+              label="Adresse"
+              type="text"
+              :rules="[rules.required]"
+              required
+            />
+            <v-text-field
+              v-model="form.postalCode"
+              label="Code postal"
+              type="text"
+              :rules="[rules.required]"
+              required
+            />
+            <v-text-field
+              v-model="form.city"
+              label="Ville"
+              type="text"
+              :rules="[rules.required]"
+              required
+            />
+            <v-text-field
+              v-model="form.country"
+              label="Pays"
+              type="text"
+              :rules="[rules.required]"
+              required
+            />
 
             <div class="d-flex justify-end mt-6">
               <v-btn text @click="cancel">Annuler</v-btn>
@@ -31,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, onMounted } from 'vue'
+import { reactive, computed, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useClientStore } from '@/stores/client'
 import { useAuthStore } from '@/stores/auth'
@@ -42,6 +90,8 @@ const route = useRoute()
 const clientStore = useClientStore()
 const authStore = useAuthStore()
 const { showToast } = useToastHandler()
+
+const formRef = ref()
 
 const isEdit = computed(() => !!route.params.id)
 
@@ -56,14 +106,29 @@ const form = reactive({
   country: 'France',
 })
 
+const rules = {
+  required: (v: string) => !!v || 'Ce champ est requis.',
+  email: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Email invalide.'
+}
+
 onMounted(async () => {
-  if (isEdit.value && route.params.id) {
-    await clientStore.fetchClient(route.params.id as string)
-    Object.assign(form, clientStore.currentClient || {})
+  try {
+    if (isEdit.value && route.params.id) {
+      await clientStore.fetchClient(route.params.id as string)
+      Object.assign(form, clientStore.currentClient || {})
+    }
+  } catch (error) {
+    showToast('error', 'Erreur lors du chargement du client.')
   }
 })
 
 const onSubmit = async () => {
+  const result = await formRef.value?.validate()
+  if (!result?.valid) {
+    showToast('error', 'Veuillez remplir tous les champs correctement avant de valider.')
+    return
+  }
+
   if (!authStore.user?.userId) {
     showToast('error', 'Utilisateur non connecté.')
     return
@@ -74,20 +139,33 @@ const onSubmit = async () => {
     userId: authStore.user.userId,
   }
 
-  if (isEdit.value) {
-    await clientStore.updateClient(route.params.id as string, payload)
-  } else {
-    await clientStore.createClient(payload)
-  }
+  try {
+    if (isEdit.value) {
+      await clientStore.updateClient(route.params.id as string, payload)
+    } else {
+      await clientStore.createClient(payload)
+    }
 
-  await clientStore.fetchAllClients()
-  router.push({
-    name: 'ClientList',
-    state: {
-      toastStatus: 'success',
-      toastMessage: `Client ${form.firstName} ${form.lastName} ${isEdit.value ? 'modifié' : 'créé'} avec succès.`,
-    },
-  })
+    try {
+      await clientStore.fetchAllClients()
+    } catch {
+      showToast('error', 'Client enregistré, mais erreur lors de la mise à jour de la liste.')
+    }
+
+    router.push({
+      name: 'ClientList',
+      state: {
+        toastStatus: 'success',
+        toastMessage: `Client ${form.firstName} ${form.lastName} ${isEdit.value ? 'modifié' : 'créé'} avec succès.`,
+      },
+    })
+  } catch (error: any) {
+    if (error.response?.status === 409) {
+      showToast('error', error.response.data.message || 'Ce client existe déjà.')
+    } else {
+      showToast('error', 'Une erreur est survenue lors de la sauvegarde.')
+    }
+  }
 }
 
 const cancel = () => {
