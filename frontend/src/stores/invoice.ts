@@ -60,6 +60,15 @@ export const useInvoiceStore = defineStore('invoice', () => {
       return null;
     }
   }  
+
+  async function updateInvoice(id: string, payload: Partial<Invoice>) {
+    try {
+      const { data } = await apiClient.put(`/invoices/${id}`, payload);
+      return InvoiceSchema.parse(data);
+    } catch (error) {
+      handleAxiosError(error, 'Erreur lors de la modification de la facture.');
+    }
+  }  
   
   return {
     invoices,
@@ -69,6 +78,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
     fetchInvoice,
     createInvoice,
     deleteInvoice, 
-    fetchNextInvoiceNumber 
+    fetchNextInvoiceNumber,
+    updateInvoice 
   };
 });

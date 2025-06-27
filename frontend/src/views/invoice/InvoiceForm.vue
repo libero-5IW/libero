@@ -48,10 +48,16 @@
               :variablesValue="variablesValue"
             />
 
-            <v-btn color="primary" @click="onCreateInvoice" :disabled="!canCreate">
+            <v-btn
+              v-if="!isEditMode"
+              color="primary"
+              @click="onCreateInvoice"
+              :disabled="!canCreate"
+            >
               <v-icon start>mdi-content-save</v-icon>
               Créer la facture
             </v-btn>
+
           </v-card>
         </v-col>
 
@@ -64,6 +70,13 @@
         </v-col>
       </v-row>
     </v-container>
+    <v-btn
+      v-if="isEditMode"
+      color="primary"
+      @click="saveInvoice"
+    >
+      Enregistrer
+    </v-btn>
   </div>
 </template>
 
@@ -83,6 +96,7 @@ import type { VariableValue, VariableType } from '@/types';
 import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
 import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
 import { extractUsedVariableNames } from '@/utils/extractUsedVariables'
+import type { CreateInvoice } from '@/schemas/invoice.schema';
 
 const route = useRoute();
 const router = useRouter();
@@ -99,6 +113,19 @@ const selectedClientId = defineModel<string>('selectedClientId');
 const previewHtml = ref('');
 const templateVariables = ref<InvoiceTemplateVariable[]>([]);
 const variablesValue = ref<VariableValue[]>([]);
+
+const form = ref<CreateInvoice>({
+  templateId: '',
+  generatedHtml: '',
+  dueDate: '',
+  clientId: '',
+  variableValues: [],
+  issuedAt: undefined
+});
+
+const invoiceId = computed(() => route.params.id as string | undefined);
+const isEditMode = computed(() => !!invoiceId.value);
+
 
 const currentUser = computed(() => userStore.user);
 const currentTemplate = computed(() => invoiceTemplateStore.currentTemplate);
@@ -117,25 +144,75 @@ const previewVariables = computed(() => {
 
 onMounted(initialize);
 
+onMounted(async () => {
+  if (isEditMode.value && invoiceId.value) {
+    await invoiceStore.fetchInvoice(invoiceId.value);
+    const invoice = invoiceStore.currentInvoice;
+
+
+    if (invoice) {
+      Object.assign(form.value, {
+      templateId: invoice.templateId ?? '',
+      generatedHtml: invoice.generatedHtml,
+      dueDate: invoice.dueDate,
+      clientId: invoice.clientId,
+      issuedAt: invoice.issuedAt,
+      variableValues: invoice.variableValues.map(v => ({
+        id: v.id,
+        variableName: v.variableName,
+        value: v.value,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+        invoiceId: invoice.id,
+      })),
+    });
+
+    selectedClientId.value = invoice.clientId; 
+
+    if (invoice.templateId) {
+      selectedTemplateId.value = invoice.templateId;
+      await invoiceTemplateStore.fetchTemplate(invoice.templateId);
+      await handleTemplateSelected(invoice.templateId);
+
+      variablesValue.value = invoice.variableValues.map(v => ({
+        id: v.id,
+        variableName: v.variableName,
+        value: v.value,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+        invoiceId: invoice.id,
+      }));
+
+    }
+}}});
+
+
 async function initialize() {
   const templateIdFromQuery = route.query.templateId as string | undefined;
   const templateId = selectedTemplateId.value || templateIdFromQuery;
 
   await clientStore.fetchAllClients();
 
-  if (!templateId) {
-    showTemplateModal.value = true;
-    return;
+  if (!templateId && !isEditMode.value) {
+  showTemplateModal.value = true;
+  return;
   }
 
+if (templateId) {
   await invoiceTemplateStore.fetchTemplate(templateId);
 
   if (!invoiceTemplateStore.currentTemplate) {
     showTemplateModal.value = true;
-  } else {
-    selectedTemplateId.value = templateId;
-    handleTemplateSelected(templateId);
+    return;
   }
+
+  selectedTemplateId.value = templateId;
+  handleTemplateSelected(templateId);
+} else if (!isEditMode.value) {
+  showTemplateModal.value = true;
+}
 }
 
 async function fetchInvoiceTemplates() {
@@ -225,7 +302,9 @@ async function fillSystemValues(variables: InvoiceTemplateVariable[]) {
 
 function updateVariable(name: string, newValue: string) {
   const v = variablesValue.value.find(v => v.variableName === name);
-  if (v) v.value = newValue;
+  if (v) {
+    v.value = newValue;
+  }
 }
 
 const canCreate = computed(() => {
@@ -263,6 +342,51 @@ const otherVariables = computed(() =>
   )
 );
 
+const saveInvoice = async () => {
+
+  if (isEditMode.value && invoiceId.value) {
+    const payload = {
+      templateId: selectedTemplateId.value!,
+      clientId: selectedClientId.value!,
+      issuedAt: form.value.issuedAt ?? new Date().toISOString(),
+      dueDate: form.value.dueDate,
+      generatedHtml: previewHtml.value,
+      variableValues: variablesValue.value.map(v => ({
+      id: v.id!,
+      variableName: v.variableName,
+      value: v.value,
+      label: v.label,
+      type: v.type,
+      required: v.required,
+      invoiceId: invoiceId.value!,
+    }))
+    };
+
+    const updated = await invoiceStore.updateInvoice(invoiceId.value, payload);
+
+    if (updated) {
+      router.push({
+        path: '/invoice',
+        state: {
+          toastStatus: 'success',
+          toastMessage: `La facture #${updated.number} a été modifiée avec succès.`,
+        },
+      });
+    }
+
+    } else {
+    const created = await invoiceStore.createInvoice({
+      ...form.value,
+      issuedAt: form.value.issuedAt ?? new Date().toISOString()
+    });
+
+    if (created) {
+      showToast('success', `Facture créée avec succès.`);
+      router.push({ name: 'InvoiceList' });
+    }
+  }
+};
+
 watch(selectedClientId, (newClientId) => {
   const client = clients.value.find(c => c.id === newClientId);
   if (!client) return;
@@ -277,11 +401,7 @@ async function onCreateInvoice() {
     return;
   }
 
-  const missingFields = templateVariables.value.filter(
-  v =>
-    v.required &&
-    !variablesValue.value.find(val => val.variableName === v.variableName)?.value
-);
+  const missingFields = templateVariables.value.filter(v => v.required && !variablesValue.value.find(val => val.variableName === v.variableName)?.value);
 
   if (missingFields.length > 0) {
     showToast('error', `Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}`);
@@ -293,22 +413,21 @@ async function onCreateInvoice() {
     return;
   }
 
-  const payload = {
-    templateId: selectedTemplateId.value,
+  const payload: CreateInvoice = {
+    templateId: selectedTemplateId.value!,
     clientId: selectedClientId.value!,
-    status: INVOICE_STATUS.DRAFT,
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
-    variableValues: variablesValue.value
-      .map(v => ({
-        variableName: v.variableName,
-        value: v.value,
-      })),
-      generatedHtml: previewHtml.value,
-      variables: Object.fromEntries(
-      variablesValue.value
-      .map(v => [v.variableName, v.value])
-    ),
+    generatedHtml: previewHtml.value,
+    variableValues: variablesValue.value.map(v => ({
+      id: v.id!,
+      variableName: v.variableName,
+      value: v.value,
+      label: v.label,
+      type: v.type,
+      required: v.required,
+      invoiceId: invoiceId.value!, 
+    }))
   };
 
   const invoice = await invoiceStore.createInvoice(payload);
