@@ -46,6 +46,42 @@
         :variant="editor.isActive('redo') ? 'text' : 'plain'"
         :disabled="!editor.can().chain().focus().redo().run()"
       >Redo</v-btn>
+
+      <v-btn
+        @click="editor.chain().focus().setTextAlign('left').run()"
+        size="small"
+        :variant="editor.isActive({ textAlign: 'left' }) ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().setTextAlign('left').run()"
+      >
+        <v-icon>mdi-format-align-left</v-icon>
+      </v-btn>
+
+      <v-btn
+        @click="editor.chain().focus().setTextAlign('center').run()"
+        size="small"
+        :variant="editor.isActive({ textAlign: 'center' }) ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().setTextAlign('center').run()"
+      >
+        <v-icon>mdi-format-align-center</v-icon>
+      </v-btn>
+
+      <v-btn
+        @click="editor.chain().focus().setTextAlign('right').run()"
+        size="small"
+        :variant="editor.isActive({ textAlign: 'right' }) ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().setTextAlign('right').run()"
+      >
+        <v-icon>mdi-format-align-right</v-icon>
+      </v-btn>
+
+      <v-btn
+        @click="editor.chain().focus().setTextAlign('justify').run()"
+        size="small"
+        :variant="editor.isActive({ textAlign: 'justify' }) ? 'text' : 'plain'"
+        :disabled="!editor.can().chain().focus().setTextAlign('justify').run()"
+      >
+        <v-icon>mdi-format-align-justify</v-icon>
+      </v-btn>
     </div>
   </template>
   

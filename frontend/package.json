@@ -19,6 +19,7 @@
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "@tailwindcss/vite": "^4.0.15",
+    "@tiptap/extension-text-align": "^2.23.0",
     "@tiptap/extension-underline": "^2.11.7",
     "@tiptap/starter-kit": "^2.11.7",
     "@tiptap/vue-3": "^2.11.7",

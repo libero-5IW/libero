@@ -96,6 +96,7 @@
   import draggable from 'vuedraggable'
   import { Node, mergeAttributes } from '@tiptap/core'
   import type { VariableBase } from '@/types'
+  import TextAlign from '@tiptap/extension-text-align'
   
   const props = defineProps<{ 
     modelValue: string,
@@ -287,6 +288,9 @@
           }
         }),
         VariableNode,
+        TextAlign.configure({
+          types: ['heading', 'paragraph'],
+        }),
       ],
       editorProps: {
         attributes: {
