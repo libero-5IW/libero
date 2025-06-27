@@ -53,6 +53,7 @@ import { useUserStore } from '@/stores/user';
 import TemplateVariableSection from '@/components/DocumentForm/TemplateVariableSection.vue';
 import type { VariableValue } from '@/types';
 import type { CreateQuote } from '@/schemas/quote.schema';
+import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
 
 
 const props = defineProps<{
@@ -82,6 +83,7 @@ async function onCreateQuote() {
   issuedAt: new Date().toISOString(),
   validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
   generatedHtml: '', 
+  status: QUOTE_STATUS.DRAFT,
   variableValues: variablesValue.value.map(v => ({
     variableName: v.variableName,
     value: v.value,

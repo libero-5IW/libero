@@ -61,6 +61,15 @@ export const useQuoteStore = defineStore('quote', () => {
       return null;
     }
   }
+
+  async function updateQuote(id: string, payload: Partial<Quote>) {
+    try {
+      const { data } = await apiClient.put(`/quotes/${id}`, payload);
+      return QuoteSchema.parse(data);
+    } catch (error) {
+      handleAxiosError(error, 'Erreur lors de la modification du devis.');
+    }
+  }  
  
   return {
     quotes,
@@ -70,6 +79,7 @@ export const useQuoteStore = defineStore('quote', () => {
     fetchQuote,
     createQuote,
     deleteQuote, 
-    fetchNextQuoteNumber 
+    fetchNextQuoteNumber,
+    updateQuote 
   };
 });
