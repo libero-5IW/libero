@@ -79,7 +79,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, onMounted, ref } from 'vue'
+import { reactive, computed, onMounted, ref, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useClientStore } from '@/stores/client'
 import { useAuthStore } from '@/stores/auth'
@@ -108,7 +108,7 @@ const form = reactive({
 
 const rules = {
   required: (v: string) => !!v || 'Ce champ est requis.',
-  email: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) || 'Email invalide.'
+  email: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) || 'Email invalide.'
 }
 
 onMounted(async () => {
@@ -117,7 +117,7 @@ onMounted(async () => {
       await clientStore.fetchClient(route.params.id as string)
       Object.assign(form, clientStore.currentClient || {})
     }
-  } catch (error) {
+  } catch {
     showToast('error', 'Erreur lors du chargement du client.')
   }
 })
@@ -152,12 +152,14 @@ const onSubmit = async () => {
       showToast('error', 'Client enregistré, mais erreur lors de la mise à jour de la liste.')
     }
 
-    router.push({
-      name: 'ClientList',
-      state: {
-        toastStatus: 'success',
-        toastMessage: `Client ${form.firstName} ${form.lastName} ${isEdit.value ? 'modifié' : 'créé'} avec succès.`,
-      },
+    router.push({ 
+      name: 'ClientList' }).then(() => {
+      nextTick(() => {
+        showToast(
+          'success',
+          `Client ${form.firstName} ${form.lastName} ${isEdit.value ? 'modifié' : 'créé'} avec succès.`
+        )
+      })
     })
   } catch (error: any) {
     if (error.response?.status === 409) {
