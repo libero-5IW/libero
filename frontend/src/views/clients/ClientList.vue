@@ -46,7 +46,7 @@ const headers: Header[] = [
   { title: 'Nom', value: 'lastName', sortable: true },
   { title: 'Email', value: 'email', sortable: true },
   { title: 'Ville', value: 'city', sortable: true },
-  { title: 'Actions', value: 'actions', sortable: false }
+  { title: '', value: 'actions', sortable: false }
 ]
 
 const fetchAllClients = async () => {
