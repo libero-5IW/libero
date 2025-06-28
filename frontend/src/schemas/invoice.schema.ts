@@ -10,6 +10,31 @@ export const CreateInvoiceVariableValueSchema = z.object({
   value: z.string(),
 });
 
+export const CreateInvoiceSchema = z.object({
+  clientId: z.string().uuid({
+    message: "L'identifiant du client doit être un UUID valide.",
+  }),
+  templateId: z.string().uuid({
+    message: "L'identifiant du template doit être un UUID valide.",
+  }),
+  generatedHtml: z.string().min(1, {
+    message: 'Le HTML généré est requis.',
+  }),
+  dueDate: z.string().refine(
+    (val) => !isNaN(Date.parse(val)),
+    { message: 'La date d’échéance doit être une date ISO valide.' }
+  ),
+  issuedAt: z
+    .string()
+    .refine((val) => !isNaN(Date.parse(val)), {
+      message: "La date d'émission doit être une date ISO valide.",
+    })
+    .optional(),
+  variableValues: z
+    .array(CreateInvoiceVariableValueSchema)
+    .min(1, { message: 'Au moins une variable est requise.' }),
+});
+
 export const InvoiceVariableValueSchema = z.object({
   id: z.string().uuid(),
   invoiceId: z.string().uuid(),
@@ -25,7 +50,7 @@ export const InvoiceSchema = z.object({
   number: z.number(),
   status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']),
   generatedHtml: z.string(),
-  issuedAt: z.string(),   
+  issuedAt: z.string().nullable().optional(),
   dueDate: z.string(),
   templateId: z.string().uuid().or(z.literal('defaultTemplate')).nullable(),
   userId: z.string().uuid(),
@@ -35,5 +60,6 @@ export const InvoiceSchema = z.object({
   updatedAt: z.string(),
 });
 
+export type CreateInvoice = z.infer<typeof CreateInvoiceSchema>;
 export type Invoice = z.infer<typeof InvoiceSchema>;
 export type InvoiceVariableValue = z.infer<typeof InvoiceVariableValueSchema>;

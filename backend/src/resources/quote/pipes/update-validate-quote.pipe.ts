@@ -17,8 +17,10 @@ export class ValidateQuoteOnUpdatePipe<
 
       if (
         required &&
+        variableName !== 'invoice_number' &&
         (rawValue === undefined || rawValue === null || rawValue === '')
-      ) {
+      )
+      {
         throw new BadRequestException(
           `La variable requise "${variableName}" est manquante ou vide.`,
         );

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import apiClient from '@/config/axios';
 import { handleError } from '@/utils/handleError';
-import { QuoteSchema, type CreateQuote, type Quote } from '@/schemas/quote.schema';
+import { QuoteSchema, type Quote, type CreateQuote } from '@/schemas/quote.schema';
 
 export const useQuoteStore = defineStore('quote', () => {
   const quotes = ref<Quote[]>([]);
@@ -13,7 +13,6 @@ export const useQuoteStore = defineStore('quote', () => {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/quotes');
-      
       quotes.value = data.map((item: Quote) => QuoteSchema.parse(item));
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération des devis.');
@@ -37,12 +36,6 @@ export const useQuoteStore = defineStore('quote', () => {
   async function createQuote(payload: CreateQuote) {
     try {
       const { data } = await apiClient.post('/quotes', payload);
-      console.log(
-        'types avant parse:',
-        data.variableValues.map((v: any) => [typeof v.type, v.type])
-      );
-      console.log('data', data);
-      
       return QuoteSchema.parse(data);
     } catch (error) {
        console.error('❌ Erreur de validation Zod:', error);
@@ -67,8 +60,17 @@ export const useQuoteStore = defineStore('quote', () => {
       handleError(error, 'Erreur lors de la récupération du numéro de devis.');
       return null;
     }
-  }  
-  
+  }
+
+  async function updateQuote(id: string, payload: Partial<Quote>) {
+    try {
+      const { data } = await apiClient.put(`/quotes/${id}`, payload);
+      return QuoteSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de la modification du devis.');
+    }
+  }
+
   return {
     quotes,
     currentQuote,
@@ -76,7 +78,8 @@ export const useQuoteStore = defineStore('quote', () => {
     fetchAllQuotes,
     fetchQuote,
     createQuote,
-    deleteQuote, 
-    fetchNextQuoteNumber 
+    deleteQuote,
+    fetchNextQuoteNumber,
+    updateQuote,
   };
 });

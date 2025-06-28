@@ -54,7 +54,6 @@
     }
   });
 
-
   function confirmSelection() {
     emit('templateSelected', selectedTemplate.value);
     emit('update:modelValue', false);

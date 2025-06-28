@@ -2,12 +2,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '@/config/axios'
 import { removeSystemVariables } from '@/utils/removeSystemVariables'
-import { ContractTemplateSchema, type ContractTemplate } from '@/schemas/contractTemplate.schema'
 import { handleError } from '@/utils/handleError'
+import { ContractTemplateSchema, type CreateContractTemplate, type ContractTemplate } from '@/schemas/contractTemplate.schema'
 
 export const useContractTemplateStore = defineStore('contractTemplate', () => {
   const templates = ref<ContractTemplate[]>([])
   const currentTemplate = ref<ContractTemplate | null>(null)
+  const defaultTemplate = ref<ContractTemplate | null>(null)
   const isLoading = ref(false)
 
   async function fetchAllTemplates(includeDefault = true) {
@@ -39,13 +40,13 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
   async function fetchDefaultTemplate() {
     try {
       const { data } = await apiClient.get('/contract-templates/default-template')
-      return ContractTemplateSchema.parse(data)
+      defaultTemplate.value = ContractTemplateSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération du template par défaut de contrat.')
     }
   }
 
-  async function createTemplate(payload: ContractTemplate) {
+  async function createTemplate(payload: CreateContractTemplate) {
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.post('/contract-templates', cleanedPayload)
@@ -53,7 +54,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
     } catch (error) {
       handleError(error, 'Erreur lors de la création du template de contrat.')
     }
-  }  
+  }
 
   async function updateTemplate(id: string, payload: Partial<ContractTemplate>) {
     try {
@@ -86,6 +87,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
   return {
     templates,
     currentTemplate,
+    defaultTemplate,
     isLoading,
     fetchAllTemplates,
     fetchTemplate,

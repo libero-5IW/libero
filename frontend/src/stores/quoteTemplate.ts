@@ -23,7 +23,6 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       templates.value = [];
       handleError(error, 'Erreur lors de la récupération des templates.')
     } finally {
-      
       isLoading.value = false
     }
   }

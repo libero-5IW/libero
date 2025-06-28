@@ -18,6 +18,15 @@
             class="mb-6"
           />
 
+          <v-text-field
+            v-if="quoteNumberVariable"
+            :model-value="quoteNumberVariable.value"
+            :label="quoteNumberVariable.label || 'Numéro du devis'"
+            readonly
+            class="mb-4"
+            :style="{ pointerEvents: 'none', opacity: 0.6 }"
+          />
+
           <v-card flat class="mb-4 pa-4">
             <TemplateVariableSection
               title="Informations du Freelance"
@@ -39,7 +48,7 @@
               :variablesValue="variablesValue"
             />
 
-            <v-btn color="primary" @click="onCreateQuote" :disabled="!canCreate">
+            <v-btn v-if="!isEditMode" color="primary" @click="onCreateQuote" :disabled="!canCreate">
               <v-icon start>mdi-content-save</v-icon>
               Créer le devis
             </v-btn>
@@ -55,6 +64,10 @@
         </v-col>
       </v-row>
     </v-container>
+
+    <v-btn v-if="isEditMode" color="primary" @click="saveQuote">
+      Enregistrer
+    </v-btn>
   </div>
 </template>
 
@@ -72,6 +85,9 @@
   import { useToastHandler } from '@/composables/useToastHandler';
   import { mapTemplateVariables } from '@/utils/mapTemplateVariables';
   import type { VariableValue, VariableType } from '@/types';
+  import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
+  import { extractUsedVariableNames } from '@/utils/extractUsedVariables';
+  import type { CreateQuote } from '@/schemas/quote.schema';
 
   const router = useRouter();
   const route = useRoute();
@@ -85,10 +101,23 @@
   const selectedTemplateId = ref<string | null>(null);
   const templateVariables = ref<QuoteTemplateVariable[]>([]);
   const variablesValue = ref<VariableValue[]>([]);
+
+  const form = ref<CreateQuote>({
+    templateId: '',
+    generatedHtml: '',
+    validUntil: '',
+    clientId: '',
+    variableValues: [],
+    issuedAt: undefined,
+    status: QUOTE_STATUS.DRAFT,
+  });
+
   const previewHtml = ref<string>('');
-  const previewVariables = ref<Record<string, string>>({});
   const selectedClientId = defineModel<string>('selectedClientId');
   const { showToast } = useToastHandler();
+  const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
+  const quoteId = computed(() => route.params.id as string | undefined);
+  const isEditMode = computed(() => !!quoteId.value);
 
   const currentUser = computed(() => userStore.user);
   const currentTemplate = computed(() => quoteTemplateStore.currentTemplate);
@@ -96,36 +125,79 @@
 
   onMounted(initialize);
 
-  async function initialize() {
-    try {
-      const templateIdFromQuery = route.query.templateId as string | undefined;
-      const templateId = selectedTemplateId.value || templateIdFromQuery;
+  onMounted(async () => {
+    await initialize();
 
-      await clientStore.fetchAllClients();
-      console.log('clients', clients.value);
-      
-      if (!templateId) {
-        showTemplateModal.value = true;
-        return;
+    if (isEditMode.value && quoteId.value) {
+      await quoteStore.fetchQuote(quoteId.value);
+      const quote = quoteStore.currentQuote;
+      if (!quote) return;
+
+      Object.assign(form.value, {
+        templateId: quote.templateId ?? '',
+        generatedHtml: quote.generatedHtml,
+        validUntil: quote.validUntil,
+        clientId: quote.clientId,
+        issuedAt: quote.issuedAt,
+        variableValues: quote.variableValues.map(v => ({
+          id: v.id,
+          variableName: v.variableName,
+          value: v.value,
+          label: v.label,
+          type: v.type,
+          required: v.required,
+          quoteId: quote.id,
+        }))
+      });
+
+      selectedClientId.value = quote.clientId;
+      selectedTemplateId.value = quote.templateId;
+
+      if (quote.templateId) {
+        await quoteTemplateStore.fetchTemplate(quote.templateId);
+        await handleTemplateSelected(quote.templateId);
       }
 
+      variablesValue.value = quote.variableValues.map(v => ({
+        id: v.id,
+        variableName: v.variableName,
+        value: v.value,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+        quoteId: quote.id,
+      }));
+    }
+  });
+
+  async function initialize() {
+    const templateIdFromQuery = route.query.templateId as string | undefined;
+    const templateId = selectedTemplateId.value || templateIdFromQuery;
+
+    await clientStore.fetchAllClients();
+
+    if (!templateId && !isEditMode.value) {
+      showTemplateModal.value = true;
+      return;
+    }
+
+    if (templateId) {
       await quoteTemplateStore.fetchTemplate(templateId);
 
       if (!quoteTemplateStore.currentTemplate) {
         showTemplateModal.value = true;
-      } else {
-        selectedTemplateId.value = templateId;
+        return;
       }
 
-      handleTemplateSelected(templateId);
-    } catch (error) {
+      selectedTemplateId.value = templateId;
+      await handleTemplateSelected(templateId);
+    } else if (!isEditMode.value) {
       showTemplateModal.value = true;
     }
   }
 
   async function fetchQuoteTemplates() {
     await quoteTemplateStore.fetchAllTemplates();
-
     return quoteTemplateStore.templates.map(template => ({
       id: template.id as string,
       name: template.name
@@ -136,15 +208,21 @@
     selectedTemplateId.value = templateId;
 
     const template = await loadAndGetTemplate(templateId);
-
     if (!template) return;
 
-    templateVariables.value = mapTemplateVariablesWithEnum(template.variables);
+    const usedVariableNames = extractUsedVariableNames(template.contentHtml);
+
+    const filtered = template.variables.filter(
+      (v, i, arr) =>
+        usedVariableNames.includes(v.variableName) &&
+        arr.findIndex(x => x.variableName === v.variableName) === i
+    );
+
+    templateVariables.value = mapTemplateVariablesWithEnum(filtered);
     previewHtml.value = template.contentHtml;
 
-    resetVariableValues(template.variables);
-    fillSystemValues(template.variables);
-    fillPreview();
+    resetVariableValues(filtered);
+    await fillSystemValues(filtered);
   }
 
   async function loadAndGetTemplate(templateId: string) {
@@ -159,20 +237,33 @@
   }
 
   function resetVariableValues(variables: QuoteTemplateVariable[]) {
-    previewVariables.value = {};
+    const valueMap = new Map<string, string>(
+      variablesValue.value.map(v => [v.variableName, v.value])
+    );
+
     variablesValue.value = variables.map(v => ({
       variableName: v.variableName,
       label: v.label,
       type: v.type as VariableType,
       required: v.required,
-      value: '',
+      value: valueMap.get(v.variableName) ?? '',
       id: v.id,
       templateId: v.templateId,
     }));
   }
-
   
   async function fillSystemValues(variables: QuoteTemplateVariable[]) {
+
+    const today = new Date().toISOString().split('T')[0];
+    const validUntil = new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString().split('T')[0];
+
+    updateVariable('issue_date', today);
+    updateVariable('valid_until', validUntil);
+
+    updateVariable('payment_terms', 'Paiement sous 30 jours');
+    updateVariable('late_penalty', 'Pénalités de 10% après échéance');
+    updateVariable('tva_detail', 'TVA de 20% incluse');
+
     if (!currentUser.value?.id) {
       await userStore.fetchCurrentUser();
     }
@@ -191,13 +282,40 @@
     const v = variablesValue.value.find(v => v.variableName === name);
     if (v) v.value = newValue;
   }
-  
-  function fillPreview() {
-    templateVariables.value.forEach((v) => {
-      previewVariables.value[v.variableName] =
-        variablesValue.value.find(val => val.variableName === v.variableName)?.value || `<em class="text-gray-500">${v.label}</em>`;
-    });
+
+  async function saveQuote() {
+    if (!isEditMode.value || !quoteId.value) return;
+
+    const payload = {
+      templateId: selectedTemplateId.value!,
+      clientId: selectedClientId.value!,
+      issuedAt: form.value.issuedAt ?? new Date().toISOString(),
+      validUntil: form.value.validUntil,
+      generatedHtml: previewHtml.value,
+      variableValues: variablesValue.value.map(v => ({
+        id: v.id!,
+        variableName: v.variableName,
+        value: v.value,
+        label: v.label,
+        type: v.type,
+        required: v.required,
+        quoteId: quoteId.value!,
+      })),
+    };
+
+    const updated = await quoteStore.updateQuote(quoteId.value, payload);
+
+    if (updated) {
+      router.push({
+        path: '/quote',
+        state: {
+          toastStatus: 'success',
+          toastMessage: `Le devis #${updated.number} a été modifié avec succès.`,
+        },
+      });
+    }
   }
+
 
   const canCreate = computed(() => {
     const hasTemplate = !!selectedTemplateId.value;
@@ -210,6 +328,14 @@
     return hasTemplate && hasClient && hasUser && allRequiredFilled;
   });
 
+  const previewVariables = computed(() => {
+    const result: Record<string, string> = {};
+    variablesValue.value.forEach(v => {
+      result[v.variableName] = v.value || `<em class="text-gray-500">${v.label}</em>`;
+    });
+    return result;
+  });
+
   const orderedTemplateVariables = computed(() => {
     return [...templateVariables.value].sort((a, b) => {
       const indexA = previewHtml.value.indexOf(`{{${a.variableName}}}`);
@@ -217,6 +343,10 @@
       return indexA - indexB;
     });
   });
+
+  const quoteNumberVariable = computed(() =>
+  variablesValue.value.find((v) => v.variableName === 'quote_number')
+  );
 
   const freelancerVariables = computed(() =>
     orderedTemplateVariables.value.filter((v) =>
@@ -240,16 +370,18 @@
   );
 
   async function onCreateQuote() {
-    if (!currentUser.value) {
-      showToast('error',`Utilisateur non chargé !` );
+    const user = currentUser.value;
+    if (!user) {
+      showToast('error', 'Utilisateur non chargé !');
       return;
     }
 
     const missingFields = templateVariables.value.filter(
       v => v.required && !variablesValue.value.find(val => val.variableName === v.variableName)?.value
     );
+
     if (missingFields.length > 0) {
-      showToast('error',`Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}` );
+      showToast('error', `Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}`);
       return;
     }
 
@@ -258,15 +390,17 @@
       return;
     }
 
-    const payload = {
+    const payload: CreateQuote = {
       templateId: selectedTemplateId.value,
       clientId: selectedClientId.value!,
-      validUntil: new Date().toISOString(),
+      issuedAt: form.value.issuedAt ?? new Date().toISOString(),
+      validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
+      generatedHtml: previewHtml.value,
+      status: QUOTE_STATUS.DRAFT,
       variableValues: variablesValue.value.map(v => ({
         variableName: v.variableName,
         value: v.value,
       })),
-      generatedHtml: generateHtmlFromTemplate(previewHtml.value, Object.fromEntries(variablesValue.value.map(v => [v.variableName, v.value]))),
     };
 
     const quote = await quoteStore.createQuote(payload);
@@ -280,15 +414,6 @@
         },
       });
     }
-  }
-
-  function generateHtmlFromTemplate(templateHtml: string, vars: Record<string, string>): string {
-    let html = templateHtml;
-    for (const [key, value] of Object.entries(vars)) {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      html = html.replace(regex, value);
-    }
-    return html;
   }
 
   watch(selectedClientId, (newClientId) => {

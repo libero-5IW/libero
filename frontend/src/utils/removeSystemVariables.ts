@@ -1,5 +1,3 @@
-
-
 export function removeSystemVariables<T extends { variables?: { templateId?: string }[] }>(template: T): T {
     if (!template.variables) return template;
 

@@ -8,11 +8,11 @@ export class CreateInvoiceVariableValueDto {
   })
   @IsNotEmpty({ message: 'Le nom de la variable est requis.' })
   @Matches(/^[a-zA-Z_][a-zA-Z0-9_]*$/, {
-    message: 'Le nom de variable doit être en camelCase ou snake_case.',
+    message: 'Le nom de variable doit être en snake_case ou camelCase.',
   })
   variableName: string;
 
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({ example: 'Jean Dupont' })
   @IsString({ message: 'La valeur doit être une chaîne de caractères.' })
   @IsNotEmpty({ message: 'La valeur de la variable est requise.' })
   value: string;

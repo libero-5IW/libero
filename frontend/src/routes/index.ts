@@ -10,6 +10,7 @@ import clientRoutes from '@/routes/client'
 import profileRoutes from '@/routes/profile'
 import { useAuthStore } from '@/stores/auth';
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
+import contractRoutes from '@/routes/contract'
 
 const authenticatedRoutes: Array<RouteRecordRaw> = [
   {
@@ -23,7 +24,8 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
       ...invoiceRoutes,
       ...dashboardRoute,
       ...clientRoutes,
-      ...profileRoutes
+      ...profileRoutes,
+      ...contractRoutes,
     ]
   }
 ]
@@ -43,7 +45,7 @@ router.beforeEach(async (to, from, next) => {
 
     const requiresAuth = to.meta.requiresAuth ?? true;
 
-    if (!authStore.isAuthenticated && !authStore.authAlreadyChecked) {
+    if (requiresAuth && !authStore.isAuthenticated && !authStore.authAlreadyChecked) {
       await authStore.verifyAuth();
     }
   

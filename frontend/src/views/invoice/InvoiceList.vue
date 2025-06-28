@@ -20,7 +20,11 @@
       <v-btn icon @click="viewInvoice(item.id)">
         <v-icon>mdi-eye</v-icon>
       </v-btn>
+      <v-btn icon @click="editInvoice(item.id)">
+        <v-icon>mdi-pencil</v-icon>
+      </v-btn>
     </template>
+
   </DataTable>
 
   <TemplateSelectionModal 
@@ -71,10 +75,8 @@ async function fetchInvoiceTemplates() {
         name: t.name,
       }))
   );
-
   return list;
 }
-
 
 const fetchAllInvoices = async () => {
   await invoiceStore.fetchAllInvoices();
@@ -91,6 +93,10 @@ const handleTemplateSelected = (templateId: string) => {
     name: 'InvoiceForm', 
     query: { templateId }   
   });
+};
+
+const editInvoice = (id: string) => {
+  router.push({ name: 'InvoiceEdit', params: { id } });
 };
 
 onMounted(async () => {

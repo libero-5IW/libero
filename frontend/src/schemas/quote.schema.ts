@@ -1,4 +1,5 @@
 import { VariableType } from '@/types';
+import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
 import { z } from 'zod';
 
 export const CreateQuoteVariableValueSchema = z.object({
@@ -30,6 +31,9 @@ export const CreateQuoteSchema = z.object({
       message: "La date d'émission doit être une date ISO valide.",
     })
     .optional(),
+  status: z.nativeEnum(QUOTE_STATUS, {
+    errorMap: () => ({ message: 'Le statut du devis est invalide.' }),
+    }),
   variableValues: z
     .array(CreateQuoteVariableValueSchema)
     .min(1, { message: 'Au moins une variable est requise.' }),

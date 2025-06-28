@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import apiClient from '@/config/axios';
 import { handleError } from '@/utils/handleError';
-import { InvoiceSchema, type Invoice } from '@/schemas/invoice.schema';
+import { InvoiceSchema, type Invoice, type CreateInvoice } from '@/schemas/invoice.schema';
 
 export const useInvoiceStore = defineStore('invoice', () => {
   const invoices = ref<Invoice[]>([]);
@@ -33,7 +33,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
     }
   }
 
-  async function createInvoice(payload: any) {
+  async function createInvoice(payload: CreateInvoice) {
     try {
       const { data } = await apiClient.post('/invoices', payload);
       return InvoiceSchema.parse(data);
@@ -51,15 +51,22 @@ export const useInvoiceStore = defineStore('invoice', () => {
     }
   }
 
-  async function fetchNextInvoiceNumber(userId: string) {
+  async function fetchNextInvoiceNumber() {
     try {
-      const { data } = await apiClient.get('/invoices/next-number', {
-        params: { userId },
-      });
+      const { data } = await apiClient.get('/invoices/next-number');
       return data;
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération du numéro de facture.');
       return null;
+    }
+  }  
+
+  async function updateInvoice(id: string, payload: Partial<Invoice>) {
+    try {
+      const { data } = await apiClient.put(`/invoices/${id}`, payload);
+      return InvoiceSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de la modification de la facture.');
     }
   }  
   
@@ -71,6 +78,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
     fetchInvoice,
     createInvoice,
     deleteInvoice, 
-    fetchNextInvoiceNumber 
+    fetchNextInvoiceNumber,
+    updateInvoice 
   };
 });

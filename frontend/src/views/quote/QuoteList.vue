@@ -20,6 +20,9 @@
       <v-btn icon @click="viewQuote(item.id)">
         <v-icon>mdi-eye</v-icon>
       </v-btn>
+      <v-btn icon @click="editQuote(item.id)">
+        <v-icon>mdi-pencil</v-icon>
+      </v-btn>
     </template>
   </DataTable>
 
@@ -52,7 +55,7 @@ const showTemplateModal = ref(false);
 const quotes = computed(() => quoteStore.quotes);
 
 const headers: Header[] = [
-  { title: 'Devis numéro', value: 'number', sortable: true },
+  { title: 'Numéro', value: 'number', sortable: true },
   { title: 'Statut', value: 'status', sortable: true },
   { title: 'Date d\'émission', value: 'issuedAt', sortable: true },
   { title: 'Actions', value: 'actions', sortable: false },
@@ -90,6 +93,10 @@ const handleTemplateSelected = (templateId: string) => {
     name: 'QuoteForm', 
     query: { templateId }   
   });
+};
+
+const editQuote = (id: string) => {
+  router.push({ name: 'QuoteEdit', params: { id } });
 };
 
 onMounted(async () => {
