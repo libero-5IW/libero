@@ -113,7 +113,7 @@
   });
 
   const previewHtml = ref<string>('');
-  const selectedClientId = defineModel<string>('selectedClientId');
+  const selectedClientId = defineModel<string | null>('selectedClientId');
   const { showToast } = useToastHandler();
   const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
   const quoteId = computed(() => route.params.id as string | undefined);
@@ -150,8 +150,8 @@
         }))
       });
 
-      selectedClientId.value = quote.clientId;
-      selectedTemplateId.value = quote.templateId;
+      selectedClientId.value = quote.clientId ?? null;
+      selectedTemplateId.value = quote.templateId ?? null;
 
       if (quote.templateId) {
         await quoteTemplateStore.fetchTemplate(quote.templateId);

@@ -107,7 +107,7 @@ const { showToast } = useToastHandler();
 
 const showTemplateModal = ref(false);
 const selectedTemplateId = ref<string | null>(null);
-const selectedClientId = defineModel<string>('selectedClientId');
+const selectedClientId = defineModel<string | null>('selectedClientId');
 const previewHtml = ref('');
 const templateVariables = ref<ContractTemplateVariable[]>([]);
 const variablesValue = ref<VariableValue[]>([]);
@@ -159,7 +159,7 @@ onMounted(async () => {
         variableValues: contract.variableValues,
       });
 
-      selectedClientId.value = contract.clientId;
+      selectedClientId.value = contract.clientId ?? null;
       selectedTemplateId.value = contract.templateId ?? null;
 
       await contractTemplateStore.fetchTemplate(contract.templateId!);

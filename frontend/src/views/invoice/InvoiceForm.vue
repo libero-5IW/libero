@@ -109,7 +109,7 @@ const { showToast } = useToastHandler();
 
 const showTemplateModal = ref(false);
 const selectedTemplateId = ref<string | null>(null);
-const selectedClientId = defineModel<string>('selectedClientId');
+const selectedClientId = defineModel<string | null>('selectedClientId');
 const previewHtml = ref('');
 const templateVariables = ref<InvoiceTemplateVariable[]>([]);
 const variablesValue = ref<VariableValue[]>([]);
@@ -167,7 +167,7 @@ onMounted(async () => {
       })),
     });
 
-    selectedClientId.value = invoice.clientId; 
+    selectedClientId.value = invoice.clientId ?? null; 
 
     if (invoice.templateId) {
       selectedTemplateId.value = invoice.templateId;
