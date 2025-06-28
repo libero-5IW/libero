@@ -346,7 +346,7 @@ const saveInvoice = async () => {
   if (isEditMode.value && invoiceId.value) {
     const payload = {
       templateId: selectedTemplateId.value!,
-      clientId: selectedClientId.value!,
+      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
       issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       dueDate: form.value.dueDate,
       generatedHtml: previewHtml.value,
@@ -414,7 +414,7 @@ async function onCreateInvoice() {
 
   const payload: CreateInvoice = {
     templateId: selectedTemplateId.value!,
-    clientId: selectedClientId.value!,
+    ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
     generatedHtml: previewHtml.value,

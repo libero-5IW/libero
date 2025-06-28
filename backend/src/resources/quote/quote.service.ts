@@ -34,13 +34,15 @@ export class QuoteService {
       createQuoteDto;
 
     await this.userService.getUserOrThrow(userId);
-    await this.clientService.getClientOrThrow(clientId, userId);
-
+    
+    if (clientId) {
+      await this.clientService.getClientOrThrow(clientId, userId);
+    }
+    
     const template = await this.quoteTemplateService.findOne(
       templateId,
       userId,
     );
-
 
     const nextNumber = await this.getNextQuoteNumber(userId);
 
@@ -49,7 +51,7 @@ export class QuoteService {
         number: nextNumber,
         template: { connect: { id: templateId } },
         user: { connect: { id: userId } },
-        client: { connect: { id: clientId } },
+        ...(clientId ? { client: { connect: { id: clientId } } } : {}),
         status: QuoteStatus.draft,
         generatedHtml,
         validUntil: new Date(validUntil),
