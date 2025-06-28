@@ -54,7 +54,7 @@ export const InvoiceSchema = z.object({
   dueDate: z.string(),
   templateId: z.string().uuid().or(z.literal('defaultTemplate')).nullable(),
   userId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  clientId: z.string().uuid().nullable(),
   variableValues: z.array(InvoiceVariableValueSchema),
   createdAt: z.string(),
   updatedAt: z.string(),

@@ -54,7 +54,7 @@ export const ContractSchema = z.object({
   validUntil: z.string(),
   templateId: z.string().uuid().or(z.literal('defaultTemplate')).nullable(),
   userId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  clientId: z.string().uuid().nullable(),
   variableValues: z.array(ContractVariableValueSchema),
   createdAt: z.string(),
   updatedAt: z.string(),
