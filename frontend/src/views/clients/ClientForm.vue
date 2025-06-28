@@ -189,8 +189,8 @@ const cancel = () => {
   router.push({ name: 'ClientList' })
 }
 
-const removeClient = async (id: string) => {
-    await clientStore.deleteClient(id)
+const removeClient = async () => {
+    await clientStore.deleteClient(route.params.id as string)
     router.push({
         path: '/clients',
         state: {
