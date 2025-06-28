@@ -1,33 +1,32 @@
 <template>
-  <DataTable
-    :headers="headers"
-    :items="quotes"
-    :items-length="quotes.length"
-    @update:options="fetchAllQuotes"
-  >
-    <template #top.title>
-      <span class="text-xl font-semibold">Liste des devis</span>
-    </template>
-
-    <template #top.actions>
+  <div class="ml-4 mt-8">
+    <div class="flex items-center justify-between mb-10">
+      <h1 class="text-xl font-bold">Liste des devis</h1>
       <v-btn color="primary" @click="showTemplateModal = true">
         <v-icon start>mdi-plus</v-icon>
         Nouveau devis
       </v-btn>
-    </template>
+    </div>
+  
+    <div v-if="documentCards.length > 0">
+      <DocumentCardList
+        :items="documentCards"
+        titlePrefix="Devis"
+        @edit="editQuote"
+        @change-status="showStatusModal = true"
+        @delete="openDeleteConfirmation"
+      />
+    </div>
 
-    <template #item.actions="{ item }">
-      <v-btn icon @click="viewQuote(item.id)">
-        <v-icon>mdi-eye</v-icon>
-      </v-btn>
-      <v-btn icon @click="editQuote(item.id)">
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
-      <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
-        <v-icon>mdi-delete</v-icon>
-      </v-btn>
-    </template>
-  </DataTable>
+    <div
+      v-else
+      class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+    >
+      <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
+      <p>Aucun devis créé pour le moment.</p>
+    </div>
+
+  </div>
 
   <TemplateSelectionModal 
     v-model="showTemplateModal"
@@ -50,14 +49,14 @@
 
 import { ref, computed, onMounted } from 'vue';
 import { useQuoteStore } from '@/stores/quote';
-import DataTable from '@/components/Table/DataTable.vue';
 import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue'; 
 import { useToastHandler } from '@/composables/useToastHandler';
-import type { ToastStatus } from '@/types';
+import type { DocumentCard, ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useQuoteTemplateStore } from '@/stores/quoteTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
+import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue';
 
 const quoteTemplateStore = useQuoteTemplateStore();
 const quoteStore = useQuoteStore();
@@ -65,11 +64,30 @@ const quoteStore = useQuoteStore();
 const { showToast } = useToastHandler();
 const router = useRouter();
 
-const showTemplateModal = ref(false);  
+const showTemplateModal = ref(false);
+const showStatusModal = ref(false);  
 const quotes = computed(() => quoteStore.quotes);
 
 const isDeleteModalOpen = ref(false);
 const selectedQuoteId = ref<string | null>(null);
+
+const documentCards = computed<DocumentCard[]>(() =>
+  quotes.value.map((quote): DocumentCard  => {
+      const clientNameVar = quote.variableValues?.find(
+          (v) => v.variableName === 'client_name'
+      );
+      
+    return {
+      id: quote.id,
+      number: quote.number,
+      status: quote.status,
+      createdAt: quote.createdAt ?? '',
+      previewUrl: quote.previewUrl ?? null,
+      pdfUrl: quote.pdfUrl ?? null,
+      clientName: clientNameVar?.value || 'Client inconnu'
+    }
+  })
+);
 
 const headers: Header[] = [
   { title: 'Numéro', value: 'number', sortable: true },
@@ -97,10 +115,6 @@ async function fetchQuoteTemplates() {
 
 const fetchAllQuotes = async () => {
   await quoteStore.fetchAllQuotes();
-};
-
-const viewQuote = (id: string) => {
-  console.log(`Visualiser devis ${id}`);
 };
 
 const handleTemplateSelected = (templateId: string) => {

@@ -13,7 +13,7 @@ export const useQuoteStore = defineStore('quote', () => {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/quotes');
-      quotes.value = data.map((item: Quote) => QuoteSchema.parse(item));
+      quotes.value = data.map((item: Quote) => QuoteSchema.parse(item)); 
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération des devis.');
     } finally {
@@ -35,19 +35,26 @@ export const useQuoteStore = defineStore('quote', () => {
 
   async function createQuote(payload: CreateQuote) {
     try {
+      isLoading.value = true;
       const { data } = await apiClient.post('/quotes', payload);
-      return QuoteSchema.parse(data);
+      const test = QuoteSchema.parse(data);
+      return test;
     } catch (error) {
       handleError(error, 'Erreur lors de la création du devis.');
+    } finally {
+      isLoading.value = false;
     }
   }
 
   async function deleteQuote(id: string) {
     try {
+      isLoading.value = true;
       await apiClient.delete(`/quotes/${id}`);
       quotes.value = quotes.value.filter((quote) => quote.id !== id);
     } catch (error) {
       handleError(error, 'Erreur lors de la suppression du devis.');
+    } finally {
+      isLoading.value = false;      
     }
   }
 
@@ -63,10 +70,13 @@ export const useQuoteStore = defineStore('quote', () => {
 
   async function updateQuote(id: string, payload: Partial<Quote>) {
     try {
+      isLoading.value = true;
       const { data } = await apiClient.put(`/quotes/${id}`, payload);
       return QuoteSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors de la modification du devis.');
+    } finally {
+      isLoading.value = false;
     }
   }
 

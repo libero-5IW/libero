@@ -24,6 +24,8 @@
     "schema": "src/database/prisma/schema.prisma"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.839.0",
+    "@aws-sdk/s3-request-presigner": "^3.839.0",
     "@nestjs/common": "^11.0.11",
     "@nestjs/config": "^4.0.1",
     "@nestjs/core": "^11.0.11",
@@ -36,6 +38,7 @@
     "class-validator": "^0.14.1",
     "jsdom": "^26.1.0",
     "passport-jwt": "^4.0.1",
+    "puppeteer": "^24.11.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },

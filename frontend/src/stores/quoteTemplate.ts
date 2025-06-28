@@ -19,7 +19,6 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       })
       templates.value = data.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
     } catch (error) {
-      console.log('error', error);
       templates.value = [];
       handleError(error, 'Erreur lors de la récupération des templates.')
     } finally {

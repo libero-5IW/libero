@@ -39,19 +39,25 @@ export const useContractStore = defineStore('contract', () => {
 
   async function createContract(payload: CreateContract) {
     try {
+      isLoading.value = true;
       const { data } = await apiClient.post('/contracts', payload);
       return ContractSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors de la création du contrat.');
+    } finally {
+      isLoading.value = false;
     }
   }
 
   async function deleteContract(id: string) {
     try {
+      isLoading.value = true;
       await apiClient.delete(`/contracts/${id}`);
       contracts.value = contracts.value.filter((contract) => contract.id !== id);
     } catch (error) {
       handleError(error, 'Erreur lors de la suppression du contrat.');
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -67,10 +73,13 @@ export const useContractStore = defineStore('contract', () => {
 
   async function updateContract(id: string, payload: Partial<Contract>) {
     try {
+      isLoading.value = true;
       const { data } = await apiClient.put(`/contracts/${id}`, payload);
       return ContractSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors de la modification du contrat.');
+    } finally {
+      isLoading.value = false;
     }
   }
 

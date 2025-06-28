@@ -10,6 +10,8 @@
       item-value="id"
       label="Sélectionner un client"
       class="mb-4"
+      clearable
+      :return-object="false"
     />
 
     <div

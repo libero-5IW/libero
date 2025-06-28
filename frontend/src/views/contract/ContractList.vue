@@ -1,33 +1,33 @@
 <template>
-  <DataTable
-    :headers="headers"
-    :items="contracts"
-    :items-length="contracts.length"
-    @update:options="fetchAllContracts"
-  >
-    <template #top.title>
-      <span class="text-xl font-semibold">Liste des contrats</span>
-    </template>
-
-    <template #top.actions>
+  <div class="ml-4 mt-8">
+    <div class="flex items-center justify-between mb-10">
+      <h1 class="text-xl font-bold">Liste des contrats</h1>
       <v-btn color="primary" @click="showTemplateModal = true">
         <v-icon start>mdi-plus</v-icon>
         Nouveau contrat
       </v-btn>
-    </template>
+    </div>
 
-    <template #item.actions="{ item }">
-      <v-btn icon @click="viewContract(item.id)">
-        <v-icon>mdi-eye</v-icon>
-      </v-btn>
-      <v-btn icon @click="editContract(item.id)">
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
-      <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
-        <v-icon>mdi-delete</v-icon>
-      </v-btn>
-    </template>
-  </DataTable>
+    <div v-if="documentCards.length > 0">
+      <DocumentCardList
+        :items="documentCards"
+        titlePrefix="Contrat"
+        @edit="editContract"
+        @change-status="showStatusModal = true"
+        @delete="openDeleteConfirmation"
+      />
+    </div>
+
+    <div
+      v-else
+      class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+    >
+      <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
+      <p>Aucun contrat créé pour le moment.</p>
+    </div>
+
+
+  </div>
 
   <TemplateSelectionModal 
     v-model="showTemplateModal"
@@ -51,10 +51,10 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useContractStore } from '@/stores/contract';
 import { useContractTemplateStore } from '@/stores/contractTemplate';
-import DataTable from '@/components/Table/DataTable.vue';
+import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue';
 import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue';
 import { useToastHandler } from '@/composables/useToastHandler';
-import type { ToastStatus } from '@/types';
+import type { DocumentCard, ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 
@@ -64,10 +64,29 @@ const contractTemplateStore = useContractTemplateStore();
 const { showToast } = useToastHandler();
 
 const showTemplateModal = ref(false);
+const showStatusModal = ref(false);  
 const contracts = computed(() => contractStore.contracts);
 
 const isDeleteModalOpen = ref(false)
 const selectedContractId = ref<string | null>(null)
+
+const documentCards = computed<DocumentCard[]>(() =>
+  contracts.value.map((contract): DocumentCard  => {
+      const clientNameVar = contract.variableValues?.find(
+          (v) => v.variableName === 'client_name'
+      );
+      
+    return {
+      id: contract.id,
+      number: contract.number,
+      status: contract.status,
+      createdAt: contract.createdAt ?? '',
+      previewUrl: contract.previewUrl ?? null,
+      pdfUrl: contract.pdfUrl ?? null,
+      clientName: clientNameVar?.value || 'Client inconnu'
+    }
+  })
+);
 
 const headers: Header[] = [
   { title: 'Numéro', value: 'number', sortable: true },
@@ -88,10 +107,6 @@ async function fetchContractTemplates() {
 
 async function fetchAllContracts() {
   await contractStore.fetchAllContracts();
-}
-
-function viewContract(id: string) {
-  console.log(`Visualiser contrat ${id}`);
 }
 
 function editContract(id: string) {

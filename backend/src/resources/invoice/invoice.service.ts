@@ -15,7 +15,8 @@ import { InvoiceStatus, VariableType } from '@prisma/client';
 import { generateNextNumber } from 'src/common/utils/generate-number.util';
 import { CreateInvoiceVariableValueDto } from './dto/create-invoice-variable-value.dto';
 import { InvoiceTemplateVariableEntity } from '../invoice-template/entities/invoice-template-variable.entity';
-import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
+import { S3Service } from 'src/common/s3/s3.service';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 
 @Injectable()
 export class InvoiceService {
@@ -24,24 +25,35 @@ export class InvoiceService {
     private readonly userService: UserService,
     private readonly clientService: ClientService,
     private readonly invoiceTemplateService: InvoiceTemplateService,
+    private readonly pdfGeneratorService: PdfGeneratorService,
+    private readonly s3Service: S3Service,
   ) {}
 
-  async create(
-    userId: string,
-    dto: CreateInvoiceDto,
-  ): Promise<InvoiceEntity> {
-    
-    const { clientId, templateId, generatedHtml, dueDate, variableValues } = dto;
+  async create(userId: string, dto: CreateInvoiceDto): Promise<InvoiceEntity> {
+    const { clientId, templateId, generatedHtml, dueDate, variableValues } =
+      dto;
 
-    await this.userService.getUserOrThrow(userId); 
-    
+    const user = await this.userService.getUserOrThrow(userId);
+
     if (clientId) {
       await this.clientService.getClientOrThrow(clientId, userId);
     }
 
-    const template = await this.invoiceTemplateService.findOne(templateId, userId);
+    const template = await this.invoiceTemplateService.findOne(
+      templateId,
+      userId,
+    );
     const nextNumber = await this.getNextInvoiceNumber(userId);
-    
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(generatedHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'invoices',
+    );
 
     const invoice = await this.prisma.invoice.create({
       data: {
@@ -53,11 +65,12 @@ export class InvoiceService {
         generatedHtml,
         dueDate: new Date(dueDate),
         issuedAt: null,
+        pdfKey,
+        previewKey,
         variableValues: {
           create: this.mapVariableWithTemplateData(
             variableValues,
             template.variables,
-            generatedHtml,
           ),
         },
       },
@@ -76,7 +89,25 @@ export class InvoiceService {
       include: { variableValues: true },
     });
 
-    return plainToInstance(InvoiceEntity, invoices, {
+    const invoicesWithUrls = await Promise.all(
+      invoices.map(async (invoice) => {
+        const previewUrl = invoice.previewKey
+          ? await this.s3Service.generateSignedUrl(invoice.previewKey)
+          : null;
+
+        const pdfUrl = invoice.pdfKey
+          ? await this.s3Service.generateSignedUrl(invoice.pdfKey)
+          : null;
+
+        return {
+          ...invoice,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+
+    return plainToInstance(InvoiceEntity, invoicesWithUrls, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
@@ -84,30 +115,67 @@ export class InvoiceService {
 
   async findOne(id: string, userId: string) {
     const invoice = await this.getInvoiceOrThrow(id, userId);
-    return plainToInstance(InvoiceEntity, invoice);
+    const previewUrl = invoice.previewKey
+      ? await this.s3Service.generateSignedUrl(invoice.previewKey)
+      : null;
+
+    const pdfUrl = invoice.pdfKey
+      ? await this.s3Service.generateSignedUrl(invoice.pdfKey)
+      : null;
+
+    return plainToInstance(InvoiceEntity, {
+      ...invoice,
+      previewUrl,
+      pdfUrl,
+    });
   }
 
   async update(id: string, userId: string, dto: UpdateInvoiceDto) {
     const { variableValues, ...otherData } = dto;
     const existing = await this.getInvoiceOrThrow(id, userId);
-  
+
     if (existing.status !== InvoiceStatus.draft) {
-      throw new BadRequestException('Seules les factures en brouillon peuvent être modifiées.');
+      throw new BadRequestException(
+        'Seules les factures en brouillon peuvent être modifiées.',
+      );
     }
-  
-    const template = await this.invoiceTemplateService.findOne(existing.templateId, userId);
-  
+
+    const template = await this.invoiceTemplateService.findOne(
+      existing.templateId,
+      userId,
+    );
+
     const preparedVariables = this.mapVariableWithTemplateData(
       variableValues ?? [],
       template.variables,
-      existing.generatedHtml,
     );
-  
+
+    const user = await this.userService.getUserOrThrow(userId);
+
+    if (existing.pdfKey) {
+      await this.s3Service.deleteFile(existing.pdfKey);
+    }
+    if (existing.previewKey) {
+      await this.s3Service.deleteFile(existing.previewKey);
+    }
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(
+        otherData.generatedHtml,
+      );
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'invoices',
+    );
+
     const updatedInvoice = await this.prisma.$transaction(async (tx) => {
       await tx.invoiceVariableValue.deleteMany({
         where: { invoiceId: id },
       });
-  
+
       if (preparedVariables.length > 0) {
         await tx.invoiceVariableValue.createMany({
           data: preparedVariables.map((v) => ({
@@ -120,19 +188,19 @@ export class InvoiceService {
           })),
         });
       }
-  
+
       return tx.invoice.update({
         where: { id },
-        data: { ...otherData },
+        data: { ...otherData, pdfKey, previewKey },
         include: { variableValues: true },
       });
     });
-  
+
     return plainToInstance(InvoiceEntity, updatedInvoice, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
-  }  
+  }
 
   async remove(id: string, userId: string) {
     await this.getInvoiceOrThrow(id, userId);
@@ -158,18 +226,17 @@ export class InvoiceService {
   private mapVariableWithTemplateData(
     submitted: CreateInvoiceVariableValueDto[],
     templateVars: InvoiceTemplateVariableEntity[],
-    html: string,
   ) {
-    const templateMap = new Map(
-      templateVars.map((v) => [v.variableName, v]),
-    );
-  
+    const templateMap = new Map(templateVars.map((v) => [v.variableName, v]));
+
     return submitted.map((v) => {
       const templateVar = templateMap.get(v.variableName);
       if (!templateVar) {
-        throw new Error(`Variable ${v.variableName} non définie dans le template`);
+        throw new Error(
+          `Variable ${v.variableName} non définie dans le template`,
+        );
       }
-  
+
       return {
         variableName: v.variableName,
         value: v.value,
@@ -179,5 +246,4 @@ export class InvoiceService {
       };
     });
   }
-  
 }

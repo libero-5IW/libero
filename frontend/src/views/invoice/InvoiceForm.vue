@@ -52,12 +52,19 @@
               v-if="!isEditMode"
               color="primary"
               @click="onCreateInvoice"
-              :disabled="!canCreate"
+              :disabled="!canCreate || isLoading"
             >
-              <v-icon start>mdi-content-save</v-icon>
-              Créer la facture
+              <template v-if="!isLoading">
+                <v-icon start>mdi-content-save</v-icon>
+                Créer la facture
+              </template>
+              <v-progress-circular
+                v-else
+                indeterminate
+                size="20"
+                color="secondary"
+              />
             </v-btn>
-
           </v-card>
         </v-col>
 
@@ -70,12 +77,23 @@
         </v-col>
       </v-row>
     </v-container>
+
     <v-btn
       v-if="isEditMode"
       color="primary"
       @click="saveInvoice"
+      :disabled="isLoading"
     >
-      Enregistrer
+      <template v-if="!isLoading">
+        <v-icon start>mdi-content-save</v-icon>
+        Enregistrer
+      </template>
+      <v-progress-circular
+        v-else
+        indeterminate
+        size="20"
+        color="white"
+      />
     </v-btn>
   </div>
 </template>
@@ -94,9 +112,9 @@ import { useToastHandler } from '@/composables/useToastHandler';
 import { mapTemplateVariables } from '@/utils/mapTemplateVariables';
 import type { VariableValue, VariableType } from '@/types';
 import type { InvoiceTemplateVariable } from '@/schemas/invoiceTemplate.schema';
-import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
 import { extractUsedVariableNames } from '@/utils/extractUsedVariables'
 import type { CreateInvoice } from '@/schemas/invoice.schema';
+import { generateFinalHtml } from '@/utils/generateFinalHtml';
 
 const route = useRoute();
 const router = useRouter();
@@ -130,6 +148,7 @@ const isEditMode = computed(() => !!invoiceId.value);
 const currentUser = computed(() => userStore.user);
 const currentTemplate = computed(() => invoiceTemplateStore.currentTemplate);
 const clients = computed(() => clientStore.clients);
+const isLoading = computed(() => invoiceStore.isLoading)
 const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
 const invoiceNumberVariable = computed(() =>
   variablesValue.value.find((v) => v.variableName === 'invoice_number')
@@ -308,13 +327,12 @@ function updateVariable(name: string, newValue: string) {
 
 const canCreate = computed(() => {
   const hasTemplate = !!selectedTemplateId.value;
-  const hasClient = !!selectedClientId.value;
   const hasUser = !!currentUser.value;
   const allRequiredFilled = templateVariables.value.every(v =>
     !v.required || !!variablesValue.value.find(val => val.variableName === v.variableName)?.value
   );
 
-  return hasTemplate && hasClient && hasUser && allRequiredFilled;
+  return hasTemplate && hasUser && allRequiredFilled;
 });
 
 const orderedTemplateVariables = computed(() => {
@@ -346,10 +364,10 @@ const saveInvoice = async () => {
   if (isEditMode.value && invoiceId.value) {
     const payload = {
       templateId: selectedTemplateId.value!,
-      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
+      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
       issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       dueDate: form.value.dueDate,
-      generatedHtml: previewHtml.value,
+      generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),
       variableValues: variablesValue.value.map(v => ({
       id: v.id!,
       variableName: v.variableName,
@@ -414,10 +432,10 @@ async function onCreateInvoice() {
 
   const payload: CreateInvoice = {
     templateId: selectedTemplateId.value!,
-    ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
+    ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
-    generatedHtml: previewHtml.value,
+    generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),
     variableValues: variablesValue.value.map(v => ({
       id: v.id!,
       variableName: v.variableName,
