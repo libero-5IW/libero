@@ -23,7 +23,7 @@
       <v-btn icon @click="editInvoice(item.id)">
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
-      <v-btn icon @click="deleteInvoice(item.id)">
+      <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
         <v-icon>mdi-delete</v-icon>
       </v-btn>
     </template>
@@ -33,6 +33,16 @@
     v-model="showTemplateModal"
     :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleTemplateSelected"
+  />
+
+  <ConfirmationModal
+    v-model="isDeleteModalOpen"
+    title="Supprimer cette facture ?"
+    message="Êtes-vous sûr de vouloir supprimer cette facture ? Cette action est irréversible."
+    confirmText="Supprimer"
+    cancelText="Annuler"
+    confirmColor="error"
+    @confirm="confirmDeleteInvoice"
   />
 </template>
 
@@ -47,6 +57,7 @@ import type { ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
 
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const invoiceStore = useInvoiceStore();
@@ -56,6 +67,9 @@ const router = useRouter();
 
 const showTemplateModal = ref(false);  
 const invoices = computed(() => invoiceStore.invoices);
+
+const isDeleteModalOpen = ref(false);
+const selectedInvoiceId = ref<string | null>(null);
 
 const headers: Header[] = [
   { title: 'Numéro', value: 'number', sortable: true },
@@ -101,11 +115,18 @@ const editInvoice = (id: string) => {
   router.push({ name: 'InvoiceEdit', params: { id } });
 };
 
-const deleteInvoice = async (id: string) => {
-  await invoiceStore.deleteInvoice(id);
+function openDeleteConfirmation(id: string) {
+  selectedInvoiceId.value = id;
+  isDeleteModalOpen.value = true;
+}
+
+async function confirmDeleteInvoice() {
+  if (!selectedInvoiceId.value) return;
+  await invoiceStore.deleteInvoice(selectedInvoiceId.value);
   await fetchAllInvoices();
   showToast('success', 'La facture a été bien supprimée !');
-};
+  selectedInvoiceId.value = null;
+}
 
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;

@@ -23,7 +23,7 @@
       <v-btn icon @click="editQuote(item.id)">
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
-      <v-btn icon @click="deleteQuote(item.id)">
+      <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
         <v-icon>mdi-delete</v-icon>
       </v-btn>
     </template>
@@ -33,6 +33,16 @@
     v-model="showTemplateModal"
     :fetchTemplates="fetchQuoteTemplates"
     @templateSelected="handleTemplateSelected"
+  />
+
+  <ConfirmationModal
+    v-model="isDeleteModalOpen"
+    title="Supprimer ce devis ?"
+    message="Êtes-vous sûr de vouloir supprimer ce devis ? Cette action est irréversible."
+    confirmText="Supprimer"
+    cancelText="Annuler"
+    confirmColor="error"
+    @confirm="confirmDeleteQuote"
   />
 </template>
 
@@ -47,6 +57,7 @@ import type { ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useQuoteTemplateStore } from '@/stores/quoteTemplate';
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
 
 const quoteTemplateStore = useQuoteTemplateStore();
 const quoteStore = useQuoteStore();
@@ -56,6 +67,9 @@ const router = useRouter();
 
 const showTemplateModal = ref(false);  
 const quotes = computed(() => quoteStore.quotes);
+
+const isDeleteModalOpen = ref(false);
+const selectedQuoteId = ref<string | null>(null);
 
 const headers: Header[] = [
   { title: 'Numéro', value: 'number', sortable: true },
@@ -102,11 +116,18 @@ const editQuote = (id: string) => {
   router.push({ name: 'QuoteEdit', params: { id } });
 };
 
-const deleteQuote = async (id: string) => {
-  await quoteStore.deleteQuote(id);
+function openDeleteConfirmation(id: string) {
+  selectedQuoteId.value = id;
+  isDeleteModalOpen.value = true;
+}
+
+async function confirmDeleteQuote() {
+  if (!selectedQuoteId.value) return;
+  await quoteStore.deleteQuote(selectedQuoteId.value);
   await fetchAllQuotes();
   showToast('success', 'Le devis a été bien supprimé !');
-};
+  selectedQuoteId.value = null;
+}
 
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
