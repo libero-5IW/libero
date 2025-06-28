@@ -23,6 +23,9 @@
       <v-btn icon @click="editContract(item.id)">
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
+      <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
+        <v-icon>mdi-delete</v-icon>
+      </v-btn>
     </template>
   </DataTable>
 
@@ -30,6 +33,16 @@
     v-model="showTemplateModal"
     :fetchTemplates="fetchContractTemplates"
     @templateSelected="handleTemplateSelected"
+  />
+
+  <ConfirmationModal
+    v-model="isDeleteModalOpen"
+    title="Confirmation de suppression"
+    message="Êtes-vous sûr de vouloir supprimer ce contrat ? Cette action est irréversible."
+    confirmText="Supprimer"
+    cancelText="Annuler"
+    confirmColor="error"
+    @confirm="confirmDeleteContract"
   />
 </template>
 
@@ -43,6 +56,7 @@ import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.v
 import { useToastHandler } from '@/composables/useToastHandler';
 import type { ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 
 const router = useRouter();
 const contractStore = useContractStore();
@@ -51,6 +65,9 @@ const { showToast } = useToastHandler();
 
 const showTemplateModal = ref(false);
 const contracts = computed(() => contractStore.contracts);
+
+const isDeleteModalOpen = ref(false)
+const selectedContractId = ref<string | null>(null)
 
 const headers: Header[] = [
   { title: 'Numéro', value: 'number', sortable: true },
@@ -87,6 +104,19 @@ function handleTemplateSelected(templateId: string) {
     name: 'ContractForm', 
     query: { templateId }   
   });
+}
+
+function openDeleteConfirmation(id: string) {
+  selectedContractId.value = id
+  isDeleteModalOpen.value = true
+}
+
+async function confirmDeleteContract() {
+  if (!selectedContractId.value) return
+  await contractStore.deleteContract(selectedContractId.value)
+  await fetchAllContracts()
+  showToast('success', 'Le contrat a été bien supprimé !')
+  selectedContractId.value = null
 }
 
 onMounted(async () => {

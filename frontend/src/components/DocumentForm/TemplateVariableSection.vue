@@ -21,7 +21,7 @@
         :is="getComponentType(variable.type)"
         :modelValue="getVariableValue(variable.variableName)"
         @update:modelValue="(val: string) => updateVariableValue(variable.variableName, val)"
-        :label="variable.label"
+        :label="getLabel(variable)"
         :type="mapInputType(variable.type)"
         :required="variable.required"
       />
@@ -52,6 +52,10 @@ const selectedClientId = defineModel<string | null>('selectedClientId');
 
 const getComponentType = (type: string) => {
   return type === 'textarea' ? 'v-textarea' : 'v-text-field';
+};
+
+const getLabel = (variable: VariableBase) => {
+  return variable.required ? `${variable.label} *` : variable.label;
 };
 
 const mapInputType = (type: string) => {
