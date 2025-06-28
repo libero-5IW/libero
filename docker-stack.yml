@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: libero
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - libero-net
+    deploy:
+      placement:
+        constraints:
+          - node.role == worker
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: postgres://admin:admin@postgres:5432/libero
+    depends_on:
+      - postgres
+    networks:
+      - libero-net
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      - backend
+    networks:
+      - libero-net
+    ports:
+      - "80:5173"
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  postgres_data:
+
+networks:
+  libero-net:
+    driver: overlay
