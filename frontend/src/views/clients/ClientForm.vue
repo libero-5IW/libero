@@ -12,67 +12,87 @@
               v-model="form.firstName"
               label="Prénom"
               type="text"
-              :rules="[rules.required]"
+              :rules="firstNameRules()"
               required
             />
             <v-text-field
               v-model="form.lastName"
               label="Nom"
               type="text"
-              :rules="[rules.required]"
+              :rules="lastNameRules()"
               required
             />
             <v-text-field
               v-model="form.email"
               label="Email"
               type="email"
-              :rules="[rules.required, rules.email]"
+              :rules="emailRules()"
               required
             />
             <v-text-field
               v-model="form.phoneNumber"
               label="Téléphone"
               type="tel"
-              :rules="[rules.required]"
+              :rules="phoneNumberRules()"
               required
             />
             <v-text-field
               v-model="form.addressLine"
               label="Adresse"
               type="text"
-              :rules="[rules.required]"
+              :rules="addressLineRules()"
               required
             />
             <v-text-field
               v-model="form.postalCode"
               label="Code postal"
               type="text"
-              :rules="[rules.required]"
+              :rules="postalCodeRules()"
               required
             />
             <v-text-field
               v-model="form.city"
               label="Ville"
               type="text"
-              :rules="[rules.required]"
+              :rules="cityRules()"
               required
             />
             <v-text-field
               v-model="form.country"
               label="Pays"
               type="text"
-              :rules="[rules.required]"
+              :rules="countryRules()"
               required
             />
 
-            <div class="d-flex justify-end mt-6">
-              <v-btn text @click="cancel">Annuler</v-btn>
-              <v-btn color="primary" type="submit" class="ml-2">
-                {{ isEdit ? 'Mettre à jour' : 'Créer' }}
-              </v-btn>
+            <div class="d-flex justify-between mt-6">
+              <div v-if="isEdit" class="d-flex align-center">
+                <v-btn color="error" variant="tonal" @click="showDeleteModal = true">
+                  Supprimer
+                </v-btn>
+              </div>
+
+              <div class="d-flex align-center">
+                <v-btn text @click="cancel">Annuler</v-btn>
+                <v-btn color="primary" type="submit" class="ml-2">
+                  {{ isEdit ? 'Mettre à jour' : 'Créer' }}
+                </v-btn>
+              </div>
             </div>
+
           </v-form>
         </v-card>
+        
+        <ConfirmationModal
+          v-model="showDeleteModal"
+          title="Confirmer la suppression"
+          message="Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible."
+          confirmText="Supprimer"
+          confirmColor="error"
+          cancelText="Annuler"
+          @confirm="removeClient"
+        />
+
       </v-col>
     </v-row>
   </v-container>
@@ -84,6 +104,16 @@ import { useRouter, useRoute } from 'vue-router'
 import { useClientStore } from '@/stores/client'
 import { useAuthStore } from '@/stores/auth'
 import { useToastHandler } from '@/composables/useToastHandler'
+import { phoneNumberRules } from '@/utils/validationRules'
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
+import { 
+    addressLineRules, 
+    cityRules,  
+    countryRules, 
+    emailRules, 
+    firstNameRules, 
+    lastNameRules, 
+    postalCodeRules } from '@/utils/registrationValidationRules'
 
 const router = useRouter()
 const route = useRoute()
@@ -92,7 +122,7 @@ const authStore = useAuthStore()
 const { showToast } = useToastHandler()
 
 const formRef = ref()
-
+const showDeleteModal = ref(false)
 const isEdit = ref(!!route.params.id)
 
 const form = reactive({
@@ -105,11 +135,6 @@ const form = reactive({
   city: '',
   country: 'France',
 })
-
-const rules = {
-  required: (v: string) => !!v || 'Ce champ est requis.',
-  email: (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) || 'Email invalide.'
-}
 
 onMounted(async () => {
   try {
@@ -134,35 +159,23 @@ const onSubmit = async () => {
     return
   }
 
-  const payload = {
-    ...form,
-    userId: authStore.user.userId,
-  }
-
   try {
-    if (isEdit.value) {
-      await clientStore.updateClient(route.params.id as string, payload)
-    } else {
-      await clientStore.createClient(payload)
-    }
-
-    try {
-      await clientStore.fetchAllClients()
-    } catch {
-      showToast('error', 'Client enregistré, mais erreur lors de la mise à jour de la liste.')
-    }
+    const response = isEdit.value
+      ? await clientStore.updateClient(route.params.id as string, form)
+      : await clientStore.createClient(form)
 
     const editStatus = isEdit.value
 
-    router.push({ 
-      name: 'ClientList' }).then(() => {
-      nextTick(() => {
-        showToast(
-          'success',
-          `Client ${form.firstName} ${form.lastName} ${editStatus ? 'modifié' : 'créé'} avec succès.`
-        )
+    if (response) {
+      router.push({
+        path: '/clients',
+        state: {
+          toastStatus: 'success',
+          toastMessage: `Client ${form.firstName} ${form.lastName} ${editStatus ? 'modifié' : 'créé'} avec succès.`
+        }
       })
-    })
+    }
+
   } catch (error: any) {
     if (error.response?.status === 409) {
       showToast('error', error.response.data.message || 'Ce client existe déjà.')
@@ -175,4 +188,14 @@ const onSubmit = async () => {
 const cancel = () => {
   router.push({ name: 'ClientList' })
 }
+
+const removeClient = async (id: string) => {
+    await clientStore.deleteClient(id)
+    router.push({
+        path: '/clients',
+        state: {
+          toastStatus: 'success',
+          toastMessage: `Client ${form.firstName} ${form.lastName} supprimé avec succès.`
+        }
+    })}
 </script>

@@ -33,9 +33,7 @@ export class ClientService {
     });
 
     if (existingClient) {
-      throw new ConflictException(
-        'Ce client existe déjà pour cet utilisateur.',
-      );
+      throw new ConflictException('Cet email est déjà utilisé par un client.');
     }
 
     const client = await this.prisma.client.create({
@@ -89,7 +87,7 @@ export class ClientService {
       where: { id },
       data: {
         ...updateClientDto,
-        userId
+        userId,
       },
     });
 

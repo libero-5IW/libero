@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import apiClient from '@/config/axios'
 import { removeSystemVariables } from '@/utils/removeSystemVariables'
 import { InvoiceTemplateSchema, type CreateInvoiceTemplate, type InvoiceTemplate } from '@/schemas/invoiceTemplate.schema'
-import { handleAxiosError } from '@/utils/handleAxiosError'
+import { handleError } from '@/utils/handleError'
 
 export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   const templates = ref<InvoiceTemplate[]>([])
@@ -21,7 +21,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
     } catch (error) {
       console.error('error', error)
       templates.value = [];
-      handleAxiosError(error, 'Erreur lors de la récupération des templates.')
+      handleError(error, 'Erreur lors de la récupération des templates.')
     } finally {
       isLoading.value = false
     }
@@ -34,7 +34,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       currentTemplate.value = InvoiceTemplateSchema.parse(data)
     } catch (error) {
       currentTemplate.value = null;
-      handleAxiosError(error, 'Erreur lors de la récupération du template.')
+      handleError(error, 'Erreur lors de la récupération du template.')
     } finally {
       isLoading.value = false
     }
@@ -48,7 +48,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       return parsed 
     } catch (error) {
       console.error('error', error)
-      handleAxiosError(error, 'Erreur lors de la récupération du template par défaut.')
+      handleError(error, 'Erreur lors de la récupération du template par défaut.')
     }
   }
 
@@ -59,7 +59,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
       console.error('error', error)
-      handleAxiosError(error, 'Erreur lors de la création du template.')
+      handleError(error, 'Erreur lors de la création du template.')
     }
   }
 
@@ -69,7 +69,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       const { data } = await apiClient.patch(`/invoice-templates/${id}`, cleanedPayload)
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la mise à jour du template.')
+      handleError(error, 'Erreur lors de la mise à jour du template.')
     }
   }
 
@@ -78,7 +78,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       await apiClient.delete(`/invoice-templates/${id}`)
       templates.value = templates.value.filter((template) => template.id !== id)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la suppression du template.')
+      handleError(error, 'Erreur lors de la suppression du template.')
     }
   }
 
@@ -87,7 +87,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       const { data } = await apiClient.post(`/invoice-templates/${id}/duplicate`)
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la duplication du template.')
+      handleError(error, 'Erreur lors de la duplication du template.')
     }
   }
 

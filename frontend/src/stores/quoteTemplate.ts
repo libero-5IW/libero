@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import apiClient from '@/config/axios'
 import { removeSystemVariables } from '@/utils/removeSystemVariables'
 import { QuoteTemplateSchema, type CreateQuoteTemplate, type QuoteTemplate } from '@/schemas/quoteTemplate.schema'
-import { handleAxiosError } from '@/utils/handleAxiosError'
+import { handleError } from '@/utils/handleError'
 
 export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
   const templates = ref<QuoteTemplate[]>([])
@@ -21,7 +21,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     } catch (error) {
       console.log('error', error);
       templates.value = [];
-      handleAxiosError(error, 'Erreur lors de la récupération des templates.')
+      handleError(error, 'Erreur lors de la récupération des templates.')
     } finally {
       
       isLoading.value = false
@@ -35,7 +35,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       currentTemplate.value = QuoteTemplateSchema.parse(data)
     } catch (error) {
       currentTemplate.value = null;
-      handleAxiosError(error, 'Erreur lors de la récupération du template.')
+      handleError(error, 'Erreur lors de la récupération du template.')
     } finally {
       isLoading.value = false
     }
@@ -47,7 +47,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       defaultTemplate.value = QuoteTemplateSchema.parse(data)
     } catch (error) {
       console.error('error', error);
-      handleAxiosError(error, 'Erreur lors de la récupération du template par défaut.')
+      handleError(error, 'Erreur lors de la récupération du template par défaut.')
     }
   }
 
@@ -57,7 +57,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       const { data } = await apiClient.post('/quote-templates', cleanedPayload)
       return QuoteTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la création du template.')
+      handleError(error, 'Erreur lors de la création du template.')
     }
   }
 
@@ -67,7 +67,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       const { data } = await apiClient.patch(`/quote-templates/${id}`, cleanedPayload)
       return QuoteTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la mise à jour du template.')
+      handleError(error, 'Erreur lors de la mise à jour du template.')
     }
   }
 
@@ -76,7 +76,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       await apiClient.delete(`/quote-templates/${id}`)
       templates.value = templates.value.filter((template) => template.id !== id)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la suppression du template.')
+      handleError(error, 'Erreur lors de la suppression du template.')
     }
   }
 
@@ -85,7 +85,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       const { data } = await apiClient.post(`/quote-templates/${id}/duplicate`)
       return QuoteTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la duplication du template.')
+      handleError(error, 'Erreur lors de la duplication du template.')
     }
   }
 
