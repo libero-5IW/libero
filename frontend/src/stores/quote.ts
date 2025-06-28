@@ -27,7 +27,7 @@ export const useQuoteStore = defineStore('quote', () => {
       const { data } = await apiClient.get(`/quotes/${id}`);
       currentQuote.value = QuoteSchema.parse(data);
     } catch (error) {
-      handleError(error, 'Erreur lors de la récupération de la devis.');
+      handleError(error, 'Erreur lors de la récupération du devis.');
     } finally {
       isLoading.value = false;
     }
@@ -38,8 +38,7 @@ export const useQuoteStore = defineStore('quote', () => {
       const { data } = await apiClient.post('/quotes', payload);
       return QuoteSchema.parse(data);
     } catch (error) {
-       console.error('❌ Erreur de validation Zod:', error);
-      handleError(error, 'Erreur lors de la création de la devis.');
+      handleError(error, 'Erreur lors de la création duvdevis.');
     }
   }
 
@@ -48,7 +47,7 @@ export const useQuoteStore = defineStore('quote', () => {
       await apiClient.delete(`/quotes/${id}`);
       quotes.value = quotes.value.filter((quote) => quote.id !== id);
     } catch (error) {
-      handleError(error, 'Erreur lors de la suppression de la devis.');
+      handleError(error, 'Erreur lors de la suppression du devis.');
     }
   }
 

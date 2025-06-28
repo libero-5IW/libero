@@ -23,6 +23,9 @@
       <v-btn icon @click="editQuote(item.id)">
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
+      <v-btn icon @click="deleteQuote(item.id)">
+        <v-icon>mdi-delete</v-icon>
+      </v-btn>
     </template>
   </DataTable>
 
@@ -97,6 +100,12 @@ const handleTemplateSelected = (templateId: string) => {
 
 const editQuote = (id: string) => {
   router.push({ name: 'QuoteEdit', params: { id } });
+};
+
+const deleteQuote = async (id: string) => {
+  await quoteStore.deleteQuote(id);
+  await fetchAllQuotes();
+  showToast('success', 'Le devis a été bien supprimé !');
 };
 
 onMounted(async () => {

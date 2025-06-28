@@ -23,8 +23,10 @@
       <v-btn icon @click="editInvoice(item.id)">
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
+      <v-btn icon @click="deleteInvoice(item.id)">
+        <v-icon>mdi-delete</v-icon>
+      </v-btn>
     </template>
-
   </DataTable>
 
   <TemplateSelectionModal 
@@ -97,6 +99,12 @@ const handleTemplateSelected = (templateId: string) => {
 
 const editInvoice = (id: string) => {
   router.push({ name: 'InvoiceEdit', params: { id } });
+};
+
+const deleteInvoice = async (id: string) => {
+  await invoiceStore.deleteInvoice(id);
+  await fetchAllInvoices();
+  showToast('success', 'La facture a été bien supprimée !');
 };
 
 onMounted(async () => {

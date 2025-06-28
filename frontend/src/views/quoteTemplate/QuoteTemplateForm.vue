@@ -4,7 +4,6 @@
       </v-card>
   <v-container fluid>
     <v-row>
-      <!-- Editor Column -->
       <v-col cols="12" md="8">
         <QuoteTemplateFormMain
           :template="template"
@@ -19,7 +18,6 @@
         />
       </v-col>
 
-      <!-- Preview Column -->
       <v-col cols="12" md="4">
         <v-card flat class="sticky-preview" :class="{ 'fullscreen-preview': isPreviewFullscreen }">
           <QuoteTemplatePreview

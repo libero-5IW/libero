@@ -23,6 +23,9 @@
       <v-btn icon @click="editContract(item.id)">
         <v-icon>mdi-pencil</v-icon>
       </v-btn>
+      <v-btn icon @click="deleteContract(item.id)">
+        <v-icon>mdi-delete</v-icon>
+      </v-btn>
     </template>
   </DataTable>
 
@@ -87,6 +90,12 @@ function handleTemplateSelected(templateId: string) {
     name: 'ContractForm', 
     query: { templateId }   
   });
+}
+
+async function deleteContract(id: string) {
+  await contractStore.deleteContract(id);
+  await fetchAllContracts();
+  showToast('success', 'Le contrat a été bien supprimé !');
 }
 
 onMounted(async () => {
