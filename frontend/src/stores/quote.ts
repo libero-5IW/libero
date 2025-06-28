@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import apiClient from '@/config/axios';
-import { handleAxiosError } from '@/utils/handleAxiosError';
+import { handleError } from '@/utils/handleError';
 import { QuoteSchema, type Quote, type CreateQuote } from '@/schemas/quote.schema';
 
 export const useQuoteStore = defineStore('quote', () => {
@@ -15,7 +15,7 @@ export const useQuoteStore = defineStore('quote', () => {
       const { data } = await apiClient.get('/quotes');
       quotes.value = data.map((item: Quote) => QuoteSchema.parse(item));
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération des devis.');
+      handleError(error, 'Erreur lors de la récupération des devis.');
     } finally {
       isLoading.value = false;
     }
@@ -27,7 +27,7 @@ export const useQuoteStore = defineStore('quote', () => {
       const { data } = await apiClient.get(`/quotes/${id}`);
       currentQuote.value = QuoteSchema.parse(data);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération du devis.');
+      handleError(error, 'Erreur lors de la récupération de la devis.');
     } finally {
       isLoading.value = false;
     }
@@ -38,7 +38,8 @@ export const useQuoteStore = defineStore('quote', () => {
       const { data } = await apiClient.post('/quotes', payload);
       return QuoteSchema.parse(data);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la création du devis.');
+       console.error('❌ Erreur de validation Zod:', error);
+      handleError(error, 'Erreur lors de la création de la devis.');
     }
   }
 
@@ -47,7 +48,7 @@ export const useQuoteStore = defineStore('quote', () => {
       await apiClient.delete(`/quotes/${id}`);
       quotes.value = quotes.value.filter((quote) => quote.id !== id);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la suppression du devis.');
+      handleError(error, 'Erreur lors de la suppression de la devis.');
     }
   }
 
@@ -56,7 +57,7 @@ export const useQuoteStore = defineStore('quote', () => {
       const { data } = await apiClient.get('/quotes/next-number');
       return data;
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération du numéro de devis.');
+      handleError(error, 'Erreur lors de la récupération du numéro de devis.');
       return null;
     }
   }
@@ -66,7 +67,7 @@ export const useQuoteStore = defineStore('quote', () => {
       const { data } = await apiClient.put(`/quotes/${id}`, payload);
       return QuoteSchema.parse(data);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la modification du devis.');
+      handleError(error, 'Erreur lors de la modification du devis.');
     }
   }
 

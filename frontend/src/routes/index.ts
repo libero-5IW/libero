@@ -33,7 +33,6 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
 const routes: Array<RouteRecordRaw> = [
   ...authenticatedRoutes,
   ...publicRoutes,
-  ...clientRoutes,
 ]
 
 const router = createRouter({

@@ -33,7 +33,6 @@
       </svg>
     </div>
 
-    <!-- List items with just the dots -->
     <div ref="itemsContainer">
       <v-list-item
         v-for="(item, i) in items"
@@ -113,7 +112,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Remove default padding from list group items */
 :deep(.v-list-group__items) .v-list-item {
   padding-left: 12px !important;
 }

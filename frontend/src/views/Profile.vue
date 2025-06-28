@@ -126,7 +126,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import apiClient from '@/config/axios'
-import { handleAxiosError } from '@/utils/handleAxiosError'
+import { handleError } from '@/utils/handleError'
 import { useToastHandler } from '@/composables/useToastHandler'
 
 const authStore = useAuthStore()
@@ -181,7 +181,7 @@ const loadUserData = async () => {
     })
   } catch (error) {
     console.error('Error loading user data:', error)
-    handleAxiosError(error, 'Erreur lors du chargement des données')
+    handleError(error, 'Erreur lors du chargement des données')
   } finally {
     isLoading.value = false
   }
@@ -220,7 +220,7 @@ const saveProfile = async () => {
     } else {
       showToast('error', 'Erreur lors de la sauvegarde des données')
     }
-    handleAxiosError(error, 'Erreur lors de la sauvegarde des données')
+    handleError(error, 'Erreur lors de la sauvegarde des données')
   } finally {
     isLoading.value = false
   }

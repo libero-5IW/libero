@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import apiClient from '@/config/axios';
-import { handleAxiosError } from '@/utils/handleAxiosError';
+import { handleError } from '@/utils/handleError';
 import { InvoiceSchema, type Invoice, type CreateInvoice } from '@/schemas/invoice.schema';
 
 export const useInvoiceStore = defineStore('invoice', () => {
@@ -15,7 +15,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
       const { data } = await apiClient.get('/invoices');
       invoices.value = data.map((item: Invoice) => InvoiceSchema.parse(item));
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération des factures.');
+      handleError(error, 'Erreur lors de la récupération des factures.');
     } finally {
       isLoading.value = false;
     }
@@ -27,7 +27,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
       const { data } = await apiClient.get(`/invoices/${id}`);
       currentInvoice.value = InvoiceSchema.parse(data);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération de la facture.');
+      handleError(error, 'Erreur lors de la récupération de la facture.');
     } finally {
       isLoading.value = false;
     }
@@ -38,7 +38,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
       const { data } = await apiClient.post('/invoices', payload);
       return InvoiceSchema.parse(data);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la création de la facture.');
+      handleError(error, 'Erreur lors de la création de la facture.');
     }
   }
 
@@ -47,7 +47,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
       await apiClient.delete(`/invoices/${id}`);
       invoices.value = invoices.value.filter((invoice) => invoice.id !== id);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la suppression de la facture.');
+      handleError(error, 'Erreur lors de la suppression de la facture.');
     }
   }
 
@@ -56,7 +56,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
       const { data } = await apiClient.get('/invoices/next-number');
       return data;
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération du numéro de facture.');
+      handleError(error, 'Erreur lors de la récupération du numéro de facture.');
       return null;
     }
   }  
@@ -66,7 +66,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
       const { data } = await apiClient.put(`/invoices/${id}`, payload);
       return InvoiceSchema.parse(data);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la modification de la facture.');
+      handleError(error, 'Erreur lors de la modification de la facture.');
     }
   }  
   

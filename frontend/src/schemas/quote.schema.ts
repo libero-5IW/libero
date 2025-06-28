@@ -53,7 +53,7 @@ export const QuoteSchema = z.object({
   id: z.string().uuid(),
   templateId: z.string().uuid().or(z.literal('defaultTemplate')).nullable(),
   userId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  clientId: z.string().uuid().nullable(),
   status: z.enum(['draft', 'sent', 'accepted', 'refused']),
   number: z.number(),
   generatedHtml: z.string(),

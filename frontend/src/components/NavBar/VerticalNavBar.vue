@@ -13,14 +13,14 @@
 
     <v-list>
       <NavItemSingle title="Dashboard" to="/dashboard" icon="mdi-view-dashboard" />
-      
+
       <NavGroupAccordian
         v-model="activeGroup"
         group-value="quote"
         main-title="Devis"
         main-icon="mdi-file-eye"
         :items="quoteItems"
-       />
+      />
 
       <NavGroupAccordian
         v-model="activeGroup"
@@ -28,7 +28,7 @@
         main-title="Contrats"
         main-icon="mdi-file-sign"
         :items="contractItems"
-       />
+      />
 
       <NavGroupAccordian
         v-model="activeGroup"
@@ -36,29 +36,36 @@
         main-title="Factures"
         main-icon="mdi-invoice-list"
         :items="invoiceItems"
-       />
+      />
 
+      <NavGroupAccordian
+        v-model="activeGroup"
+        group-value="clients"
+        main-title="Clients"
+        main-icon="mdi-account-multiple"
+        :items="clientItems"
+      />
     </v-list>
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue';
+import { ref } from 'vue';
 import NavGroupAccordian from './NavGroupAccordian.vue'
-  import NavItemSingle from './NavItemSingle.vue'
+import NavItemSingle from './NavItemSingle.vue'
 
-  defineProps<{
-    modelValue?: boolean
-    permanent?: boolean
-  }>()
+defineProps<{
+  modelValue?: boolean
+  permanent?: boolean
+}>()
 
-  defineEmits<{
-    'update:modelValue': [value: boolean]
-  }>()
+defineEmits<{
+  'update:modelValue': [value: boolean]
+}>()
 
-  const activeGroup = ref<string | null>(null)
+const activeGroup = ref<string | null>(null)
 
-  const quoteItems = [
+const quoteItems = [
     {
       title: 'Liste des devis',
       to: '/quote',
@@ -90,5 +97,9 @@ import NavGroupAccordian from './NavGroupAccordian.vue'
       to: '/invoice-template',
     }
   ]
+const clientItems = [
+  { title: 'Liste des clients', to: '/clients' },
+  { title: 'Nouveau client', to: '/clients/new' }
+]
 </script>
 

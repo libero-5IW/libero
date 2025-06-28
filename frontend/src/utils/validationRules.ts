@@ -97,4 +97,21 @@ export function passwordMatchRule(target: string) {
   ];
 }
 
+export const phoneNumberRules = (required: boolean = true) => {
+  const rules: ((v: string) => boolean | string)[] = [
+    (v: string) =>
+      /^(\+?\d{1,4})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/.test(v) ||
+      'Numéro de téléphone invalide',
+    (v: string) =>
+      v.replace(/\D/g, '').length <= 15 ||
+      'Le numéro de téléphone doit contenir au maximum 15 chiffres',
+  ];
+
+  if (required) {
+    rules.unshift(requiredRule('Téléphone'));
+  }
+
+  return rules;
+};
+
   

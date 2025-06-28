@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router';
 import apiClient from '@/config/axios';
 import { cleanAllStates } from '@/composables/useStateCleaner';
 import { type ApiCurrentUser, ApiCurrentUserSchema, type LoginData, type RegisterData } from '@/schemas/user.schema';
-import { handleAxiosError } from '@/utils/handleAxiosError';
+import { handleError } from '@/utils/handleError';
 
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
@@ -38,7 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
       router.push('/dashboard');
 
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la connexion.')
+      handleError(error, 'Erreur lors de la connexion.')
     } finally {
       loading.value = false;
     }
@@ -60,7 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
         state: { toastStatus : 'success', toastMessage: 'Le compte a été crée avec succès, connectez-vous !' }
     });
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de l’inscription.')
+      handleError(error, 'Erreur lors de l’inscription.')
     } finally {
       loading.value = false;
     }

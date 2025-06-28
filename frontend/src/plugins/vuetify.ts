@@ -2,6 +2,7 @@ import { createVuetify, type ThemeDefinition } from 'vuetify'
 import { md3 } from 'vuetify/blueprints'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
+import { fr } from 'vuetify/locale'
 
 const customLightTheme: ThemeDefinition = {
   dark: false,
@@ -67,12 +68,25 @@ export default createVuetify({
     defaultTheme: 'customLight',
     themes: {
       customLight: customLightTheme,
-      customDark: customDarkTheme
+      customDark: customDarkTheme,
     },
     variations: {
       colors: ['primary', 'secondary', 'accent'],
       lighten: 5,
       darken: 5,
-    }
+    },
+  },
+  locale: {
+    locale: 'fr',
+    messages: {
+      fr: {
+        ...fr,
+        dataIterator: {
+          ...fr.dataIterator,
+          itemsPerPageText: 'Éléments par page :',
+          noResultsText: 'Aucun résultat trouvé',
+        },
+      },
+    },
   },
 })

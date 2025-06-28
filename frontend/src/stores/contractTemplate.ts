@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '@/config/axios'
 import { removeSystemVariables } from '@/utils/removeSystemVariables'
+import { handleError } from '@/utils/handleError'
 import { ContractTemplateSchema, type CreateContractTemplate, type ContractTemplate } from '@/schemas/contractTemplate.schema'
-import { handleAxiosError } from '@/utils/handleAxiosError'
 
 export const useContractTemplateStore = defineStore('contractTemplate', () => {
   const templates = ref<ContractTemplate[]>([])
@@ -19,8 +19,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       })
       templates.value = data.map((item: ContractTemplate) => ContractTemplateSchema.parse(item))
     } catch (error) {
-      templates.value = []
-      handleAxiosError(error, 'Erreur lors de la récupération des templates.')
+      handleError(error, 'Erreur lors de la récupération des templates de contrat.')
     } finally {
       isLoading.value = false
     }
@@ -32,8 +31,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       const { data } = await apiClient.get(`/contract-templates/${id}`)
       currentTemplate.value = ContractTemplateSchema.parse(data)
     } catch (error) {
-      currentTemplate.value = null
-      handleAxiosError(error, 'Erreur lors de la récupération du template.')
+      handleError(error, 'Erreur lors de la récupération du template de contrat.')
     } finally {
       isLoading.value = false
     }
@@ -44,7 +42,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       const { data } = await apiClient.get('/contract-templates/default-template')
       defaultTemplate.value = ContractTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération du template par défaut.')
+      handleError(error, 'Erreur lors de la récupération du template par défaut de contrat.')
     }
   }
 
@@ -54,7 +52,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       const { data } = await apiClient.post('/contract-templates', cleanedPayload)
       return ContractTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la création du template.')
+      handleError(error, 'Erreur lors de la création du template de contrat.')
     }
   }
 
@@ -64,7 +62,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       const { data } = await apiClient.patch(`/contract-templates/${id}`, cleanedPayload)
       return ContractTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la mise à jour du template.')
+      handleError(error, 'Erreur lors de la mise à jour du template de contrat.')
     }
   }
 
@@ -73,7 +71,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       await apiClient.delete(`/contract-templates/${id}`)
       templates.value = templates.value.filter((template) => template.id !== id)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la suppression du template.')
+      handleError(error, 'Erreur lors de la suppression du template de contrat.')
     }
   }
 
@@ -82,7 +80,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       const { data } = await apiClient.post(`/contract-templates/${id}/duplicate`)
       return ContractTemplateSchema.parse(data)
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la duplication du template.')
+      handleError(error, 'Erreur lors de la duplication du template de contrat.')
     }
   }
 
