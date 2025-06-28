@@ -31,7 +31,7 @@
 
   <ConfirmationModal
     v-model="isDeleteModalOpen"
-    title="Supprimer ce template ?"
+    title="Confirmation de suppression"
     message="Êtes-vous sûr de vouloir supprimer ce template de facture ? Cette action est irréversible."
     confirmText="Supprimer"
     cancelText="Annuler"

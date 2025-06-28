@@ -37,7 +37,7 @@
 
   <ConfirmationModal
     v-model="isDeleteModalOpen"
-    title="Supprimer ce contrat ?"
+    title="Confirmation de suppression"
     message="Êtes-vous sûr de vouloir supprimer ce contrat ? Cette action est irréversible."
     confirmText="Supprimer"
     cancelText="Annuler"

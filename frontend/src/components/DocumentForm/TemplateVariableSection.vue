@@ -55,7 +55,7 @@ const getComponentType = (type: string) => {
 };
 
 const getLabel = (variable: VariableBase) => {
-  return variable.required ? `* ${variable.label}` : variable.label;
+  return variable.required ? `${variable.label} *` : variable.label;
 };
 
 const mapInputType = (type: string) => {
