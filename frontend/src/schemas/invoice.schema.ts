@@ -13,7 +13,7 @@ export const CreateInvoiceVariableValueSchema = z.object({
 export const CreateInvoiceSchema = z.object({
   clientId: z.string().uuid({
     message: "L'identifiant du client doit être un UUID valide.",
-  }),
+  }).nullable().optional(),
   templateId: z.string().uuid({
     message: "L'identifiant du template doit être un UUID valide.",
   }),

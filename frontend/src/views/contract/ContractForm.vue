@@ -335,7 +335,7 @@ async function onCreateContract() {
 
   const payload: CreateContract = {
     templateId: selectedTemplateId.value!,
-    clientId: selectedClientId.value!,
+    ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
     issuedAt: new Date().toISOString(),
     validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
     generatedHtml: previewHtml.value,
@@ -361,7 +361,7 @@ async function saveContract() {
   if (isEditMode.value && contractId.value) {
     const payload = {
       templateId: selectedTemplateId.value!,
-      clientId: selectedClientId.value!,
+      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
       issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       validUntil: form.value.validUntil,
       generatedHtml: previewHtml.value,

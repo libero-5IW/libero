@@ -29,7 +29,10 @@ export class ContractService {
     const { clientId, templateId, generatedHtml, validUntil, variableValues } = dto;
 
     await this.userService.getUserOrThrow(userId);
-    await this.clientService.getClientOrThrow(clientId, userId);
+
+    if (clientId) {
+      await this.clientService.getClientOrThrow(clientId, userId);
+    }
 
     const template = await this.contractTemplateService.findOne(templateId, userId);
     const nextNumber = await this.getNextContractNumber(userId);
@@ -39,7 +42,7 @@ export class ContractService {
         number: nextNumber,
         template: { connect: { id: templateId } },
         user: { connect: { id: userId } },
-        client: { connect: { id: clientId } },
+        ...(clientId ? { client: { connect: { id: clientId } } } : {}),
         status: ContractStatus.draft,
         generatedHtml,
         validUntil: new Date(validUntil),

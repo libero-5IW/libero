@@ -288,7 +288,7 @@
 
     const payload = {
       templateId: selectedTemplateId.value!,
-      clientId: selectedClientId.value!,
+      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
       issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       validUntil: form.value.validUntil,
       generatedHtml: previewHtml.value,
@@ -316,10 +316,9 @@
     }
   }
 
-
   const canCreate = computed(() => {
     const hasTemplate = !!selectedTemplateId.value;
-    const hasClient = !!selectedClientId.value;
+    const hasClient = true;
     const hasUser = !!currentUser.value;
     const allRequiredFilled = templateVariables.value.every(v =>
       !v.required || !!variablesValue.value.find(val => val.variableName === v.variableName)?.value
@@ -392,7 +391,7 @@
 
     const payload: CreateQuote = {
       templateId: selectedTemplateId.value,
-      clientId: selectedClientId.value!,
+      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
       issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
       generatedHtml: previewHtml.value,

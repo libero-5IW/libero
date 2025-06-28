@@ -33,8 +33,11 @@ export class InvoiceService {
     
     const { clientId, templateId, generatedHtml, dueDate, variableValues } = dto;
 
-    await this.userService.getUserOrThrow(userId);
-    await this.clientService.getClientOrThrow(clientId, userId);
+    await this.userService.getUserOrThrow(userId); 
+    
+    if (clientId) {
+      await this.clientService.getClientOrThrow(clientId, userId);
+    }
 
     const template = await this.invoiceTemplateService.findOne(templateId, userId);
     const nextNumber = await this.getNextInvoiceNumber(userId);
@@ -45,7 +48,7 @@ export class InvoiceService {
         number: nextNumber,
         template: { connect: { id: templateId } },
         user: { connect: { id: userId } },
-        client: { connect: { id: clientId } },
+        ...(clientId ? { client: { connect: { id: clientId } } } : {}),
         status: InvoiceStatus.draft,
         generatedHtml,
         dueDate: new Date(dueDate),
