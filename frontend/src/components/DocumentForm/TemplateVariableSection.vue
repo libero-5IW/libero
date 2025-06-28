@@ -48,7 +48,7 @@ const clients = computed(() =>
     }))
 );
 
-const selectedClientId = defineModel<string>('selectedClientId');
+const selectedClientId = defineModel<string | null>('selectedClientId');
 
 const getComponentType = (type: string) => {
   return type === 'textarea' ? 'v-textarea' : 'v-text-field';
