@@ -7,8 +7,8 @@
       @click="onCardClick(item)"
     >
 
-          <v-card-title class="text-lg font-bold mt-2 px-4">
-        {{ titlePrefix }} #{{ item.number }} - {{ item.clientName ?? '—' }}
+      <v-card-title class="text-lg font-bold mt-2 px-4">
+        <span class="text-primary">{{ titlePrefix }} #{{ item.number }} </span> - {{ item.clientName ?? '—' }}
       </v-card-title>
       <v-img
         v-if="item.previewUrl"
