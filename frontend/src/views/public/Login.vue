@@ -1,6 +1,5 @@
-<template>
-  <CenteredContainer>
-    <div class="shadow-lg shadow-gray-300 border">
+<template >
+   <CenteredContainer>
       <LoginForm :form="form" :loading="loading" @submit="handleLogin">
         <template v-slot:header>
           <div class="flex justify-center py-4">
@@ -20,8 +19,7 @@
           </div>
         </template>
       </LoginForm>
-    </div>
-  </CenteredContainer>
+    </CenteredContainer>
 </template>
 
 <script setup lang="ts">

@@ -1,5 +1,5 @@
 <template>
-    <CenteredContainer>
+    <CenteredContainer size="lg">
       <div class="shadow-lg shadow-gray-300 border">
         <RegisterForm :data="data" :loading="loading" @submit="handleRegister">
           <template v-slot:header>

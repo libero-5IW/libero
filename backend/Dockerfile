@@ -27,8 +27,11 @@ RUN apt-get update && apt-get install -y \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
- ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+# MISE EN PROD: NODE_ENV=development -> NODE_ENV=production
+ENV NODE_ENV=development
 
 WORKDIR /app/backend
 
@@ -42,6 +45,6 @@ RUN npx prisma migrate
 RUN npx prisma generate
 
 EXPOSE 3000 5555
-
+# MISE EN PROD: npm run start:dev -> npm run start:prod 
 CMD sh -c "nohup npx prisma studio --port 5555 & npm run start:dev"
 

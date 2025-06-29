@@ -1,7 +1,11 @@
+import { config as loadEnv } from 'dotenv';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import frontendUrl from './config/config';
+
+const envFile = process.env.NODE_ENV === 'production' ? '.env.prod' : '.env';
+loadEnv({ path: envFile });
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
