@@ -1,6 +1,8 @@
+# FROM --platform=linux/arm64 node:20-slim
 FROM node:20-slim
 
 RUN apt-get update && apt-get install -y \
+    chromium \
     wget \
     ca-certificates \
     fonts-liberation \
@@ -25,6 +27,9 @@ RUN apt-get update && apt-get install -y \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
+ ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
 WORKDIR /app/backend
 
 COPY package*.json ./
@@ -35,8 +40,6 @@ COPY . .
 
 RUN npx prisma migrate
 RUN npx prisma generate
-
-RUN npx puppeteer browsers install chrome
 
 EXPOSE 3000 5555
 
