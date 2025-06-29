@@ -1,4 +1,3 @@
-# FROM --platform=linux/arm64 node:20-slim
 FROM node:20-slim
 
 RUN apt-get update && apt-get install -y \
@@ -22,12 +21,12 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     libu2f-udev \
     libvulkan1 \
-    libgbm1 \ 
+    libgbm1 \
     --no-install-recommends \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
- ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 WORKDIR /app/backend
@@ -38,10 +37,21 @@ RUN npm install
 
 COPY . .
 
-RUN npx prisma migrate
+#prod
+# Génération Prisma
 RUN npx prisma generate
 
-EXPOSE 3000 5555
+# Build en production
+RUN npm run build
 
-CMD sh -c "nohup npx prisma studio --port 5555 & npm run start:dev"
+EXPOSE 3000
 
+CMD ["npm", "run", "start:prod"]
+
+#dev 
+# RUN npx prisma migrate
+# RUN npx prisma generate
+
+# EXPOSE 3000 5555
+
+# CMD sh -c "nohup npx prisma studio --port 5555 & npm run start:dev"
