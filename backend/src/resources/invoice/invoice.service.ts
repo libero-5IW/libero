@@ -30,7 +30,7 @@ export class InvoiceService {
   ) {}
 
   async create(userId: string, dto: CreateInvoiceDto): Promise<InvoiceEntity> {
-    const { clientId, templateId, generatedHtml, dueDate, variableValues } =
+    const { clientId, templateId, generatedHtml, dueDate, variableValues, quoteId } =
       dto;
 
     const user = await this.userService.getUserOrThrow(userId);
@@ -61,6 +61,7 @@ export class InvoiceService {
         template: { connect: { id: templateId } },
         user: { connect: { id: userId } },
         ...(clientId ? { client: { connect: { id: clientId } } } : {}),
+        ...(quoteId ? { quote: { connect: { id: quoteId } } } : {}), 
         status: InvoiceStatus.draft,
         generatedHtml,
         dueDate: new Date(dueDate),

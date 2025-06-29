@@ -15,6 +15,7 @@
         @edit="editQuote"
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
+        @convert-to-invoice="handleConvertToInvoice"
       />
     </div>
 
@@ -43,6 +44,12 @@
     confirmColor="error"
     @confirm="confirmDeleteQuote"
   />
+
+  <TemplateSelectionModal
+    v-model="showInvoiceTemplateModal"
+    :fetchTemplates="fetchInvoiceTemplates"
+    @templateSelected="handleInvoiceTemplateSelected"
+  />
 </template>
 
 <script setup lang="ts">
@@ -56,9 +63,13 @@ import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useQuoteTemplateStore } from '@/stores/quoteTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
-import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue';
+import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue'
+import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
+import type { Quote } from '@/schemas/quote.schema'
+import { mapQuoteToInvoiceVariables } from '@/utils/mapQuoteToInvoice'
 
 const quoteTemplateStore = useQuoteTemplateStore();
+const invoiceTemplateStore = useInvoiceTemplateStore();
 const quoteStore = useQuoteStore();
 
 const { showToast } = useToastHandler();
@@ -70,6 +81,10 @@ const quotes = computed(() => quoteStore.quotes);
 
 const isDeleteModalOpen = ref(false);
 const selectedQuoteId = ref<string | null>(null);
+
+const quoteToConvert = ref<Quote | null>(null)
+
+const showInvoiceTemplateModal = ref(false)
 
 const documentCards = computed<DocumentCard[]>(() =>
   quotes.value.map((quote): DocumentCard  => {
@@ -113,6 +128,18 @@ async function fetchQuoteTemplates() {
   return list;
 }
 
+function handleConvertToInvoice(card: DocumentCard) {
+  const fullQuote = quoteStore.quotes.find(q => q.id === card.id)
+
+  if (!fullQuote) {
+    showToast('error', 'Impossible de trouver le devis à convertir.')
+    return
+  }
+
+  quoteToConvert.value = fullQuote
+  showInvoiceTemplateModal.value = true
+}
+
 const fetchAllQuotes = async () => {
   await quoteStore.fetchAllQuotes();
 };
@@ -133,6 +160,43 @@ const editQuote = (id: string) => {
 function openDeleteConfirmation(id: string) {
   selectedQuoteId.value = id;
   isDeleteModalOpen.value = true;
+}
+
+async function fetchInvoiceTemplates() {
+  await invoiceTemplateStore.fetchAllTemplates()
+  return invoiceTemplateStore.templates
+  .filter(t => typeof t.id === 'string')
+  .map(t => ({
+    id: t.id as string,
+    name: t.name
+  }))
+}
+
+async function handleInvoiceTemplateSelected(templateId: string) {
+  await invoiceTemplateStore.fetchTemplate(templateId)
+
+  const invoiceTemplate = invoiceTemplateStore.currentTemplate
+  const quote = quoteToConvert.value
+
+  if (!invoiceTemplate || !quote) {
+    showToast('error', 'Impossible de créer une facture à partir de ce devis.')
+    return
+  }
+
+  const mappedVariables = mapQuoteToInvoiceVariables(
+    invoiceTemplate.variables,
+    quote.variableValues
+  )
+
+  router.push({
+    name: 'InvoiceForm',
+    state: {
+      fromQuoteId: quote.id,
+      templateId,
+      clientId: quote.clientId,
+      variables: mappedVariables
+    }
+  })
 }
 
 async function confirmDeleteQuote() {
