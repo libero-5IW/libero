@@ -5,7 +5,7 @@
           <template v-slot:header>
             <div class="flex justify-center py-4">
               <div>
-                <v-img :src="logo" width="70" />
+                <v-img :src="logo" width="100" />
               </div>
             </div>
           </template>

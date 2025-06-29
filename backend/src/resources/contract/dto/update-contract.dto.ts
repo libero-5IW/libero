@@ -33,7 +33,7 @@ export class UpdateContractDto extends PartialType(CreateContractDto) {
 
   @ApiPropertyOptional({ example: '2025-06-30T00:00:00.000Z' })
   @IsOptional()
-  @IsDateString({}, { message: 'La date d\'échéance doit être une date ISO.' })
+  @IsDateString({}, { message: "La date d'échéance doit être une date ISO." })
   dueDate?: Date;
 
   @ApiPropertyOptional({

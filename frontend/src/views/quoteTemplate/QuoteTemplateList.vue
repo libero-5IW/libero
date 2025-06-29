@@ -23,11 +23,21 @@
       <v-btn icon @click="duplicateTemplate(item.id)">
         <v-icon>mdi-content-duplicate</v-icon>
       </v-btn>
-      <v-btn icon @click="deleteTemplate(item.id)">
+      <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
         <v-icon>mdi-delete</v-icon>
       </v-btn>
     </template>
   </DataTable>
+
+  <ConfirmationModal
+    v-model="isDeleteModalOpen"
+    title="Confirmation de suppression"
+    message="Êtes-vous sûr de vouloir supprimer ce template de devis ? Cette action est irréversible."
+    confirmText="Supprimer"
+    cancelText="Annuler"
+    confirmColor="error"
+    @confirm="confirmDeleteTemplate"
+  />
 </template>
 
 <script setup lang="ts">
@@ -35,13 +45,16 @@
   import { useQuoteTemplateStore } from '@/stores/quoteTemplate';
   import type { ToastStatus } from '@/types';
   import type { Header } from '@/types/Header';
-  import { computed, onMounted } from 'vue';
+  import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
-  import DataTable from '@/components/Table/DataTable.vue';
+  import DataTable from '@/components/DocumentDisplay/DataTable.vue';
+  import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
 
   const router = useRouter()
   const quoteTemplate = useQuoteTemplateStore()
   const { showToast } = useToastHandler(); 
+  const isDeleteModalOpen = ref(false);
+  const selectedTemplateId = ref<string | null>(null);
 
   const headers: Header[] = [
     { title: 'Nom', value: 'name', sortable: true },
@@ -72,10 +85,17 @@
     }
   }
 
-  const deleteTemplate = async (id: string) => {
-    await quoteTemplate.deleteTemplate(id)
-    fetchAllTemplates()
-    showToast('success', `Le template a été bien supprimé !`)
+  function openDeleteConfirmation(id: string) {
+    selectedTemplateId.value = id;
+    isDeleteModalOpen.value = true;
+  }
+
+  async function confirmDeleteTemplate() {
+    if (!selectedTemplateId.value) return;
+    await quoteTemplate.deleteTemplate(selectedTemplateId.value);
+    await fetchAllTemplates();
+    showToast('success', 'Le template a été bien supprimé !');
+    selectedTemplateId.value = null;
   }
 
   onMounted( async () => {

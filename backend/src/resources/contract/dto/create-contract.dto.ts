@@ -27,9 +27,12 @@ export class CreateContractDto {
   generatedHtml: string;
 
   @ApiProperty({ example: '2025-07-15T00:00:00.000Z' })
-  @IsDateString({}, {
-    message: 'La date de validité doit être une date ISO valide.',
-  })
+  @IsDateString(
+    {},
+    {
+      message: 'La date de validité doit être une date ISO valide.',
+    },
+  )
   validUntil: Date;
 
   @ApiProperty({

@@ -6,7 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "darwin-arm64", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x", "debian-openssl-3.0.x"]
+  binaryTargets = ["native", "darwin-arm64", "linux-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -98,6 +98,8 @@ model Quote {
   generatedHtml   String
   issuedAt        DateTime?
   validUntil      DateTime
+  pdfKey          String
+  previewKey      String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -170,8 +172,11 @@ model Invoice {
   generatedHtml   String
   issuedAt        DateTime?
   dueDate         DateTime
+  pdfKey          String
+  previewKey      String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
@@ -196,6 +201,8 @@ model Contract {
   generatedHtml   String
   issuedAt        DateTime?
   validUntil      DateTime
+  pdfKey          String
+  previewKey      String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

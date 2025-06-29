@@ -30,12 +30,15 @@ export class ContractEntity {
 
   @ApiProperty({ example: 'sent' })
   @IsEnum(ContractStatus, {
-    message: 'Le statut doit être draft, sent, signed, declined, expired ou cancelled.',
+    message:
+      'Le statut doit être draft, sent, signed, declined, expired ou cancelled.',
   })
   @Expose()
   status: ContractStatus;
 
-  @ApiProperty({ example: '<p>Voici le contrat de mission pour le projet...</p>' })
+  @ApiProperty({
+    example: '<p>Voici le contrat de mission pour le projet...</p>',
+  })
   @Expose()
   generatedHtml: string;
 
@@ -46,6 +49,28 @@ export class ContractEntity {
   @ApiProperty({ example: '2025-07-20T23:59:59Z' })
   @Expose()
   validUntil: Date;
+
+  @ApiProperty({ example: 'user@email.com/contracts/pdf/2025-06-20.pdf' })
+  @Expose()
+  pdfKey: string;
+
+  @ApiProperty({
+    example: 'user@email.com/contracts/preview/2025-06-20.preview.png',
+  })
+  @Expose()
+  previewKey: string;
+
+  @ApiProperty({
+    example: 'user@email.com/contracts/pdf/2025-06-20.pdf',
+  })
+  @Expose()
+  pdfUrl: string;
+
+  @ApiProperty({
+    example: 'user@email.com/contracts/preview/2025-06-20.preview.png',
+  })
+  @Expose()
+  previewUrl: string;
 
   @ApiProperty({ example: '2025-06-19T10:00:00Z' })
   @Expose()

@@ -48,9 +48,22 @@
               :variablesValue="variablesValue"
             />
 
-            <v-btn v-if="!isEditMode" color="primary" @click="onCreateQuote" :disabled="!canCreate">
-              <v-icon start>mdi-content-save</v-icon>
-              Créer le devis
+            <v-btn
+              v-if="!isEditMode"
+              color="primary"
+              @click="onCreateQuote"
+              :disabled="!canCreate || isLoading"
+            >
+              <template v-if="!isLoading">
+                <v-icon start>mdi-content-save</v-icon>
+                Créer le devis
+              </template>
+              <v-progress-circular
+                v-else
+                indeterminate
+                size="20"
+                color="secondary"
+              />
             </v-btn>
           </v-card>
         </v-col>
@@ -65,8 +78,22 @@
       </v-row>
     </v-container>
 
-    <v-btn v-if="isEditMode" color="primary" @click="saveQuote">
-      Enregistrer
+    <v-btn
+      v-if="isEditMode"
+      color="primary"
+      @click="saveQuote"
+      :disabled="isLoading"
+    >
+      <template v-if="!isLoading">
+        <v-icon start>mdi-content-save</v-icon>
+        Enregistrer
+      </template>
+      <v-progress-circular
+        v-else
+        indeterminate
+        size="20"
+        color="white"
+      />
     </v-btn>
   </div>
 </template>
@@ -88,6 +115,7 @@
   import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
   import { extractUsedVariableNames } from '@/utils/extractUsedVariables';
   import type { CreateQuote } from '@/schemas/quote.schema';
+import { generateFinalHtml } from '@/utils/generateFinalHtml';
 
   const router = useRouter();
   const route = useRoute();
@@ -122,6 +150,7 @@
   const currentUser = computed(() => userStore.user);
   const currentTemplate = computed(() => quoteTemplateStore.currentTemplate);
   const clients = computed(() => clientStore.clients);
+  const isLoading = computed(() => quoteStore.isLoading)
 
   onMounted(initialize);
 
@@ -284,14 +313,14 @@
   }
 
   async function saveQuote() {
-    if (!isEditMode.value || !quoteId.value) return;
+    if (!isEditMode.value || !quoteId.value) return;    
 
     const payload = {
       templateId: selectedTemplateId.value!,
-      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
+      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
       issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       validUntil: form.value.validUntil,
-      generatedHtml: previewHtml.value,
+      generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),
       variableValues: variablesValue.value.map(v => ({
         id: v.id!,
         variableName: v.variableName,
@@ -318,13 +347,12 @@
 
   const canCreate = computed(() => {
     const hasTemplate = !!selectedTemplateId.value;
-    const hasClient = true;
     const hasUser = !!currentUser.value;
     const allRequiredFilled = templateVariables.value.every(v =>
       !v.required || !!variablesValue.value.find(val => val.variableName === v.variableName)?.value
     );
 
-    return hasTemplate && hasClient && hasUser && allRequiredFilled;
+    return hasTemplate && hasUser && allRequiredFilled;
   });
 
   const previewVariables = computed(() => {
@@ -391,10 +419,10 @@
 
     const payload: CreateQuote = {
       templateId: selectedTemplateId.value,
-      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
+      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
       issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
-      generatedHtml: previewHtml.value,
+      generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),
       status: QUOTE_STATUS.DRAFT,
       variableValues: variablesValue.value.map(v => ({
         variableName: v.variableName,

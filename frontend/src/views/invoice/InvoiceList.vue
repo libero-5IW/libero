@@ -1,36 +1,47 @@
 <template>
-  <DataTable
-    :headers="headers"
-    :items="invoices"
-    :items-length="invoices.length"
-    @update:options="fetchAllInvoices"
-  >
-    <template #top.title>
-      <span class="text-xl font-semibold">Liste des factures</span>
-    </template>
-
-    <template #top.actions>
+  <div class="ml-4 mt-8">
+    <div class="flex items-center justify-between mb-10">
+      <h1 class="text-xl font-bold">Liste des factures</h1>
       <v-btn color="primary" @click="showTemplateModal = true">
         <v-icon start>mdi-plus</v-icon>
-        Nouvelle facture
+        Nouveau facture
       </v-btn>
-    </template>
+    </div>
 
-    <template #item.actions="{ item }">
-      <v-btn icon @click="viewInvoice(item.id)">
-        <v-icon>mdi-eye</v-icon>
-      </v-btn>
-      <v-btn icon @click="editInvoice(item.id)">
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
-    </template>
+    <div v-if="documentCards.length > 0">
+      <DocumentCardList
+        :items="documentCards"
+        titlePrefix="Facture"
+        @edit="editInvoice"
+        @change-status="showStatusModal = true"
+        @delete="openDeleteConfirmation"
+      />
+    </div>
 
-  </DataTable>
+    <div
+      v-else
+      class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+    >
+      <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
+      <p>Aucune facture créée pour le moment.</p>
+    </div>
+
+  </div>
 
   <TemplateSelectionModal 
     v-model="showTemplateModal"
     :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleTemplateSelected"
+  />
+
+  <ConfirmationModal
+    v-model="isDeleteModalOpen"
+    title="Confirmation de suppression"
+    message="Êtes-vous sûr de vouloir supprimer cette facture ? Cette action est irréversible."
+    confirmText="Supprimer"
+    cancelText="Annuler"
+    confirmColor="error"
+    @confirm="confirmDeleteInvoice"
   />
 </template>
 
@@ -38,13 +49,14 @@
 
 import { ref, computed, onMounted } from 'vue';
 import { useInvoiceStore } from '@/stores/invoice';
-import DataTable from '@/components/Table/DataTable.vue';
+import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue';
 import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue'; 
 import { useToastHandler } from '@/composables/useToastHandler';
-import type { ToastStatus } from '@/types';
+import type { DocumentCard, ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
 
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const invoiceStore = useInvoiceStore();
@@ -53,7 +65,29 @@ const { showToast } = useToastHandler();
 const router = useRouter();
 
 const showTemplateModal = ref(false);  
+const showStatusModal = ref(false);  
 const invoices = computed(() => invoiceStore.invoices);
+
+const isDeleteModalOpen = ref(false);
+const selectedInvoiceId = ref<string | null>(null);
+
+const documentCards = computed<DocumentCard[]>(() =>
+  invoices.value.map((invoice): DocumentCard  => {
+      const clientNameVar = invoice.variableValues?.find(
+          (v) => v.variableName === 'client_name'
+      );
+      
+    return {
+      id: invoice.id,
+      number: invoice.number,
+      status: invoice.status,
+      createdAt: invoice.createdAt ?? '',
+      previewUrl: invoice.previewUrl ?? null,
+      pdfUrl: invoice.pdfUrl ?? null,
+      clientName: clientNameVar?.value || 'Client inconnu'
+    }
+  })
+);
 
 const headers: Header[] = [
   { title: 'Numéro', value: 'number', sortable: true },
@@ -82,10 +116,6 @@ const fetchAllInvoices = async () => {
   await invoiceStore.fetchAllInvoices();
 };
 
-const viewInvoice = (id: string) => {
-  console.log(`Visualiser facture ${id}`);
-};
-
 const handleTemplateSelected = (templateId: string) => {
   showTemplateModal.value = false;
 
@@ -98,6 +128,19 @@ const handleTemplateSelected = (templateId: string) => {
 const editInvoice = (id: string) => {
   router.push({ name: 'InvoiceEdit', params: { id } });
 };
+
+function openDeleteConfirmation(id: string) {
+  selectedInvoiceId.value = id;
+  isDeleteModalOpen.value = true;
+}
+
+async function confirmDeleteInvoice() {
+  if (!selectedInvoiceId.value) return;
+  await invoiceStore.deleteInvoice(selectedInvoiceId.value);
+  await fetchAllInvoices();
+  showToast('success', 'La facture a été bien supprimée !');
+  selectedInvoiceId.value = null;
+}
 
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
