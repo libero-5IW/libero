@@ -64,7 +64,7 @@ import { useClientStore } from '@/stores/client'
 import { useRouter } from 'vue-router'
 import { useToastHandler } from '@/composables/useToastHandler'
 import type { Header } from '@/types/Header'
-import DataTable from '@/components/Table/DataTable.vue'
+import DataTable from '@/components/DocumentDisplay/DataTable.vue'
 import type { ToastStatus } from '@/types'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 

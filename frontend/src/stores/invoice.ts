@@ -39,15 +39,20 @@ export const useInvoiceStore = defineStore('invoice', () => {
       return InvoiceSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors de la création de la facture.');
-    }
+    } finally {
+      isLoading.value = false; 
+    }  
   }
 
   async function deleteInvoice(id: string) {
     try {
+      isLoading.value = true;
       await apiClient.delete(`/invoices/${id}`);
       invoices.value = invoices.value.filter((invoice) => invoice.id !== id);
     } catch (error) {
       handleError(error, 'Erreur lors de la suppression de la facture.');
+    } finally {
+      isLoading.value = false;   
     }
   }
 
@@ -63,10 +68,13 @@ export const useInvoiceStore = defineStore('invoice', () => {
 
   async function updateInvoice(id: string, payload: Partial<Invoice>) {
     try {
+      isLoading.value = true;
       const { data } = await apiClient.put(`/invoices/${id}`, payload);
       return InvoiceSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors de la modification de la facture.');
+    } finally {
+      isLoading.value = false;      
     }
   }  
   

@@ -51,11 +51,19 @@
               v-if="!isEditMode"
               color="primary"
               @click="onCreateContract"
-              :disabled="!canCreate"
+              :disabled="!canCreate || isLoading"
             >
-              <v-icon start>mdi-content-save</v-icon>
-              Créer le contrat
-            </v-btn>
+              <template v-if="!isLoading">
+                <v-icon start>mdi-content-save</v-icon>
+                Créer le contrat
+              </template>
+              <v-progress-circular
+                v-else
+                indeterminate
+                size="20"
+                color="secondary"
+              />
+            </v-btn>            
           </v-card>
         </v-col>
 
@@ -67,13 +75,23 @@
           />
         </v-col>
       </v-row>
-
+      
       <v-btn
         v-if="isEditMode"
         color="primary"
         @click="saveContract"
+        :disabled="isLoading"
       >
-        Enregistrer
+        <template v-if="!isLoading">
+          <v-icon start>mdi-content-save</v-icon>
+          Enregistrer
+        </template>
+        <v-progress-circular
+          v-else
+          indeterminate
+          size="20"
+          color="white"
+        />
       </v-btn>
     </v-container>
   </div>
@@ -95,6 +113,7 @@ import { extractUsedVariableNames } from '@/utils/extractUsedVariables';
 import type { VariableType, VariableValue } from '@/types';
 import type { ContractTemplateVariable } from '@/schemas/contractTemplate.schema';
 import type { CreateContract } from '@/schemas/contract.schema';
+import { generateFinalHtml } from '@/utils/generateFinalHtml';
 
 const route = useRoute();
 const router = useRouter();
@@ -127,6 +146,7 @@ const isEditMode = computed(() => !!contractId.value);
 const currentUser = computed(() => userStore.user);
 const currentTemplate = computed(() => contractTemplateStore.currentTemplate);
 const clients = computed(() => clientStore.clients);
+const isLoading = computed(() => contractStore.isLoading)
 
 const THIRTY_DAYS_IN_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -280,13 +300,12 @@ function updateVariable(name: string, newValue: string) {
 
 const canCreate = computed(() => {
   const hasTemplate = !!selectedTemplateId.value;
-  const hasClient = !!selectedClientId.value;
   const hasUser = !!currentUser.value;
   const allRequiredFilled = templateVariables.value.every(v =>
     !v.required || !!variablesValue.value.find(val => val.variableName === v.variableName)?.value
   );
 
-  return hasTemplate && hasClient && hasUser && allRequiredFilled;
+  return hasTemplate && hasUser && allRequiredFilled;
 });
 
 const orderedTemplateVariables = computed(() => {
@@ -335,10 +354,10 @@ async function onCreateContract() {
 
   const payload: CreateContract = {
     templateId: selectedTemplateId.value!,
-    ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
+    ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
     issuedAt: new Date().toISOString(),
     validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
-    generatedHtml: previewHtml.value,
+    generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),
     variableValues: variablesValue.value.map(v => ({
       variableName: v.variableName,
       value: v.value,
@@ -361,10 +380,10 @@ async function saveContract() {
   if (isEditMode.value && contractId.value) {
     const payload = {
       templateId: selectedTemplateId.value!,
-      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {}),
+      ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
       issuedAt: form.value.issuedAt ?? new Date().toISOString(),
       validUntil: form.value.validUntil,
-      generatedHtml: previewHtml.value,
+      generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),
       variableValues: variablesValue.value.map(v => ({
         id: v.id!,
         variableName: v.variableName,

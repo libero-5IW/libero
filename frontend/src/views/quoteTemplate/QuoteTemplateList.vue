@@ -47,7 +47,7 @@
   import type { Header } from '@/types/Header';
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
-  import DataTable from '@/components/Table/DataTable.vue';
+  import DataTable from '@/components/DocumentDisplay/DataTable.vue';
   import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
 
   const router = useRouter()

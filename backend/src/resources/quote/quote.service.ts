@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -15,7 +16,8 @@ import { QuoteStatus, VariableType } from '@prisma/client';
 import { generateNextNumber } from 'src/common/utils/generate-number.util';
 import { CreateQuoteVariableValueDto } from './dto/create-quote-variable-value.dto';
 import { QuoteTemplateVariableEntity } from '../quote-template/entities/quote-template-variable.entity';
-import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { S3Service } from 'src/common/s3/s3.service';
 
 @Injectable()
 export class QuoteService {
@@ -24,6 +26,8 @@ export class QuoteService {
     private readonly userService: UserService,
     private readonly clientService: ClientService,
     private readonly quoteTemplateService: QuoteTemplateService,
+    private readonly pdfGeneratorService: PdfGeneratorService,
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(
@@ -33,18 +37,28 @@ export class QuoteService {
     const { clientId, templateId, generatedHtml, validUntil, variableValues } =
       createQuoteDto;
 
-    await this.userService.getUserOrThrow(userId);
-    
+    const user = await this.userService.getUserOrThrow(userId);
+
     if (clientId) {
       await this.clientService.getClientOrThrow(clientId, userId);
     }
-    
+
     const template = await this.quoteTemplateService.findOne(
       templateId,
       userId,
     );
 
     const nextNumber = await this.getNextQuoteNumber(userId);
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(generatedHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'quotes',
+    );
 
     const quote = await this.prisma.quote.create({
       data: {
@@ -56,11 +70,12 @@ export class QuoteService {
         generatedHtml,
         validUntil: new Date(validUntil),
         issuedAt: null,
+        pdfKey,
+        previewKey,
         variableValues: {
           create: this.mapVariableWithTemplateData(
             variableValues,
             template.variables,
-            generatedHtml, 
           ),
         },
       },
@@ -81,7 +96,25 @@ export class QuoteService {
       include: { variableValues: true },
     });
 
-    return plainToInstance(QuoteEntity, quotes, {
+    const quotesWithUrls = await Promise.all(
+      quotes.map(async (quote) => {
+        const previewUrl = quote.previewKey
+          ? await this.s3Service.generateSignedUrl(quote.previewKey)
+          : null;
+
+        const pdfUrl = quote.pdfKey
+          ? await this.s3Service.generateSignedUrl(quote.pdfKey)
+          : null;
+
+        return {
+          ...quote,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+
+    return plainToInstance(QuoteEntity, quotesWithUrls, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
@@ -89,7 +122,19 @@ export class QuoteService {
 
   async findOne(id: string, userId: string) {
     const quote = await this.getQuoteOrThrow(id, userId);
-    return plainToInstance(QuoteEntity, quote);
+    const previewUrl = quote.previewKey
+      ? await this.s3Service.generateSignedUrl(quote.previewKey)
+      : null;
+
+    const pdfUrl = quote.pdfKey
+      ? await this.s3Service.generateSignedUrl(quote.pdfKey)
+      : null;
+
+    return plainToInstance(QuoteEntity, {
+      ...quote,
+      previewUrl,
+      pdfUrl,
+    });
   }
 
   async update(id: string, userId: string, data: UpdateQuoteDto) {
@@ -101,6 +146,29 @@ export class QuoteService {
         'Seuls les devis en brouillon peuvent être modifiés.',
       );
     }
+
+    await this.quoteTemplateService.findOne(otherData.templateId, userId);
+
+    const user = await this.userService.getUserOrThrow(userId);
+
+    if (existingQuote.pdfKey) {
+      await this.s3Service.deleteFile(existingQuote.pdfKey);
+    }
+    if (existingQuote.previewKey) {
+      await this.s3Service.deleteFile(existingQuote.previewKey);
+    }
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(
+        otherData.generatedHtml,
+      );
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'quotes',
+    );
 
     for (const variable of variableValues ?? []) {
       await this.prisma.quoteVariableValue.update({
@@ -120,6 +188,8 @@ export class QuoteService {
       where: { id },
       data: {
         ...otherData,
+        pdfKey,
+        previewKey,
       },
       include: {
         variableValues: true,
@@ -157,18 +227,19 @@ export class QuoteService {
   private mapVariableWithTemplateData(
     submittedVariables: CreateQuoteVariableValueDto[],
     templateVariables: QuoteTemplateVariableEntity[],
-    templateHtml: string, 
   ) {
     const templateMap = new Map(
       templateVariables.map((v) => [v.variableName, v]),
     );
-    
+
     return submittedVariables.map((v) => {
       const templateVar = templateMap.get(v.variableName);
       if (!templateVar) {
-        throw new Error(`Variable ${v.variableName} non définie dans le template`);
+        throw new Error(
+          `Variable ${v.variableName} non définie dans le template`,
+        );
       }
-    
+
       return {
         variableName: v.variableName,
         value: v.value,
@@ -177,5 +248,15 @@ export class QuoteService {
         required: templateVar.required,
       };
     });
+  }
+
+  async getPreviewSignedUrl(id: string, userId: string): Promise<string> {
+    const quote = await this.prisma.quote.findUnique({ where: { id } });
+
+    if (!quote || quote.userId !== userId) {
+      throw new ForbiddenException('Accès refusé');
+    }
+
+    return this.s3Service.generateSignedUrl(quote.previewKey);
   }
 }
