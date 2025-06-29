@@ -53,6 +53,10 @@
               <v-list-item-title>Éditer</v-list-item-title>
             </v-list-item>
 
+            <v-list-item @click.stop="onConvertToInvoice(item)">
+              <v-list-item-title>Transformer en Facture</v-list-item-title>
+            </v-list-item>
+
             <v-list-item @click.stop="onDelete(item.id)">
               <v-list-item-title class="text-red-600">Supprimer</v-list-item-title>
             </v-list-item>
@@ -80,6 +84,7 @@ const emit = defineEmits<{
   (e: 'edit', id: string): void
   (e: 'delete', id: string): void
   (e: 'change-status', id: string): void
+  (e: 'convert-to-invoice', item: DocumentCard): void
 }>()
 
 function onEdit(id: string) {
@@ -98,6 +103,10 @@ function onCardClick(item: DocumentCard) {
 
 function onDelete(id: string) {
   emit('delete', id)
+}
+
+function onConvertToInvoice(item: DocumentCard) {
+  emit('convert-to-invoice', item)
 }
 
 function onChangeStatus(item: DocumentCard) {

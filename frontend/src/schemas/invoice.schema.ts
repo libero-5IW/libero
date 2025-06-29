@@ -33,6 +33,7 @@ export const CreateInvoiceSchema = z.object({
   variableValues: z
     .array(CreateInvoiceVariableValueSchema)
     .min(1, { message: 'Au moins une variable est requise.' }),
+  quoteId: z.string().uuid().optional(),
 });
 
 export const InvoiceVariableValueSchema = z.object({
