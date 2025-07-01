@@ -84,6 +84,7 @@ export class AuthService {
         resetPasswordTokenExpiry: null,
       },
     });
+    await this.mailerService.sendPasswordResetSuccessEmail(user.email);
   }
 
   async isTokenValid(token: string): Promise<boolean> {

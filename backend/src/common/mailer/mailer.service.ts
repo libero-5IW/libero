@@ -39,7 +39,7 @@ export class MailerService {
     await this.mailerService.sendMail({
       to: email,
       subject: 'Mot de passe réinitialisé avec succès - Libero',
-      template: 'reset-success',
+      template: 'password-reset-success',
       context: {
         loginUrl: `${process.env.FRONTEND_URL}/login`,
         helpUrl: `${process.env.FRONTEND_URL}/help`,
