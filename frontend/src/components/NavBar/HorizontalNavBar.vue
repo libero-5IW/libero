@@ -1,31 +1,26 @@
 <template>
   <v-app-bar
-    color="surface"
-    class="horizontal-nav"
+    :style="{ background: theme.current.value.colors.appbar }"
+    color="appbar"
+    class="horizontal-nav "
     elevation="0"
     height="64"
   >
-    <!-- Search bar -->
-    <v-text-field
-      prepend-inner-icon="mdi-magnify"
-      placeholder="Search..."
-      variant="solo-filled"
-      density="compact"
-      color="text-secondary"
-      hide-details
-      :class="[
-        'search-field',
-        {
-          'mx-4': $vuetify.display.lgAndUp,
-          'mx-2': !$vuetify.display.lgAndUp,
-          'search-field-lg': $vuetify.display.lgAndUp,
-          'search-field-md': !$vuetify.display.lgAndUp
-        }
-      ]"
-      bg-color="secondary-lighten-5"
-    />
-
     <v-spacer />
+
+        <!-- Help button with tooltip -->
+    <v-tooltip location="bottom end">
+      <template v-slot:activator="{ props }">
+        <v-btn
+          icon
+          v-bind="props"
+          @click="router.push('/help')"
+        >
+            <v-icon>mdi-help-circle-outline</v-icon>
+        </v-btn>
+      </template>
+      <span>Aide</span>
+    </v-tooltip>
 
     <!-- Notifications dropdown -->
     <v-menu
@@ -117,8 +112,8 @@
           v-bind="props"
           :class="{ 'mr-4': $vuetify.display.lgAndUp, 'mr-2': !$vuetify.display.lgAndUp }"
         >
-          <v-avatar size="32" color="primary">
-            <v-icon>mdi-account</v-icon>
+          <v-avatar size="32" color="surface">
+            <v-icon color="primary">mdi-account</v-icon>
           </v-avatar>
         </v-btn>
       </template>
@@ -127,20 +122,20 @@
         <v-list>
           <v-list-item
             prepend-icon="mdi-account-circle"
-            title="Profile"
+            title="Profil"
             value="profile"
             @click="handleUserMenuClick('profile')"
           />
           <v-list-item
             prepend-icon="mdi-cog"
-            title="Settings"
+            title="Paramètres"
             value="settings"
             @click="handleUserMenuClick('settings')"
           />
           <v-divider />
           <v-list-item
             prepend-icon="mdi-logout"
-            title="Logout"
+            title="Déconnexion"
             value="logout"
             color="error"
             @click="logout"
@@ -156,7 +151,9 @@ import { ref, computed } from 'vue'
 import { useDisplay } from 'vuetify'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth';
+import { useTheme } from 'vuetify'
 
+const theme = useTheme()
 const router = useRouter()
 const { lgAndUp } = useDisplay()
 const showNotifications = ref(false)
