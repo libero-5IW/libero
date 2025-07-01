@@ -1,6 +1,5 @@
 <template>
     <CenteredContainer size="lg">
-      <div class="shadow-lg shadow-gray-300 border">
         <RegisterForm :data="data" :loading="loading" @submit="handleRegister">
           <template v-slot:header>
             <div class="flex justify-center py-4">
@@ -16,7 +15,6 @@
             </div>
           </template>
         </RegisterForm>
-      </div>
     </CenteredContainer>
 </template>
   
@@ -27,8 +25,11 @@
   import { computed, reactive } from 'vue'
   import { useAuthStore } from '@/stores/auth'
   import type { RegisterData } from '@/schemas/user.schema'
+  import { useRouter } from 'vue-router'
   
   const authStore = useAuthStore()
+  const router = useRouter();
+
 
   const loading = computed(() => authStore.loading);
   const data = reactive({
@@ -48,6 +49,10 @@
 
   const handleRegister = async (payload: RegisterData) => {
     await authStore.register(payload);
+    router.push({
+        path: '/login',
+        state: { toastStatus : 'success', toastMessage: 'Le compte a été crée avec succès, connectez-vous !' }
+    });
   }
 
 </script>

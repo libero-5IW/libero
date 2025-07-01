@@ -15,7 +15,7 @@
           </div>
           <div class="text-center">
             <p class="text-gray-600">Mot de passe oublié ?</p>
-            <router-link to="/EmailResetPassword">Réinitialiser</router-link>
+            <router-link to="/email-reset-password">Réinitialiser</router-link>
           </div>
         </template>
       </LoginForm>

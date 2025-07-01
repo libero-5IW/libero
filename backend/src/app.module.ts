@@ -18,7 +18,8 @@ import { S3Module } from './common/s3/s3.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.NODE_ENV === 'production' ? '.env.prod' : '.env',
+      envFilePath:
+        process.env.NODE_ENV === 'production' ? '.env.prod' : '.env.local',
     }),
     PrismaModule,
     UserModule,

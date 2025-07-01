@@ -55,10 +55,6 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     try {
       await apiClient.post('/auth/register', data);
-      router.push({
-        path: '/login',
-        state: { toastStatus : 'success', toastMessage: 'Le compte a été crée avec succès, connectez-vous !' }
-    });
     } catch (error) {
       handleError(error, 'Erreur lors de l’inscription.')
     } finally {
@@ -83,6 +79,48 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  const isUserAuthenticated = async () => {
+    const response = await apiClient.get('/auth/is-authenticated');     
+    isAuthenticated.value = response.data;
+  };
+
+  const sendResetPasswordEmail = async (email: string) => {
+  clearState();
+  loading.value = true;
+  try {
+    await apiClient.post('/auth/request-reset-password', { email });
+  } catch (error) {
+    handleError(error, 'Erreur lors de la demande de réinitialisation.');
+  } finally {
+    loading.value = false;
+  }
+};
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    clearState();
+    loading.value = true;
+    try {
+      await apiClient.post('/auth/reset-password', {
+        token,
+        newPassword
+      });
+    } catch (error) {
+      handleError(error, 'Erreur lors de la réinitialisation du mot de passe.');
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const checkResetToken = async (token: string) => {
+    try {
+      await apiClient.get(`/auth/reset-password/validate?token=${token}`);
+      return true;
+    } catch (error) {
+      handleError(error, 'Token invalide ou expiré.');
+      return false;
+    }
+  };
+
   return {
     user,
     isAuthenticated,
@@ -93,6 +131,10 @@ export const useAuthStore = defineStore('auth', () => {
     errorMessage,
     clearState,
     verifyAuth,
-    authAlreadyChecked
+    authAlreadyChecked,
+    sendResetPasswordEmail,
+    resetPassword,
+    checkResetToken,
+    isUserAuthenticated
   };
 });

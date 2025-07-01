@@ -15,29 +15,31 @@ datasource db {
 }
 
 model User {
-  id                String   @id @default(uuid())
-  firstName         String
-  lastName          String
-  email             String   @unique
-  password          String
-  companyName       String?
-  addressLine       String
-  postalCode        String
-  city              String
-  country           String   @default("France")
-  legalStatus       String
-  siret             String
-  tvaNumber         String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                        String   @id @default(uuid())
+  firstName                 String
+  lastName                  String
+  email                     String   @unique
+  password                  String
+  companyName               String?
+  addressLine               String
+  postalCode                String
+  city                      String
+  country                   String   @default("France")
+  legalStatus               String
+  siret                     String
+  tvaNumber                 String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  resetPasswordToken        String?
+  resetPasswordTokenExpiry  DateTime?
 
-  quoteTemplates    QuoteTemplate[]
-  quotes            Quote[]
-  invoiceTemplates  InvoiceTemplate[]
-  invoices          Invoice[]
-  clients           Client[] 
-  contractTemplates ContractTemplate[]
-  contracts         Contract[]
+  quoteTemplates            QuoteTemplate[]
+  quotes                    Quote[]
+  invoiceTemplates          InvoiceTemplate[]
+  invoices                  Invoice[]
+  clients                   Client[] 
+  contractTemplates         ContractTemplate[]
+  contracts                 Contract[]
 }
 
 model Client {

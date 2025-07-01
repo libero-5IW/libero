@@ -56,7 +56,7 @@
         </template>
         <v-list-item-title :class="{
           'text-primary': route.path === item.to,
-          'text-text-secondary': route.path !== item.to
+          'text-secondary': route.path !== item.to
         }">{{ item.title }}</v-list-item-title>
       </v-list-item>
     </div>

@@ -54,6 +54,14 @@ export class UserEntity {
   @Exclude()
   password: string;
 
+  @ApiProperty({ example: 'Asjeuu76....' })
+  @Exclude()
+  resetPasswordToken: string;
+
+  @ApiProperty({ example: '2025-03-10T12:34:56Z' })
+  @Exclude()
+  resetPasswordTokenExpiry: Date;
+
   @ApiProperty({ example: '2025-03-10T12:34:56Z' })
   @Expose()
   createdAt: Date;
