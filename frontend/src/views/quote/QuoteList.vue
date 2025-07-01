@@ -12,6 +12,7 @@
       <DocumentCardList
         :items="documentCards"
         titlePrefix="Devis"
+        type="quote"
         @edit="editQuote"
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"

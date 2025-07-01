@@ -12,9 +12,11 @@
       <DocumentCardList
         :items="documentCards"
         titlePrefix="Contrat"
+        type="contract"
         @edit="editContract"
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
+        @convert-to-invoice="handleConvertToInvoice"
       />
     </div>
 
@@ -44,6 +46,13 @@
     confirmColor="error"
     @confirm="confirmDeleteContract"
   />
+
+  <TemplateSelectionModal
+  v-model="showInvoiceTemplateModal"
+  :fetchTemplates="fetchInvoiceTemplates"
+  @templateSelected="handleInvoiceTemplateSelected"
+  />
+
 </template>
 
 <script setup lang="ts">
@@ -57,6 +66,9 @@ import { useToastHandler } from '@/composables/useToastHandler';
 import type { DocumentCard, ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
+import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
+import { mapContractToInvoiceVariables } from '@/utils/mapContractToInvoice';
+import type { Contract } from '@/schemas/contract.schema';
 
 const router = useRouter();
 const contractStore = useContractStore();
@@ -69,6 +81,9 @@ const contracts = computed(() => contractStore.contracts);
 
 const isDeleteModalOpen = ref(false)
 const selectedContractId = ref<string | null>(null)
+const invoiceTemplateStore = useInvoiceTemplateStore();
+const showInvoiceTemplateModal = ref(false);
+const contractToConvert = ref<Contract | null>(null);
 
 const documentCards = computed<DocumentCard[]>(() =>
   contracts.value.map((contract): DocumentCard  => {
@@ -132,6 +147,48 @@ async function confirmDeleteContract() {
   await fetchAllContracts()
   showToast('success', 'Le contrat a été bien supprimé !')
   selectedContractId.value = null
+}
+
+function handleConvertToInvoice(card: DocumentCard) {
+  const contract = contracts.value.find(c => c.id === card.id);
+
+  if (!contract) {
+    showToast('error', 'Contrat introuvable');
+    return;
+  }
+
+  contractToConvert.value = contract;
+  showInvoiceTemplateModal.value = true;
+}
+
+async function fetchInvoiceTemplates() {
+  await invoiceTemplateStore.fetchAllTemplates();
+  return invoiceTemplateStore.templates.map(t => ({
+    id: t.id!,
+    name: t.name,
+  }));
+}
+
+function handleInvoiceTemplateSelected(templateId: string) {
+  const contract = contractToConvert.value;
+  const template = invoiceTemplateStore.templates.find(t => t.id === templateId);
+
+  if (!contract || !template) {
+    showToast('error', 'Erreur lors de la génération de la facture');
+    return;
+  }
+
+  const mappedVars = mapContractToInvoiceVariables(template.variables, contract.variableValues);
+
+  router.push({
+    name: 'InvoiceForm',
+    state: {
+      fromContractId: contract.id,
+      templateId,
+      clientId: contract.clientId,
+      variables: mappedVars,
+    }
+  });
 }
 
 onMounted(async () => {

@@ -208,7 +208,6 @@ onMounted(async () => {
   }
 });
 
-
 async function initialize() {
   await clientStore.fetchAllClients();
 
@@ -222,6 +221,14 @@ async function initialize() {
     form.value.templateId = templateIdFromState;
     form.value.clientId = state.clientId;
     form.value.quoteId = state.fromQuoteId;
+    variablesValue.value = state.variables;
+    selectedTemplateId.value = templateIdFromState;
+  }
+
+  else if (state?.fromContractId && templateIdFromState) {
+    form.value.templateId = templateIdFromState;
+    form.value.clientId = state.clientId;
+    form.value.contractId = state.fromContractId;
     variablesValue.value = state.variables;
     selectedTemplateId.value = templateIdFromState;
   }
