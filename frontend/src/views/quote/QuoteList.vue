@@ -17,6 +17,7 @@
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
         @convert-to-invoice="handleConvertToInvoice"
+        @convert-to-contract="handleConvertToContract"
       />
     </div>
 
@@ -51,6 +52,12 @@
     :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleInvoiceTemplateSelected"
   />
+
+  <TemplateSelectionModal
+    v-model="showContractTemplateModal"
+    :fetchTemplates="fetchContractTemplates"
+    @templateSelected="handleContractTemplateSelected"
+  />
 </template>
 
 <script setup lang="ts">
@@ -68,10 +75,14 @@ import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue'
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 import type { Quote } from '@/schemas/quote.schema'
 import { mapQuoteToInvoiceVariables } from '@/utils/mapQuoteToInvoice'
+import { mapQuoteToContractVariables } from '@/utils/mapQuoteToContract'
+import { useContractTemplateStore } from '@/stores/contractTemplate'
+
 
 const quoteTemplateStore = useQuoteTemplateStore();
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const quoteStore = useQuoteStore();
+const contractTemplateStore = useContractTemplateStore()
 
 const { showToast } = useToastHandler();
 const router = useRouter();
@@ -86,6 +97,7 @@ const selectedQuoteId = ref<string | null>(null);
 const quoteToConvert = ref<Quote | null>(null)
 
 const showInvoiceTemplateModal = ref(false)
+const showContractTemplateModal = ref(false)
 
 const documentCards = computed<DocumentCard[]>(() =>
   quotes.value.map((quote): DocumentCard  => {
@@ -141,6 +153,18 @@ function handleConvertToInvoice(card: DocumentCard) {
   showInvoiceTemplateModal.value = true
 }
 
+function handleConvertToContract(card: DocumentCard) {
+  const fullQuote = quoteStore.quotes.find(q => q.id === card.id)
+
+  if (!fullQuote) {
+    showToast('error', 'Impossible de trouver le devis à convertir en contrat.')
+    return
+  }
+
+  quoteToConvert.value = fullQuote
+  showContractTemplateModal.value = true
+}
+
 const fetchAllQuotes = async () => {
   await quoteStore.fetchAllQuotes();
 };
@@ -173,6 +197,17 @@ async function fetchInvoiceTemplates() {
   }))
 }
 
+async function fetchContractTemplates() {
+  await contractTemplateStore.fetchAllTemplates()
+
+  return contractTemplateStore.templates
+    .filter(t => typeof t.id === 'string')
+    .map(t => ({
+      id: t.id as string,
+      name: t.name
+    }))
+}
+
 async function handleInvoiceTemplateSelected(templateId: string) {
   await invoiceTemplateStore.fetchTemplate(templateId)
 
@@ -191,6 +226,33 @@ async function handleInvoiceTemplateSelected(templateId: string) {
 
   router.push({
     name: 'InvoiceForm',
+    state: {
+      fromQuoteId: quote.id,
+      templateId,
+      clientId: quote.clientId,
+      variables: mappedVariables
+    }
+  })
+}
+
+async function handleContractTemplateSelected(templateId: string) {
+  await contractTemplateStore.fetchTemplate(templateId)
+
+  const contractTemplate = contractTemplateStore.currentTemplate
+  const quote = quoteToConvert.value
+
+  if (!contractTemplate || !quote) {
+    showToast('error', 'Impossible de créer un contrat à partir de ce devis.')
+    return
+  }
+
+  const mappedVariables = mapQuoteToContractVariables(
+    contractTemplate.variables,
+    quote.variableValues
+  )
+
+  router.push({
+    name: 'ContractForm',
     state: {
       fromQuoteId: quote.id,
       templateId,

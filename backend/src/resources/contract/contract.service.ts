@@ -33,7 +33,7 @@ export class ContractService {
     userId: string,
     dto: CreateContractDto,
   ): Promise<ContractEntity> {
-    const { clientId, templateId, generatedHtml, validUntil, variableValues } =
+    const { clientId, templateId, generatedHtml, validUntil, variableValues, quoteId } =
       dto;
 
     const user = await this.userService.getUserOrThrow(userId);
@@ -64,6 +64,7 @@ export class ContractService {
         template: { connect: { id: templateId } },
         user: { connect: { id: userId } },
         ...(clientId ? { client: { connect: { id: clientId } } } : {}),
+        ...(quoteId ? { quote: { connect: { id: quoteId } } } : {}),
         status: ContractStatus.draft,
         generatedHtml,
         validUntil: new Date(validUntil),
