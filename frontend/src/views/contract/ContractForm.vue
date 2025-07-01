@@ -191,10 +191,21 @@ onMounted(async () => {
 });
 
 async function initialize() {
+  const state = window.history.state;
+  const templateIdFromState = state?.templateId as string | undefined;
   const templateIdFromQuery = route.query.templateId as string | undefined;
-  const templateId = selectedTemplateId.value || templateIdFromQuery;
+  const templateId = templateIdFromState || templateIdFromQuery;
 
   await clientStore.fetchAllClients();
+
+  if (state?.fromQuoteId && templateIdFromState) {
+    form.value.templateId = templateIdFromState;
+    form.value.clientId = state.clientId;
+    form.value.quoteId = state.fromQuoteId; 
+    form.value.variableValues = state.variables;
+    variablesValue.value = state.variables;
+    selectedTemplateId.value = templateIdFromState;
+  }
 
   if (!templateId && !isEditMode.value) {
     showTemplateModal.value = true;
@@ -355,6 +366,7 @@ async function onCreateContract() {
   const payload: CreateContract = {
     templateId: selectedTemplateId.value!,
     ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
+    ...(history.state?.fromQuoteId ? { quoteId: history.state.fromQuoteId } : {}),
     issuedAt: new Date().toISOString(),
     validUntil: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
     generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),

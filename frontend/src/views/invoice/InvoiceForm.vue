@@ -208,7 +208,6 @@ onMounted(async () => {
   }
 });
 
-
 async function initialize() {
   await clientStore.fetchAllClients();
 
@@ -222,6 +221,14 @@ async function initialize() {
     form.value.templateId = templateIdFromState;
     form.value.clientId = state.clientId;
     form.value.quoteId = state.fromQuoteId;
+    variablesValue.value = state.variables;
+    selectedTemplateId.value = templateIdFromState;
+  }
+
+  else if (state?.fromContractId && templateIdFromState) {
+    form.value.templateId = templateIdFromState;
+    form.value.clientId = state.clientId;
+    form.value.contractId = state.fromContractId;
     variablesValue.value = state.variables;
     selectedTemplateId.value = templateIdFromState;
   }
@@ -442,6 +449,8 @@ async function onCreateInvoice() {
   const payload: CreateInvoice = {
     templateId: selectedTemplateId.value!,
     ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
+    ...(history.state?.fromQuoteId ? { quoteId: history.state.fromQuoteId } : {}),
+    ...(history.state?.fromContractId ? { contractId: history.state.fromContractId } : {}),
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
     generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),

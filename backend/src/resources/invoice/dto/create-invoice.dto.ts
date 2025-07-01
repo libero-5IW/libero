@@ -33,6 +33,14 @@ export class CreateInvoiceDto {
   @IsUUID('4', { message: "L'ID du devis doit être un UUID valide." })
   quoteId?: string;
 
+  @ApiPropertyOptional({
+    example: 'a2a2332e-03f4-4ec0-98cf-e1d8f11d9999',
+    description: 'ID du contrat lié à cette facture',
+  })
+  @IsOptional()
+  @IsUUID('4', { message: "L'ID du contrat doit être un UUID valide." })
+  contractId?: string;  
+
   @ApiProperty({ example: '<p>Voici la facture générée…</p>' })
   @IsString({ message: 'Le HTML généré doit être une chaîne de caractères.' })
   generatedHtml: string;

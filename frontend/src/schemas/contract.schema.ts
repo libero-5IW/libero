@@ -33,6 +33,7 @@ export const CreateContractSchema = z.object({
   variableValues: z
     .array(CreateContractVariableValueSchema)
     .min(1, { message: 'Au moins une variable est requise.' }),
+  quoteId: z.string().uuid().optional(),
 });
 
 export const ContractVariableValueSchema = z.object({

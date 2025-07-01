@@ -10,6 +10,7 @@
       <v-card-title class="text-lg font-bold mt-2 px-4">
         <span class="text-primary">{{ titlePrefix }} #{{ item.number }} </span> - {{ item.clientName ?? '—' }}
       </v-card-title>
+
       <v-img
         v-if="item.previewUrl"
         :src="item.previewUrl"
@@ -53,7 +54,18 @@
               <v-list-item-title>Éditer</v-list-item-title>
             </v-list-item>
 
-            <v-list-item @click.stop="onConvertToInvoice(item)">
+            <!-- Transformer en contrat : seulement pour les devis -->
+            <v-list-item
+              v-if="props.type === 'quote'"
+              @click.stop="onConvertToContract(item)"
+            >
+              <v-list-item-title>Transformer en Contrat</v-list-item-title>
+            </v-list-item>
+
+            <v-list-item
+              v-if="props.type === 'quote' || props.type === 'contract'"
+              @click.stop="onConvertToInvoice(item)"
+            >
               <v-list-item-title>Transformer en Facture</v-list-item-title>
             </v-list-item>
 
@@ -63,11 +75,11 @@
           </v-list>
         </v-menu>
       </div>
-        
+
       <v-card-subtitle class="pb-4 text-sm text-gray-600">
         Créé le {{ formatDate(item.createdAt) }} — <span class="capitalize">{{ item.status }}</span>
       </v-card-subtitle>
-      
+
     </v-card>
   </div>
 </template>
@@ -78,6 +90,7 @@ import type { DocumentCard } from '@/types'
 const props = defineProps<{
   items: DocumentCard[]
   titlePrefix: string
+  type: 'quote' | 'contract' | 'invoice'  
 }>()
 
 const emit = defineEmits<{
@@ -85,6 +98,7 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void
   (e: 'change-status', id: string): void
   (e: 'convert-to-invoice', item: DocumentCard): void
+  (e: 'convert-to-contract', item: DocumentCard): void
 }>()
 
 function onEdit(id: string) {
@@ -97,7 +111,7 @@ function formatDate(date: string): string {
 
 function onCardClick(item: DocumentCard) {
   if (item.pdfUrl) {
-    window.open(item.pdfUrl, '_blank');
+    window.open(item.pdfUrl, '_blank')
   }
 }
 
@@ -109,8 +123,11 @@ function onConvertToInvoice(item: DocumentCard) {
   emit('convert-to-invoice', item)
 }
 
+function onConvertToContract(item: DocumentCard) {
+  emit('convert-to-contract', item)
+}
+
 function onChangeStatus(item: DocumentCard) {
   emit('change-status', item.id)
 }
-
 </script>
