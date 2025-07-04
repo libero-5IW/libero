@@ -47,6 +47,7 @@ export class UserEntity {
   @Expose()
   siret: string;
 
+  @IsOptional()
   @ApiProperty({ example: 'BE0123456789' })
   @Expose()
   tvaNumber?: string;
