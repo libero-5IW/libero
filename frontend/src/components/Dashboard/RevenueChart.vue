@@ -1,0 +1,138 @@
+<template>
+  <v-card class="pa-4">
+    <v-card-title class="text-h6">Chiffre d'affaires mensuel</v-card-title>
+    <v-divider class="my-2" />
+
+    <v-row class="mb-4">
+      <v-col cols="12" md="4">
+        <v-select
+          v-model="selectedYear"
+          :items="availableYears"
+          label="Sélectionner une année"
+          dense
+        />
+      </v-col>
+    </v-row>
+
+    <div style="height: 300px;">
+      <Line :chart-data="chartData" :chart-options="chartOptions" />
+    </div>
+  </v-card>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { Line } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale
+} from 'chart.js';
+import { useInvoiceStore } from '@/stores/invoice';
+
+ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale);
+
+const invoiceStore = useInvoiceStore();
+const currentYear = new Date().getFullYear();
+const selectedYear = ref(currentYear);
+
+const availableYears = computed(() => {
+  const years = invoiceStore.invoices.map(inv => new Date(inv.issuedAt ?? inv.createdAt).getFullYear());
+  return Array.from(new Set(years)).sort((a, b) => b - a);
+});
+
+onMounted(async () => {
+  if (invoiceStore.invoices.length === 0) {
+    await invoiceStore.fetchAllInvoices();
+  }
+});
+
+const chartData = computed(() => {
+  const labels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+  const dataByMonth = Array(12).fill(0);
+
+  if (invoiceStore.invoices.length === 0) {
+    return {
+      labels,
+      datasets: [
+        {
+          label: "Chiffre d'affaires (€)",
+          data: dataByMonth,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3
+        }
+      ]
+    };
+  }
+
+  invoiceStore.invoices.forEach(inv => {
+    if (inv.status === 'paid') {
+      const date = new Date(inv.issuedAt ?? inv.createdAt);
+      const year = date.getFullYear();
+      if (year === selectedYear.value) {
+        const month = date.getMonth();
+
+        const amountVar = inv.variableValues.find(v =>
+          ['amount', 'total_amount', 'montant', 'total_ht', 'total_ttc'].includes(
+            v.variableName.toLowerCase()
+          )
+        );
+        const total = amountVar ? parseFloat(amountVar.value) || 0 : 0;
+        dataByMonth[month] += total;
+      }
+    }
+  });
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: "Chiffre d'affaires (€)",
+        data: dataByMonth,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59, 130, 246, 0.15)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3
+      }
+    ]
+  };
+});
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: true,
+  aspectRatio: 2.5,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      callbacks: {
+        label: (context) => `${context.parsed.y.toFixed(2)} €`
+      }
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        callback: (value) => `${value} €`
+      }
+    }
+  }
+};
+</script>
+
+<style scoped>
+.chart-container {
+  height: 300px;
+  padding-bottom: 20px;
+}
+</style>
