@@ -2,7 +2,7 @@
   <v-app>
     <!-- Responsive app bar -->
     <v-app-bar
-      color="surface"
+      color="appbar"
       elevation="1"
       v-if="!mdAndUp"
     >
@@ -10,18 +10,6 @@
       <v-app-bar-title class="mr-4">Libero</v-app-bar-title>
       
       <!-- Mobile search and icons -->
-      <v-text-field
-        prepend-inner-icon="mdi-magnify"
-        placeholder="Search..."
-        variant="solo-filled"
-        density="compact"
-        color="text-secondary"
-        hide-details
-        class="search-field mx-2"
-        bg-color="secondary-lighten-5"
-        style="max-width: 150px"
-      />
-
       <v-btn icon class="ml-2">
         <v-badge
           color="error"

@@ -24,12 +24,31 @@ export class MailerService {
   async sendResetPasswordEmail(email: string, resetLink: string) {
     await this.mailerService.sendMail({
       to: email,
-      subject: 'Réinitialisation de votre mot de passe',
+      subject: 'Réinitialisation de votre mot de passe - Libero',
       template: 'reset-password',
       context: {
         resetLink,
         helpUrl: `${process.env.FRONTEND_URL}/help`,
         year: new Date().getFullYear(),
+      },
+      attachments: [this.getLogoAttachment()],
+    });
+  }
+
+  async sendAccountLockedEmail(
+    email: string,
+    resetLink: string,
+    lockDuration: number,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Votre compte a été temporairement bloqué - Libero',
+      template: 'account-blocked',
+      context: {
+        resetLink,
+        helpUrl: `${process.env.FRONTEND_URL}/help`,
+        year: new Date().getFullYear(),
+        lockDuration,
       },
       attachments: [this.getLogoAttachment()],
     });
@@ -49,20 +68,16 @@ export class MailerService {
     });
   }
 
-  async sendAccountBlockedEmail(
-    email: string,
-    resetLink: string,
-    lockDuration: number,
-  ) {
+  async sendPasswordExpirationEmail(email: string, resetLink: string) {
     await this.mailerService.sendMail({
       to: email,
-      subject: 'Compte bloqué - Libero',
-      template: 'account-blocked',
+      subject: 'Votre mot de passe a expiré - Libero',
+      template: 'password-expired',
       context: {
         resetLink,
         helpUrl: `${process.env.FRONTEND_URL}/help`,
+        forgotPasswordUrl: `${process.env.FRONTEND_URL}/email-reset-password`,
         year: new Date().getFullYear(),
-        lockDuration,
       },
       attachments: [this.getLogoAttachment()],
     });

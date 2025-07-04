@@ -89,8 +89,10 @@ export const useAuthStore = defineStore('auth', () => {
   loading.value = true;
   try {
     await apiClient.post('/auth/request-reset-password', { email });
+    return true;
   } catch (error) {
     handleError(error, 'Erreur lors de la demande de réinitialisation.');
+    return false;
   } finally {
     loading.value = false;
   }
@@ -104,8 +106,10 @@ export const useAuthStore = defineStore('auth', () => {
         token,
         newPassword
       });
+      return true;
     } catch (error) {
       handleError(error, 'Erreur lors de la réinitialisation du mot de passe.');
+      return false;
     } finally {
       loading.value = false;
     }
