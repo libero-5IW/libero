@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "lastPasswordUpdate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "lockedUntil" TIMESTAMP(3),
+ADD COLUMN     "loginAttempts" INTEGER NOT NULL DEFAULT 0;

@@ -32,6 +32,10 @@ model User {
   updatedAt                 DateTime @updatedAt
   resetPasswordToken        String?
   resetPasswordTokenExpiry  DateTime?
+  lastPasswordUpdate        DateTime @default(now())
+  resetTokenSource          ResetTokenSource?
+  loginAttempts             Int @default(0)
+  lockedUntil               DateTime?
 
   quoteTemplates            QuoteTemplate[]
   quotes                    Quote[]
@@ -40,6 +44,12 @@ model User {
   clients                   Client[] 
   contractTemplates         ContractTemplate[]
   contracts                 Contract[]
+}
+
+enum ResetTokenSource {
+  RESET //forgotten password
+  LOCKED
+  EXPIRED
 }
 
 model Client {

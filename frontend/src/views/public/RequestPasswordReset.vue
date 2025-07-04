@@ -65,11 +65,13 @@ const submit = async () => {
   const valid = await formRef.value?.validate();
   if (!valid?.valid) return;
 
-  await authStore.sendResetPasswordEmail(email.value);
-  router.push({
-    path: '/login',
-    state: { toastStatus : 'success', toastMessage: 'Si un compte existe avec cette adresse e-mail, un lien de réinitialisation vous a été envoyé.' }
-  });
+  const success = await authStore.sendResetPasswordEmail(email.value);
+  if (success) {
+    router.push({
+      path: '/login',
+      state: { toastStatus : 'success', toastMessage: 'Si un compte existe avec cette adresse e-mail, un lien de réinitialisation vous a été envoyé.' }
+    });
+  }
 
 };
 </script>

@@ -119,10 +119,12 @@ const submit = async () => {
   const valid = await formRef.value?.validate();
   if (!valid?.valid) return;
 
-  await authStore.resetPassword(token, password.value);
-  router.push({
-    path: '/login',
-    state: { toastStatus : 'success', toastMessage: 'Mot de passe réinitialisé avec succès, connectez-vous !' }
-  });
+  const success = await authStore.resetPassword(token, password.value);
+  if (success) {
+    router.push({
+      path: '/login',
+      state: { toastStatus : 'success', toastMessage: 'Mot de passe réinitialisé avec succès, connectez-vous !' }
+    });
+  }
 };
 </script>
