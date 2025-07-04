@@ -80,6 +80,18 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
+  async function searchQuotes(search: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.get(`/quotes/search/${search}`);
+      quotes.value = data.map((item: Quote) => QuoteSchema.parse(item));
+    } catch (error) {
+      handleError(error, 'Erreur lors de la recherche des devis.');
+    } finally {
+      isLoading.value = false;
+    }
+  }  
+
   return {
     quotes,
     currentQuote,
@@ -90,5 +102,6 @@ export const useQuoteStore = defineStore('quote', () => {
     deleteQuote,
     fetchNextQuoteNumber,
     updateQuote,
+    searchQuotes
   };
 });

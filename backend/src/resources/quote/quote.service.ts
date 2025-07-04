@@ -259,4 +259,73 @@ export class QuoteService {
 
     return this.s3Service.generateSignedUrl(quote.previewKey);
   }
+
+  async search(userId: string, search: string) {
+    const searchNumber = Number(search)
+    const isNumberSearch = !isNaN(searchNumber)
+  
+    const quotes = await this.prisma.quote.findMany({
+      where: {
+        userId,
+        OR: [
+          ...(isNumberSearch
+            ? [{
+                number: {
+                  equals: searchNumber
+                }
+              }]
+            : []
+          ),
+          {
+            client: {
+              OR: [
+                {
+                  firstName: {
+                    contains: search,
+                    mode: 'insensitive'
+                  }
+                },
+                {
+                  lastName: {
+                    contains: search,
+                    mode: 'insensitive'
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      include: {
+        variableValues: true,
+        client: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+  
+    const quotesWithUrls = await Promise.all(
+      quotes.map(async (quote) => {
+        const previewUrl = quote.previewKey
+          ? await this.s3Service.generateSignedUrl(quote.previewKey)
+          : null
+  
+        const pdfUrl = quote.pdfKey
+          ? await this.s3Service.generateSignedUrl(quote.pdfKey)
+          : null
+  
+        return {
+          ...quote,
+          previewUrl,
+          pdfUrl,
+        }
+      })
+    )
+  
+    return plainToInstance(QuoteEntity, quotesWithUrls, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    })
+  }  
 }

@@ -61,4 +61,12 @@ export class QuoteController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.quoteService.remove(id, user.userId);
   }
+
+  @Get('search/:term')
+  searchQuotes(
+    @Param('term') term: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.quoteService.search(user.userId, term);
+  }
 }
