@@ -51,4 +51,9 @@ export class ClientController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.clientService.remove(id, user.userId);
   }
+
+  @Get('search/:term')
+  search(@Param('term') term: string, @CurrentUser() user: JwtPayload) {
+    return this.clientService.search(user.userId, term);
+  }
 }
