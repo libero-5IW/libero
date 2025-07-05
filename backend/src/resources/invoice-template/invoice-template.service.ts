@@ -13,6 +13,7 @@ import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.ut
 import { InvoiceTemplateVariableDto } from './dto/invoice-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { VariableType } from 'src/common/enums/variable-type.enum';
+import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery';
 
 @Injectable()
 export class InvoiceTemplateService {
@@ -199,5 +200,20 @@ export class InvoiceTemplateService {
 
   private mergeWithSystemVariables(template: InvoiceTemplateEntity) {
     return mergeSystemVariables(template, 'invoiceTemplateVariable');
+  }
+
+  async search(userId: string, rawSearch: string): Promise<InvoiceTemplateEntity[]> {
+    const whereClause = buildTemplateSearchQuery(rawSearch, userId, true);
+  
+    const templates = await this.prisma.invoiceTemplate.findMany({
+      where: whereClause,
+      include: { variables: true },
+    });
+  
+    const templatesWithSystemVariables = await Promise.all(
+      templates.map((t) => this.mergeWithSystemVariables(t)),
+    );
+  
+    return plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables);
   }
 }

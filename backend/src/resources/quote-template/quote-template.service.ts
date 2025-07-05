@@ -14,6 +14,7 @@ import { QuoteTemplateVariableDto } from './dto/quote-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { VariableType } from 'src/common/enums/variable-type.enum';
 import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
+import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery'
 
 @Injectable()
 export class QuoteTemplateService {
@@ -201,5 +202,20 @@ export class QuoteTemplateService {
 
   private mergeWithSystemVariables(template: QuoteTemplateEntity) {
     return mergeSystemVariables(template, 'quoteTemplateVariable');
+  }
+
+  async search(userId: string, rawSearch: string): Promise<QuoteTemplateEntity[]> {
+    const whereClause = buildTemplateSearchQuery(rawSearch, userId, true); // includeDefault = true
+  
+    const templates = await this.prisma.quoteTemplate.findMany({
+      where: whereClause,
+      include: { variables: true },
+    });
+  
+    const templatesWithSystemVariables = await Promise.all(
+      templates.map((t) => this.mergeWithSystemVariables(t)),
+    );
+  
+    return plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables);
   }
 }

@@ -1,43 +1,48 @@
 <template>
-  <DataTable
-    :headers="headers"
-    :items="templates"
-    :items-length="templates.length"
-    @update:options="fetchAllTemplates"
-  >
-    <template #top.title>
+  <div>
+    <div class="flex items-center justify-between mb-6">
       <span class="text-xl font-semibold">Templates de devis</span>
-    </template>
-
-    <template #top.actions>
       <v-btn color="primary" @click="createTemplate">
         <v-icon start>mdi-plus</v-icon>
         Nouveau template
       </v-btn>
-    </template>
+    </div>
 
-    <template #item.actions="{ item }">
-      <v-btn icon @click="editTemplate(item.id)">
-        <v-icon>mdi-pencil</v-icon>
-      </v-btn>
-      <v-btn icon @click="duplicateTemplate(item.id)">
-        <v-icon>mdi-content-duplicate</v-icon>
-      </v-btn>
-      <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
-        <v-icon>mdi-delete</v-icon>
-      </v-btn>
-    </template>
-  </DataTable>
+    <SearchInput
+      v-model="search"
+      placeholder="Rechercher un template"
+      @search="handleSearch"
+    />
 
-  <ConfirmationModal
-    v-model="isDeleteModalOpen"
-    title="Confirmation de suppression"
-    message="Êtes-vous sûr de vouloir supprimer ce template de devis ? Cette action est irréversible."
-    confirmText="Supprimer"
-    cancelText="Annuler"
-    confirmColor="error"
-    @confirm="confirmDeleteTemplate"
-  />
+    <DataTable
+      :headers="headers"
+      :items="templates"
+      :items-length="templates.length"
+      @update:options="fetchAllTemplates"
+    >
+      <template #item.actions="{ item }">
+        <v-btn icon @click="editTemplate(item.id)">
+          <v-icon>mdi-pencil</v-icon>
+        </v-btn>
+        <v-btn icon @click="duplicateTemplate(item.id)">
+          <v-icon>mdi-content-duplicate</v-icon>
+        </v-btn>
+        <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
+          <v-icon>mdi-delete</v-icon>
+        </v-btn>
+      </template>
+    </DataTable>
+
+    <ConfirmationModal
+      v-model="isDeleteModalOpen"
+      title="Confirmation de suppression"
+      message="Êtes-vous sûr de vouloir supprimer ce template de devis ? Cette action est irréversible."
+      confirmText="Supprimer"
+      cancelText="Annuler"
+      confirmColor="error"
+      @confirm="confirmDeleteTemplate"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -49,12 +54,14 @@
   import { useRouter } from 'vue-router';
   import DataTable from '@/components/DocumentDisplay/DataTable.vue';
   import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
+  import SearchInput from '@/components/SearchInput.vue'
 
   const router = useRouter()
   const quoteTemplate = useQuoteTemplateStore()
   const { showToast } = useToastHandler(); 
   const isDeleteModalOpen = ref(false);
   const selectedTemplateId = ref<string | null>(null);
+  const search = ref('')
 
   const headers: Header[] = [
     { title: 'Nom', value: 'name', sortable: true },
@@ -96,6 +103,14 @@
     await fetchAllTemplates();
     showToast('success', 'Le template a été bien supprimé !');
     selectedTemplateId.value = null;
+  }
+
+  async function handleSearch(term: string) {
+    if (term.trim() === '') {
+      await quoteTemplate.fetchAllTemplates(false)
+    } else {
+      await quoteTemplate.searchTemplates(term)
+    }
   }
 
   onMounted( async () => {

@@ -13,6 +13,7 @@ import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.ut
 import { ContractTemplateVariableDto } from './dto/contract-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { VariableType } from 'src/common/enums/variable-type.enum';
+import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery';
 
 @Injectable()
 export class ContractTemplateService {
@@ -199,4 +200,19 @@ export class ContractTemplateService {
   private mergeWithSystemVariables(template: ContractTemplateEntity) {
     return mergeSystemVariables(template, 'contractTemplateVariable');
   }
+
+  async search(userId: string, rawSearch: string): Promise<ContractTemplateEntity[]> {
+    const whereClause = buildTemplateSearchQuery(rawSearch, userId, true);
+  
+    const templates = await this.prisma.contractTemplate.findMany({
+      where: whereClause,
+      include: { variables: true },
+    });
+  
+    const templatesWithSystemVariables = await Promise.all(
+      templates.map((t) => this.mergeWithSystemVariables(t)),
+    );
+  
+    return plainToInstance(ContractTemplateEntity, templatesWithSystemVariables);
+  }  
 }
