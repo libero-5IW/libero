@@ -83,8 +83,7 @@ import type { Quote } from '@/schemas/quote.schema'
 import { mapQuoteToInvoiceVariables } from '@/utils/mapQuoteToInvoice'
 import { mapQuoteToContractVariables } from '@/utils/mapQuoteToContract'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
-import SearchInput from '@/components/ui/SearchInput.vue'
-
+import SearchInput from '@/components/SearchInput.vue'
 
 const search = ref('')
 const quoteTemplateStore = useQuoteTemplateStore();

@@ -261,40 +261,62 @@ export class QuoteService {
   }
 
   async search(userId: string, search: string) {
+    const raw = search.trim().toLowerCase()
+  
     const searchNumber = Number(search)
-    const isNumberSearch = !isNaN(searchNumber)
+    const isNumberSearch = !isNaN(searchNumber) && search.trim() !== ''
+  
+    const matchDevisNumber = raw.match(/devis\s*#?(\d+)/i)
+    const extractedNumber = matchDevisNumber ? Number(matchDevisNumber[1]) : null
+  
+    const isDevisKeyword = raw.startsWith('d')
+    const isDevisTitleSearch = 'devis'.startsWith(raw) && raw.length >= 1
+  
+    const hasValidQuery = isDevisKeyword || isNumberSearch || extractedNumber !== null || raw.length >= 2
   
     const quotes = await this.prisma.quote.findMany({
       where: {
         userId,
-        OR: [
-          ...(isNumberSearch
-            ? [{
-                number: {
-                  equals: searchNumber
-                }
-              }]
-            : []
-          ),
-          {
-            client: {
+        ...(isDevisTitleSearch
+          ? {} 
+          : hasValidQuery
+          ? {
               OR: [
+                ...(isNumberSearch
+                  ? [{
+                      number: {
+                        equals: searchNumber
+                      }
+                    }]
+                  : []),
+                ...(extractedNumber !== null
+                  ? [{
+                      number: {
+                        equals: extractedNumber
+                      }
+                    }]
+                  : []),
                 {
-                  firstName: {
-                    contains: search,
-                    mode: 'insensitive'
-                  }
-                },
-                {
-                  lastName: {
-                    contains: search,
-                    mode: 'insensitive'
+                  client: {
+                    OR: [
+                      {
+                        firstName: {
+                          contains: raw,
+                          mode: 'insensitive'
+                        }
+                      },
+                      {
+                        lastName: {
+                          contains: raw,
+                          mode: 'insensitive'
+                        }
+                      }
+                    ]
                   }
                 }
               ]
             }
-          }
-        ]
+          : {})
       },
       include: {
         variableValues: true,
@@ -328,4 +350,5 @@ export class QuoteService {
       enableImplicitConversion: true,
     })
   }  
+  
 }
