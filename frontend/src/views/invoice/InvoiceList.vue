@@ -98,10 +98,10 @@ const selectedInvoiceId = ref<string | null>(null);
 const statusOptions = [
   { label: 'Tous', value: null },
   { label: 'Brouillon', value: INVOICE_STATUS.DRAFT },
-  { label: 'Envoyé', value: INVOICE_STATUS.SENT },
-  { label: 'Payé', value: INVOICE_STATUS.PAID },
+  { label: 'Envoyée', value: INVOICE_STATUS.SENT },
+  { label: 'Payée', value: INVOICE_STATUS.PAID },
   { label: 'En retard', value: INVOICE_STATUS.OVERDUE },
-  { label: 'Annulé', value: INVOICE_STATUS.CANCELLED },
+  { label: 'Annulée', value: INVOICE_STATUS.CANCELLED },
 ];
 
 const documentCards = computed<DocumentCard[]>(() =>
