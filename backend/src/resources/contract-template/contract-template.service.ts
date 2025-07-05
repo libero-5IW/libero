@@ -202,7 +202,7 @@ export class ContractTemplateService {
   }
 
   async search(userId: string, rawSearch: string): Promise<ContractTemplateEntity[]> {
-    const whereClause = buildTemplateSearchQuery(rawSearch, userId, true);
+    const whereClause = buildTemplateSearchQuery(rawSearch, userId);
   
     const templates = await this.prisma.contractTemplate.findMany({
       where: whereClause,

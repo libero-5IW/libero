@@ -203,7 +203,7 @@ export class InvoiceTemplateService {
   }
 
   async search(userId: string, rawSearch: string): Promise<InvoiceTemplateEntity[]> {
-    const whereClause = buildTemplateSearchQuery(rawSearch, userId, true);
+    const whereClause = buildTemplateSearchQuery(rawSearch, userId);
   
     const templates = await this.prisma.invoiceTemplate.findMany({
       where: whereClause,

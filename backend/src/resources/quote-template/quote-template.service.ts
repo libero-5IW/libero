@@ -205,7 +205,7 @@ export class QuoteTemplateService {
   }
 
   async search(userId: string, rawSearch: string): Promise<QuoteTemplateEntity[]> {
-    const whereClause = buildTemplateSearchQuery(rawSearch, userId, true); // includeDefault = true
+    const whereClause = buildTemplateSearchQuery(rawSearch, userId);
   
     const templates = await this.prisma.quoteTemplate.findMany({
       where: whereClause,
