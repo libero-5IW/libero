@@ -7,8 +7,12 @@
         <div class="pt-16 pb-20 animate-fade-in-up">
           <div class="flex justify-center mb-6">
             <div class="relative">
-              <div class="w-20 h-20 bg-gradient-to-br from-[#6366f1] to-[#4f46e5] rounded-2xl shadow-2xl flex items-center justify-center animate-bounce-slow">
-                <v-icon icon="mdi-star-four-points" color="white" size="40" />
+              <div class="w-20 h-20 bg-primary rounded-2xl shadow-2xl flex items-center justify-center animate-bounce-slow">
+                <img
+                    src="@/assets/libero_icon_white.png"
+                    alt="Libero Logo"
+                    class="w-20 h-20 object-contain"
+                />
               </div>
               <div class="absolute -inset-2 bg-gradient-to-br from-[#6366f1] to-[#4f46e5] rounded-2xl opacity-20 blur-lg"></div>
             </div>
@@ -174,6 +178,29 @@
       </div>
     </div>
   </section>
+
+  <footer class="bg-gray-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <img
+          src="@/assets/libero_icon_white.png"
+          alt="Logo Libero"
+          class="w-8 h-8 rounded-lg"
+        />
+        <span class="text-white font-semibold text-lg">Libero</span>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-6 text-sm text-gray-300">
+        <RouterLink to="/privacy-policy" class="hover:underline">Politique de confidentialité</RouterLink>
+        <a href="mailto:contact@libero.app" class="hover:underline">Contact</a>
+        <RouterLink to="/help" class="hover:underline">Aide</RouterLink>
+      </div>
+
+      <div class="text-xs text-gray-400 sm:mt-0 mt-2 text-center sm:text-right">
+        © {{ new Date().getFullYear() }} Libero. Tous droits réservés. Créé pour les freelances.
+      </div>
+    </div>
+  </footer>
 
   </div>
 </template>
