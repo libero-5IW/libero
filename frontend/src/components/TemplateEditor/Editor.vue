@@ -39,22 +39,26 @@
         >
           <template #item="{ element, index }">
             <v-chip
-            rounded="pill"
-              class="ma-1 variable-list-chip"
-              :class="{
-                'chip-in-editor': variablesInEditor.has(element.variableName),
-                'chip-not-in-editor': !variablesInEditor.has(element.variableName)
-              }"
+              class="ma-1 flex items-center gap-2"
+              :color="variablesInEditor.has(element.variableName) ? 'secondary' : 'primary'"
+              variant="flat"
+              rounded="pill"
               draggable
               @dragstart="onDragStart($event, element)"
             >
               {{ element.label }}
-              
               <v-tooltip v-if="!isSystemVariable(element)" text="Modifier la variable">
                 <template #activator="{ props }">
                   <v-icon
                     v-bind="props"
-                    class="ml-2 edit-icon"
+                    :class="[
+                      'ml-2',
+                      'opacity-0',
+                      'transition-opacity',
+                      'duration-200',
+                      'cursor-pointer',
+                      'group-hover:opacity-100',
+                    ]"
                     size="small"
                     @click.stop="openVariableEditModal(index)"
                   >
@@ -66,7 +70,14 @@
                 <template #activator="{ props }">
                   <v-icon
                     v-bind="props"
-                    class="ml-2 edit-icon"
+                    :class="[
+                      'ml-2',
+                      'opacity-0',
+                      'transition-opacity',
+                      'duration-200',
+                      'cursor-pointer',
+                      'group-hover:opacity-100',
+                    ]"
                     size="small"
                     @click.stop="removeVariable(index)"
                   >
@@ -79,7 +90,7 @@
         </draggable>
       </div>
       <EditorToolbar v-if="editor" :editor="editor" />
-      <div class="editor-wrapper">
+      <div class="editor-wrapper relative">
         <EditorContent :editor="editor" />
       </div>
     </div>
@@ -170,18 +181,15 @@
 
     addNodeView() {
       return ({ node, getPos }) => {
-
         const dom = document.createElement('span')
         dom.setAttribute('data-type', 'variable')
         dom.setAttribute('data-variable-name', node.attrs.variableName)
         dom.setAttribute('data-label', node.attrs.label)
-        dom.className = 'variable-chip'
-        
+        dom.className = 'inline-flex items-center bg-primary text-white px-3 rounded-full text-[0.92rem] h-7 select-none mr-2 mb-2 shadow-sm transition-shadow duration-200 gap-1.5 hover:shadow-lg hover:bg-primary/95'
         const text = document.createTextNode(node.attrs.label)
         dom.appendChild(text)
-
         const closeButton = document.createElement('span')
-        closeButton.className = 'close-button'
+        closeButton.className = 'ml-1 cursor-pointer opacity-70 transition-opacity duration-200 text-[15px] leading-none rounded-full px-1 hover:opacity-100 hover:bg-white/15'
         closeButton.innerHTML = '×'
         closeButton.onclick = (e) => {
           e.stopPropagation()
@@ -197,7 +205,6 @@
           }
         }
         dom.appendChild(closeButton)
-
         return {
           dom,
           update: (newNode) => {
@@ -361,85 +368,4 @@
     }
   );
 </script>
-
-<style>
-.variable-chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  background-color: rgb(var(--v-theme-primary));
-  color: white;
-  padding: 0 12px;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  height: 32px;
-  user-select: none;
-  margin: 0 2px;
-}
-
-.edit-icon {
-  opacity: 0;
-  transition: opacity 0.2s;
-  cursor: pointer;
-}
-
-.variable-chip:hover .edit-icon {
-  opacity: 1;
-}
-
-.close-button {
-  position: relative;
-  margin-left: 4px;
-  cursor: pointer;
-  opacity: 1; /* Always visible for testing */
-  transition: opacity 0.2s;
-  font-size: 16px;
-  line-height: 1;
-}
-
-.variable-chip:hover .close-button {
-  opacity: 1;
-}
-
-.editor-wrapper {
-  position: relative;
-}
-
-.ProseMirror {
-  min-height: 30rem;
-}
-
-.ProseMirror:focus {
-  outline: none;
-}
-
-.ProseMirror p {
-  margin: 0;
-  min-height: 1.5em;
-}
-
-/* .variable-list-chip {
-  position: relative !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  background-color: rgb(var(--v-theme-primary)) !important;
-  color: white !important;
-  padding: 0 12px !important;
-  border-radius: 9999px !important;
-  font-size: 0.875rem !important;
-  height: 32px !important;
-  user-select: none !important;
-  margin: 0 2px !important;
-} */
-
-.chip-in-editor {
-  background-color: rgb(var(--v-theme-text-secondary)) !important;
-  color: white !important;
-}
-
-.chip-not-in-editor {
-  background-color: rgb(var(--v-theme-primary)) !important;
-  color: white !important;
-}
-</style>
 

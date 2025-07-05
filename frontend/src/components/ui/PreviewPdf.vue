@@ -50,14 +50,61 @@
     html = html.replace(regex, value)
   }
 
-  return html
+  // Inject professional PDF styles and a wrapper for margins
+  const pdfStyles = `
+    <style>
+      .pdf-wrapper {
+        margin: 40px 48px 40px 48px;
+        font-family: 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
+        color: #222;
+        font-size: 13px;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        font-weight: bold;
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+        color: #1a1a1a;
+      }
+      h1 { font-size: 2em; }
+      h2 { font-size: 1.5em; }
+      h3 { font-size: 1.2em; }
+      p {
+        margin: 0.7em 0;
+        line-height: 1.7;
+      }
+      ul, ol {
+        margin: 0.7em 0 0.7em 2em;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1em 0;
+      }
+      th, td {
+        border: 1px solid #bbb;
+        padding: 6px 10px;
+        text-align: left;
+      }
+      th {
+        background: #f5f5f5;
+      }
+      .text-left { text-align: left; }
+      .text-center { text-align: center; }
+      .text-right { text-align: right; }
+      .text-justify { text-align: justify; }
+    </style>
+  `;
+  return `${pdfStyles}<div class="pdf-wrapper">${html}</div>`
   })
   
   function downloadPdf() {
     if (!previewRef.value) return
     loading.value = true
+    // Use the computed HTML with styles for PDF
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = previewHtml.value
     html2pdf()
-      .from(previewRef.value)
+      .from(tempDiv)
       .set({ filename: fileName, html2canvas: { scale: 2 } })
       .save()
       .finally(() => (loading.value = false))
