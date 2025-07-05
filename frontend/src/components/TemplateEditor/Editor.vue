@@ -2,7 +2,7 @@
   <v-card flat class="p-4">
     <div
       ref="editorContainer"
-      class="container mx-auto max-w-4xl my-8"
+      class="container mx-auto max-w-4xl my-8 px-6"
     >
       <div class="mb-4">
         <div class="flex items-center justify-between mb-4">
@@ -89,9 +89,9 @@
           </template>
         </draggable>
       </div>
-      <EditorToolbar v-if="editor" :editor="editor" />
+      <EditorToolbar v-if="editor" :editor="editor" class="mb-0" />
       <div class="editor-wrapper relative">
-        <EditorContent :editor="editor" />
+        <EditorContent :editor="editor" class="p-4" />
       </div>
     </div>
   </v-card>
@@ -277,12 +277,12 @@
         StarterKit.configure({
           paragraph: {
             HTMLAttributes: {
-              class: 'whitespace-pre-wrap',
+              class: 'whitespace-pre-wrap mx-4',
             },
           },
           heading: {
             HTMLAttributes: {
-              class: 'whitespace-pre-wrap',
+              class: 'whitespace-pre-wrap mx-4',
             },
           },
           hardBreak: false,

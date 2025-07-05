@@ -13,7 +13,7 @@
           <img src="@/assets/logo.png" alt="Logo" class="w-1/3 h-auto mx-auto" />
         </div>
         <v-list>
-          <NavItemSingle title="Dashboard" to="/" icon="mdi-view-dashboard" />
+          <NavItemSingle title="Dashboard" to="/dashboard" icon="mdi-view-dashboard" />
           
           <NavGroupAccordian
             v-model="activeGroup"
