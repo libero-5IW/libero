@@ -8,6 +8,12 @@
       </v-btn>
     </div>
 
+    <SearchInput
+      v-model="search"
+      placeholder="Rechercher une facture"
+      @search="fetchInvoices"
+    />
+
     <div v-if="documentCards.length > 0">
       <DocumentCardList
         :items="documentCards"
@@ -47,7 +53,7 @@
 
 <script setup lang="ts">
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useInvoiceStore } from '@/stores/invoice';
 import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue';
 import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue'; 
@@ -57,7 +63,9 @@ import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
+import SearchInput from '@/components/SearchInput.vue';
 
+const search = ref('');
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const invoiceStore = useInvoiceStore();
 
@@ -142,6 +150,15 @@ async function confirmDeleteInvoice() {
   selectedInvoiceId.value = null;
 }
 
+async function fetchInvoices() {
+  const term = search.value.trim();
+  if (term === '') {
+    await fetchAllInvoices();
+  } else {
+    await invoiceStore.searchInvoices(term);
+  }
+}
+
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
   const message = history.state?.toastMessage as string;
@@ -151,6 +168,10 @@ onMounted(async () => {
   }
 
   await fetchAllInvoices();
+});
+
+watch(search, async () => {
+  await fetchInvoices();
 });
 
 </script>
