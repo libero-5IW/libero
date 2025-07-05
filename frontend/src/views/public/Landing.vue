@@ -15,27 +15,27 @@
           </div>
 
           <h1 class="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-            <span class="bg-gradient-to-r from-[#6366f1] to-[#4f46e5] bg-clip-text text-transparent">Libero</span>
+            <span class="text-primary bg-clip-text text-transparent">Libero</span>
             <br />
             <span class="text-gray-900 dark:text-white">Gérez vos documents professionnels</span>
           </h1>
 
           <p class="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
             Créez vos <strong>devis</strong>, <strong>contrats</strong> et <strong>factures</strong> personnalisées en toute simplicité.
-            <span class="text-[#6366f1] font-semibold"> Rapide, sûr et adapté aux freelances.</span>
+            <span class="text-primary font-semibold"> Rapide, sûr et adapté aux freelances.</span>
           </p>
 
           <div class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
             <RouterLink
               to="/register"
-              class="bg-white text-[#6366f1] font-semibold px-8 py-4 rounded-lg text-lg flex items-center gap-2 shadow-lg hover:shadow-2xl hover:scale-105 transition"
+              class="bg-white text-primary font-semibold px-8 py-4 rounded-lg text-lg flex items-center gap-2 shadow-lg hover:shadow-2xl hover:scale-105 transition"
             >
               <v-icon icon="mdi-flash" size="20" />
               Commencer gratuitement
             </RouterLink>
             <RouterLink
               to="/login"
-              class="border-2 border-[#6366f1] text-[#6366f1] font-semibold px-8 py-4 rounded-lg text-lg flex items-center gap-2 hover:bg-[#6366f1] hover:text-white transition"
+              class="border-2 border-primary text-primary font-semibold px-8 py-4 rounded-lg text-lg flex items-center gap-2 hover:bg-[#6366f1] hover:text-black transition"
             >
               <v-icon icon="mdi-file-document-outline" size="20" />
               Se connecter
@@ -64,7 +64,7 @@
       <div class="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12">
         <div class="text-center mb-16 animate-fade-in-up">
           <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Pourquoi choisir <span class="text-[#6366f1]">Libero</span> ?
+            Pourquoi choisir <span class="text-primary">Libero</span> ?
           </h2>
           <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
             Un assistant complet pour gérer vos devis, contrats, factures et signatures sans prise de tête.
@@ -111,7 +111,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-16 animate-fade-in-up">
         <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-          Comment ça <span class="text-[#6366f1]">fonctionne</span> ?
+          Comment ça <span class="text-primary">fonctionne</span> ?
         </h2>
         <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
             De la création à la facturation, tout est fluide.        </p>
@@ -146,7 +146,7 @@
     </div>
   </section>
 
-  <section class="py-15 bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white">
+  <section class="py-15 bg-gradient-to-r bg-primary text-white">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
       <div class="animate-fade-in-up">
         <h2 class="text-4xl md:text-5xl font-bold mb-6">
