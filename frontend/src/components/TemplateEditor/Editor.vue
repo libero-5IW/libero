@@ -108,6 +108,8 @@
   import { Node, mergeAttributes } from '@tiptap/core'
   import type { VariableBase } from '@/types'
   import TextAlign from '@tiptap/extension-text-align'
+  import Color from '@tiptap/extension-color'
+  import TextStyle from '@tiptap/extension-text-style'
   
   const props = defineProps<{ 
     modelValue: string,

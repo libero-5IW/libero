@@ -32,7 +32,7 @@
         size="small"
         :variant="editor.isActive('underline') ? 'text' : 'plain'"
       >Underline</v-btn>
-  
+
       <v-btn
         @click="editor.chain().focus().undo().run()"
         size="small"
@@ -91,5 +91,38 @@
   import type { Editor } from '@tiptap/vue-3'
   
   const props = defineProps<{ editor: Editor }>()
+
+  import { ref, watch } from 'vue'
+
+  const currentColor = ref('#000000')
+
+  function onColorChange(event: Event) {
+    const color = (event.target as HTMLInputElement).value
+    currentColor.value = color
+    const { editor } = props
+    // Debug: log selection and marks before
+    console.log('Before color:', {
+      selection: editor.state.selection,
+      marks: editor.state.storedMarks,
+      html: editor.getHTML(),
+    })
+    editor.chain().focus().setColor(color).run()
+    // Debug: log selection and marks after
+    console.log('After color:', {
+      selection: editor.state.selection,
+      marks: editor.state.storedMarks,
+      html: editor.getHTML(),
+    })
+  }
+
+  watch(
+    () => props.editor,
+    (editor) => {
+      if (editor) {
+        // Optionally, update currentColor based on selection
+        // Not implemented for simplicity
+      }
+    }
+  )
 </script>
   
