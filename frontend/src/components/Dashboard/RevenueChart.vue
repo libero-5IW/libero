@@ -42,7 +42,7 @@ const currentYear = new Date().getFullYear();
 const selectedYear = ref(currentYear);
 
 const availableYears = computed(() => {
-  const years = invoiceStore.invoices.map(inv => new Date(inv.issuedAt ?? inv.createdAt).getFullYear());
+  const years = invoiceStore.invoices.map(inv => new Date(inv.dueDate).getFullYear());
   return Array.from(new Set(years)).sort((a, b) => b - a);
 });
 
@@ -75,9 +75,8 @@ const chartData = computed(() => {
 
   invoiceStore.invoices.forEach(inv => {
     if (inv.status === 'paid') {
-      const date = new Date(inv.issuedAt ?? inv.createdAt);
-      const year = date.getFullYear();
-      if (year === selectedYear.value) {
+      const date = new Date(inv.dueDate);
+      if (date.getFullYear() === selectedYear.value) {
         const month = date.getMonth();
 
         const amountVar = inv.variableValues.find(v =>
@@ -115,7 +114,7 @@ const chartOptions = {
     legend: { display: false },
     tooltip: {
       callbacks: {
-        label: (context) => `${context.parsed.y.toFixed(2)} €`
+        label: (context: { parsed: { y: number; }; }) => `${context.parsed.y.toFixed(2)} €`
       }
     }
   },
@@ -123,7 +122,9 @@ const chartOptions = {
     y: {
       beginAtZero: true,
       ticks: {
-        callback: (value) => `${value} €`
+        callback: function(tickValue: string | number) {
+          return `${tickValue} €`;
+        }
       }
     }
   }

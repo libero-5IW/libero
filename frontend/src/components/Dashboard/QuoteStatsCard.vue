@@ -1,55 +1,56 @@
 <template>
   <v-card class="pa-4 d-flex flex-column justify-center align-center">
-    <v-card-title class="text-h6">Résumé des factures</v-card-title>
+    <v-card-title class="text-h6">Résumé des devis</v-card-title>
     <v-divider class="my-2" />
 
     <div class="d-flex justify-space-around w-100 mb-4">
       <div class="d-flex flex-column align-center">
         <span class="text-h4 font-bold text-blue-600">{{ sentCount }}</span>
-        <span class="text-sm text-gray-600">Envoyées</span>
+        <span class="text-sm text-gray-600">Envoyés</span>
       </div>
       <div class="d-flex flex-column align-center">
-        <span class="text-h4 font-bold text-green-600">{{ paidCount }}</span>
-        <span class="text-sm text-gray-600">Payées</span>
+        <span class="text-h4 font-bold text-green-600">{{ acceptedCount }}</span>
+        <span class="text-sm text-gray-600">Acceptés</span>
       </div>
       <div class="d-flex flex-column align-center">
-        <span class="text-h4 font-bold text-red-600">{{ overdueCount }}</span>
-        <span class="text-sm text-gray-600">En retard</span>
+        <span class="text-h4 font-bold text-red-600">{{ refusedCount }}</span>
+        <span class="text-sm text-gray-600">Refusés</span>
       </div>
     </div>
 
     <v-divider class="my-2" />
+
     <div class="w-100">
-      <h3 class="text-sm font-semibold mb-2">5 dernières factures créées</h3>
+      <h3 class="text-sm font-semibold mb-2">5 derniers devis créés</h3>
       <v-table dense class="text-xs">
         <thead>
           <tr>
             <th class="text-left">Numéro</th>
             <th class="text-left">Client</th>
             <th class="text-left">Statut</th>
-            <th class="text-left">Créée le</th>
+            <th class="text-left">Créé le</th>
           </tr>
         </thead>
         <tbody>
           <tr
-            v-for="invoice in lastFiveInvoices"
-            :key="invoice.id"
+            v-for="quote in lastFiveQuotes"
+            :key="quote.id"
             class="hover:bg-gray-50 cursor-pointer"
-            @click="editInvoice(invoice.id)"
+            @click="editQuote(quote.id)"
           >
-            <td>#{{ invoice.number }}</td>
-            <td>{{ invoice.clientName }}</td>
+            <td>#{{ quote.number }}</td>
+            <td>{{ quote.clientName }}</td>
             <td>
               <v-chip
-                :color="statusColor(invoice.status)"
+                :color="statusColor(quote.status)"
                 size="x-small"
                 variant="flat"
                 class="text-white"
               >
-                {{ statusLabel(invoice.status) }}
+                {{ statusLabel(quote.status) }}
               </v-chip>
             </td>
-            <td>{{ formatDate(invoice.createdAt) }}</td>
+            <td>{{ formatDate(quote.createdAt) }}</td>
           </tr>
         </tbody>
       </v-table>
@@ -59,45 +60,45 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { useInvoiceStore } from '@/stores/invoice';
+import { useQuoteStore } from '@/stores/quote';
 import { useRouter } from 'vue-router';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-const invoiceStore = useInvoiceStore();
+const quoteStore = useQuoteStore();
 const router = useRouter();
 
 onMounted(async () => {
-  if (invoiceStore.invoices.length === 0) {
-    await invoiceStore.fetchAllInvoices();
+  if (quoteStore.quotes.length === 0) {
+    await quoteStore.fetchAllQuotes();
   }
 });
 
 const sentCount = computed(() =>
-  invoiceStore.invoices.filter(inv => inv.status === 'sent').length
+  quoteStore.quotes.filter(quote => quote.status === 'sent').length
 );
 
-const overdueCount = computed(() =>
-  invoiceStore.invoices.filter(inv => inv.status === 'overdue').length
+const acceptedCount = computed(() =>
+  quoteStore.quotes.filter(quote => quote.status === 'accepted').length
 );
 
-const paidCount = computed(() =>
-  invoiceStore.invoices.filter(inv => inv.status === 'paid').length
+const refusedCount = computed(() =>
+  quoteStore.quotes.filter(quote => quote.status === 'refused').length
 );
 
-const lastFiveInvoices = computed(() => {
-  return [...invoiceStore.invoices]
+const lastFiveQuotes = computed(() => {
+  return [...quoteStore.quotes]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)
-    .map(inv => {
-      const clientNameVar = inv.variableValues?.find(
+    .map(quote => {
+      const clientNameVar = quote.variableValues?.find(
         v => v.variableName === 'client_name'
       );
       return {
-        id: inv.id,
-        number: inv.number,
-        status: inv.status,
-        createdAt: inv.createdAt,
+        id: quote.id,
+        number: quote.number,
+        status: quote.status,
+        createdAt: quote.createdAt,
         clientName: clientNameVar?.value || 'Client inconnu',
       };
     });
@@ -108,13 +109,11 @@ function statusLabel(status: string) {
     case 'draft':
       return 'Brouillon';
     case 'sent':
-      return 'Envoyée';
-    case 'paid':
-      return 'Payée';
-    case 'overdue':
-      return 'En retard';
-    case 'cancelled':
-      return 'Annulée';
+      return 'Envoyé';
+    case 'accepted':
+      return 'Accepté';
+    case 'refused':
+      return 'Refusé';
     default:
       return status;
   }
@@ -126,12 +125,10 @@ function statusColor(status: string) {
       return 'grey';
     case 'sent':
       return 'blue';
-    case 'paid':
+    case 'accepted':
       return 'green';
-    case 'overdue':
+    case 'refused':
       return 'red';
-    case 'cancelled':
-      return 'grey-darken-1';
     default:
       return 'grey';
   }
@@ -142,8 +139,8 @@ function formatDate(dateStr: string) {
   return format(date, 'dd MMM yyyy', { locale: fr });
 }
 
-function editInvoice(id: string) {
-  router.push({ name: 'InvoiceEdit', params: { id } });
+function editQuote(id: string) {
+  router.push({ name: 'QuoteEdit', params: { id } });
 }
 </script>
 
