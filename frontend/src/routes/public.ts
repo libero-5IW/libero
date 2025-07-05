@@ -4,11 +4,18 @@ import Register from '@/views/public/Register.vue';
 import NotFound from '@/views/public/NotFound.vue';
 import RequestPasswordReset from '@/views/public/RequestPasswordReset.vue';
 import ResetPassword from '@/views/public/ResetPassword.vue';
+import Landing from '@/views/public/Landing.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     children: [
+      {
+        path: 'home',
+        name: 'Landing',
+        component: Landing,
+        meta: { requiresAuth: false, publicOnly: false }
+      },
       {
         path: 'login',
         name: 'Login',
