@@ -83,6 +83,18 @@ export const useContractStore = defineStore('contract', () => {
     }
   }
 
+  async function searchContracts(search: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.get(`/contracts/search/${search}`);
+      contracts.value = data.map((item: Contract) => ContractSchema.parse(item));
+    } catch (error) {
+      handleError(error, 'Erreur lors de la recherche des contrats.');
+    } finally {
+      isLoading.value = false;
+    }
+  }  
+
   return {
     contracts,
     currentContract,
@@ -92,6 +104,7 @@ export const useContractStore = defineStore('contract', () => {
     createContract,
     deleteContract,
     fetchNextContractNumber,
-    updateContract
+    updateContract,
+    searchContracts
   };
 });

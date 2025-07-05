@@ -18,6 +18,7 @@ import { CreateQuoteVariableValueDto } from './dto/create-quote-variable-value.d
 import { QuoteTemplateVariableEntity } from '../quote-template/entities/quote-template-variable.entity';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
+import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util'
 
 @Injectable()
 export class QuoteService {
@@ -259,4 +260,43 @@ export class QuoteService {
 
     return this.s3Service.generateSignedUrl(quote.previewKey);
   }
+
+  async search(userId: string, search: string) {
+    const where = buildSearchQuery(search, userId, 'devis');
+  
+    const quotes = await this.prisma.quote.findMany({
+      where,
+      include: {
+        variableValues: true,
+        client: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  
+    const quotesWithUrls = await Promise.all(
+      quotes.map(async (quote) => {
+        const previewUrl = quote.previewKey
+          ? await this.s3Service.generateSignedUrl(quote.previewKey)
+          : null;
+  
+        const pdfUrl = quote.pdfKey
+          ? await this.s3Service.generateSignedUrl(quote.pdfKey)
+          : null;
+  
+        return {
+          ...quote,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+  
+    return plainToInstance(QuoteEntity, quotesWithUrls, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }  
+  
 }

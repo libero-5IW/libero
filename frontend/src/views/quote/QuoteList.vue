@@ -7,7 +7,13 @@
         Nouveau devis
       </v-btn>
     </div>
-  
+
+    <SearchInput
+      v-model="search"
+      placeholder="Rechercher un devis"
+      @search="fetchQuotes"
+    />
+
     <div v-if="documentCards.length > 0">
       <DocumentCardList
         :items="documentCards"
@@ -62,7 +68,7 @@
 
 <script setup lang="ts">
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useQuoteStore } from '@/stores/quote';
 import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue'; 
 import { useToastHandler } from '@/composables/useToastHandler';
@@ -77,8 +83,9 @@ import type { Quote } from '@/schemas/quote.schema'
 import { mapQuoteToInvoiceVariables } from '@/utils/mapQuoteToInvoice'
 import { mapQuoteToContractVariables } from '@/utils/mapQuoteToContract'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
+import SearchInput from '@/components/SearchInput.vue'
 
-
+const search = ref('')
 const quoteTemplateStore = useQuoteTemplateStore();
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const quoteStore = useQuoteStore();
@@ -270,6 +277,15 @@ async function confirmDeleteQuote() {
   selectedQuoteId.value = null;
 }
 
+async function fetchQuotes() {
+  const term = search.value.trim()
+  if (term === '') {
+    await quoteStore.fetchAllQuotes()
+  } else {
+    await quoteStore.searchQuotes(term)
+  }
+}
+
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
   const message = history.state?.toastMessage as string;
@@ -279,6 +295,10 @@ onMounted(async () => {
   }
 
   await fetchAllQuotes();
+});
+
+watch(search, async () => {
+  await fetchQuotes();
 });
 
 </script>

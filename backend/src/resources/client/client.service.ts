@@ -113,4 +113,24 @@ export class ClientService {
     }
     return client;
   }
+
+  async search(userId: string, term: string): Promise<ClientEntity[]> {
+    const raw = term.trim().toLowerCase();
+  
+    const clients = await this.prisma.client.findMany({
+      where: {
+        userId,
+        OR: [
+          { firstName: { contains: raw, mode: 'insensitive' } },
+          { lastName: { contains: raw, mode: 'insensitive' } },
+          { email: { contains: raw, mode: 'insensitive' } },
+          { phoneNumber: { contains: raw, mode: 'insensitive' } },
+          { city: { contains: raw, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  
+    return plainToInstance(ClientEntity, clients);
+  }  
 }

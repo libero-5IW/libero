@@ -89,6 +89,19 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
     }
   }
 
+  async function searchTemplates(term: string) {
+    isLoading.value = true
+    try {
+      const { data } = await apiClient.get(`/invoice-templates/search/${encodeURIComponent(term)}`)
+      templates.value = data.map((item: InvoiceTemplate) => InvoiceTemplateSchema.parse(item))
+    } catch (error) {
+      templates.value = []
+      handleError(error, 'Erreur lors de la recherche des templates.')
+    } finally {
+      isLoading.value = false
+    }
+  }  
+
   return {
     templates,
     currentTemplate,
@@ -101,5 +114,6 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
     updateTemplate,
     deleteTemplate,
     duplicateTemplate,
+    searchTemplates
   }
 })

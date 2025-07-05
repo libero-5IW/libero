@@ -82,4 +82,13 @@ export class InvoiceTemplateController {
   duplicate(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.invoiceTemplateService.duplicate(id, user.userId);
   }
+
+  @Get('search/:term')
+  search(
+    @Param('term') term: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.invoiceTemplateService.search(user.userId, term);
+  }
+
 }

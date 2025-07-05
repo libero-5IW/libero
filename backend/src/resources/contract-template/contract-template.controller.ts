@@ -82,4 +82,12 @@ export class ContractTemplateController {
   duplicate(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.contractTemplateService.duplicate(id, user.userId);
   }
+
+  @Get('search/:term')
+  search(
+    @Param('term') term: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.contractTemplateService.search(user.userId, term);
+  }
 }
