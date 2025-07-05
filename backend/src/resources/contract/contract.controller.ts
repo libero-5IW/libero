@@ -61,4 +61,12 @@ export class ContractController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.contractService.remove(id, user.userId);
   }
+
+  @Get('search/:term')
+  searchContracts(
+    @Param('term') term: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.contractService.search(user.userId, term);
+  }
 }

@@ -18,6 +18,7 @@ import { CreateQuoteVariableValueDto } from './dto/create-quote-variable-value.d
 import { QuoteTemplateVariableEntity } from '../quote-template/entities/quote-template-variable.entity';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
+import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util'
 
 @Injectable()
 export class QuoteService {
@@ -261,94 +262,41 @@ export class QuoteService {
   }
 
   async search(userId: string, search: string) {
-    const raw = search.trim().toLowerCase()
-  
-    const searchNumber = Number(search)
-    const isNumberSearch = !isNaN(searchNumber) && search.trim() !== ''
-  
-    const matchDevisNumber = raw.match(/devis\s*#?(\d+)/i)
-    const extractedNumber = matchDevisNumber ? Number(matchDevisNumber[1]) : null
-  
-    const isDevisKeyword = raw.startsWith('d')
-    const isDevisTitleSearch = 'devis'.startsWith(raw) && raw.length >= 1
-  
-    const hasValidQuery = isDevisKeyword || isNumberSearch || extractedNumber !== null || raw.length >= 2
+    const where = buildSearchQuery(search, userId, 'devis');
   
     const quotes = await this.prisma.quote.findMany({
-      where: {
-        userId,
-        ...(isDevisTitleSearch
-          ? {} 
-          : hasValidQuery
-          ? {
-              OR: [
-                ...(isNumberSearch
-                  ? [{
-                      number: {
-                        equals: searchNumber
-                      }
-                    }]
-                  : []),
-                ...(extractedNumber !== null
-                  ? [{
-                      number: {
-                        equals: extractedNumber
-                      }
-                    }]
-                  : []),
-                {
-                  client: {
-                    OR: [
-                      {
-                        firstName: {
-                          contains: raw,
-                          mode: 'insensitive'
-                        }
-                      },
-                      {
-                        lastName: {
-                          contains: raw,
-                          mode: 'insensitive'
-                        }
-                      }
-                    ]
-                  }
-                }
-              ]
-            }
-          : {})
-      },
+      where,
       include: {
         variableValues: true,
-        client: true
+        client: true,
       },
       orderBy: {
-        createdAt: 'desc'
-      }
-    })
+        createdAt: 'desc',
+      },
+    });
   
     const quotesWithUrls = await Promise.all(
       quotes.map(async (quote) => {
         const previewUrl = quote.previewKey
           ? await this.s3Service.generateSignedUrl(quote.previewKey)
-          : null
+          : null;
   
         const pdfUrl = quote.pdfKey
           ? await this.s3Service.generateSignedUrl(quote.pdfKey)
-          : null
+          : null;
   
         return {
           ...quote,
           previewUrl,
           pdfUrl,
-        }
-      })
-    )
+        };
+      }),
+    );
   
     return plainToInstance(QuoteEntity, quotesWithUrls, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
-    })
+    });
   }  
   
 }

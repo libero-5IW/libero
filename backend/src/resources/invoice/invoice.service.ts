@@ -17,6 +17,7 @@ import { CreateInvoiceVariableValueDto } from './dto/create-invoice-variable-val
 import { InvoiceTemplateVariableEntity } from '../invoice-template/entities/invoice-template-variable.entity';
 import { S3Service } from 'src/common/s3/s3.service';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util'
 
 @Injectable()
 export class InvoiceService {
@@ -248,4 +249,43 @@ export class InvoiceService {
       };
     });
   }
+
+  async search(userId: string, search: string) {
+    const where = buildSearchQuery(search, userId, 'facture');
+  
+    const invoices = await this.prisma.invoice.findMany({
+      where,
+      include: {
+        variableValues: true,
+        client: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  
+    const invoicesWithUrls = await Promise.all(
+      invoices.map(async (invoice) => {
+        const previewUrl = invoice.previewKey
+          ? await this.s3Service.generateSignedUrl(invoice.previewKey)
+          : null;
+  
+        const pdfUrl = invoice.pdfKey
+          ? await this.s3Service.generateSignedUrl(invoice.pdfKey)
+          : null;
+  
+        return {
+          ...invoice,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+  
+    return plainToInstance(InvoiceEntity, invoicesWithUrls, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+  
 }

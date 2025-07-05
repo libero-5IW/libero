@@ -61,4 +61,13 @@ export class InvoiceController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.invoiceService.remove(id, user.userId);
   }
+
+  @Get('search/:term')
+  searchInvoices(
+    @Param('term') term: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.invoiceService.search(user.userId, term);
+  }
+
 }
