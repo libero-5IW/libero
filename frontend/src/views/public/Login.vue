@@ -25,15 +25,22 @@
           </div>
         </template>
       </LoginForm>
-      <div v-else class="p-6">
-        <h2 class="text-lg font-bold mb-2">Code de vérification 2FA</h2>
+      <div v-else class="p-6 flex flex-col items-center justify-center bg-gray-100 rounded-lg shadow-lg">
+        <h2 class="text-xl font-bold mb-4 text-center">Vérification en deux étapes</h2>
+        <v-icon color="primary" size="36" class="mb-2">mdi-shield-key-outline</v-icon>
+        <div class="mb-2 text-gray-600 text-center">Veuillez entrer le code de vérification généré par votre application d'authentification.</div>
         <v-text-field
           v-model="twoFAToken"
           label="Code 2FA"
           maxlength="6"
-          class="mb-4"
+          class="mb-4 min-w-[300px] text-center text-lg tracking-widest"
+          prepend-inner-icon="mdi-lock"
+          type="text"
+          inputmode="numeric"
+          placeholder="123456"
+          hide-details="auto"
         />
-        <v-btn :loading="loading" color="primary" block @click="handle2FAVerify">
+        <v-btn :loading="loading" color="primary" block class="min-w-[300px]" @click="handle2FAVerify">
           Vérifier
         </v-btn>
         <div class="text-center mt-4">

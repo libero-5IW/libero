@@ -37,7 +37,6 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
 const routes: Array<RouteRecordRaw> = [
   ...authenticatedRoutes,
   ...publicRoutes,
-  ...dashboardRoute,
   ...clientRoutes,
 ]
 
