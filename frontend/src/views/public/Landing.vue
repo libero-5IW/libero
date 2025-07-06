@@ -112,43 +112,43 @@
     </section>
 
     <section class="py-15">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-16 animate-fade-in-up">
-        <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-          Comment ça <span class="text-primary">fonctionne</span> ?
-        </h2>
-        <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            De la création à la facturation, tout est fluide.        </p>
-      </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16 animate-fade-in-up">
+            <h2 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
+            Comment ça <span class="text-primary">fonctionne</span> ?
+            </h2>
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                De la création à la facturation, tout est fluide.        </p>
+        </div>
 
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <StepCard
-          number="1"
-          icon="mdi-file-document-outline"
-          title="Créez un devis"
-          description="Sélectionnez un modèle, remplissez les champs et envoyez-le automatiquement."
-        />
-        <StepCard
-          number="2"
-          icon="mdi-handshake-outline"
-          title="Générez un contrat"
-          description="Transformez votre devis en contrat prêt à être signé électroniquement."
-        />
-        <StepCard
-          number="3"
-          icon="mdi-file-certificate-outline"
-          title="Signez en ligne"
-          description="Le client signe depuis son e-mail. Vous êtes notifié instantanément."
-        />
-        <StepCard
-          number="4"
-          icon="mdi-receipt-text-outline"
-          title="Facturez automatiquement"
-          description="Créez la facture automatiquement après signature et suivez les paiements."
-        />
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <StepCard
+            number="1"
+            icon="mdi-file-document-outline"
+            title="Créez un devis"
+            description="Sélectionnez un modèle, remplissez les champs et envoyez-le automatiquement."
+            />
+            <StepCard
+            number="2"
+            icon="mdi-handshake-outline"
+            title="Générez un contrat"
+            description="Transformez votre devis en contrat prêt à être signé électroniquement."
+            />
+            <StepCard
+            number="3"
+            icon="mdi-file-certificate-outline"
+            title="Signez en ligne"
+            description="Le client signe depuis son e-mail. Vous êtes notifié instantanément."
+            />
+            <StepCard
+            number="4"
+            icon="mdi-receipt-text-outline"
+            title="Facturez automatiquement"
+            description="Créez la facture automatiquement après signature et suivez les paiements."
+            />
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
   <section class="py-15 bg-gradient-to-r bg-primary text-white">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

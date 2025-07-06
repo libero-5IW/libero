@@ -33,34 +33,12 @@
           </template>
 
           <v-list v-if="!props.isLoading" class="rounded-xl py-1">
-            <v-list-item @click.stop="onChangeStatus(item)">
-              <v-list-item-title>Changer le statut</v-list-item-title>
-            </v-list-item>
-
-            <v-list-item 
-              v-if="item.pdfUrl"
-              :href="item.pdfUrl"
-              target="_blank"
-            >
-              <v-list-item-title>Envoyer le PDF</v-list-item-title>
-            </v-list-item>
-
             <v-list-item @click.stop="onEdit(item.id)">
               <v-list-item-title>Éditer</v-list-item-title>
             </v-list-item>
 
-            <v-list-item
-              v-if="props.type === 'quote'"
-              @click.stop="onConvertToContract(item)"
-            >
-              <v-list-item-title>Transformer en Contrat</v-list-item-title>
-            </v-list-item>
-
-            <v-list-item
-              v-if="props.type === 'quote' || props.type === 'contract'"
-              @click.stop="onConvertToInvoice(item)"
-            >
-              <v-list-item-title>Transformer en Facture</v-list-item-title>
+            <v-list-item @click.stop="onDuplicate(item.id)">
+              <v-list-item-title>Dupliquer</v-list-item-title>
             </v-list-item>
 
             <v-list-item @click.stop="onDelete(item.id)">
@@ -70,40 +48,46 @@
         </v-menu>
       </div>
 
-      <v-card-subtitle class="pb-4 text-sm text-gray-600">
-        Créé le {{ formatDate(item.createdAt) }} — <span class="capitalize">{{ translateStatus(item.status) }}</span>
+      <v-card-title class="text-xl font-semibold px-4 pt-4 text-gray-900 dark:text-white">
+        <span class="text-primary">{{ item.name }}</span>
+      </v-card-title>
+
+      <v-card-subtitle class="px-4 pb-4 text-sm text-gray-500 dark:text-gray-400">
+        <p>Créé le {{ formatDate(item.createdAt) }}</p>
+        <p>Nombre de variables : {{ item.variablesLength }}</p>
+        <p>Dernière mise à jour : {{ formatDate(item.updatedAt) }}</p>
       </v-card-subtitle>
     </v-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { DocumentCard } from '@/types'
+import type { TemplateDocumentCard } from '@/types'
 
 const props = defineProps<{
-  items: DocumentCard[]
-  titlePrefix: string
-  type: 'quote' | 'contract' | 'invoice'  
+  items: TemplateDocumentCard[]
   isLoading: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'edit', id: string): void
   (e: 'delete', id: string): void
-  (e: 'change-status', id: string): void
-  (e: 'convert-to-invoice', item: DocumentCard): void
-  (e: 'convert-to-contract', item: DocumentCard): void
+  (e: 'duplicate', id: string): void
 }>()
 
 function onEdit(id: string) {
   emit('edit', id)
 }
 
+function onDuplicate(id: string) {
+  emit('duplicate', id)
+}
+
 function formatDate(date: string): string {
   return new Date(date).toLocaleDateString('fr-FR')
 }
 
-function onCardClick(item: DocumentCard) {
+function onCardClick(item: TemplateDocumentCard) {
   if (item.pdfUrl) {
     window.open(item.pdfUrl, '_blank')
   }
@@ -111,43 +95,5 @@ function onCardClick(item: DocumentCard) {
 
 function onDelete(id: string) {
   emit('delete', id)
-}
-
-function onConvertToInvoice(item: DocumentCard) {
-  emit('convert-to-invoice', item)
-}
-
-function onConvertToContract(item: DocumentCard) {
-  emit('convert-to-contract', item)
-}
-
-function onChangeStatus(item: DocumentCard) {
-  emit('change-status', item.id)
-}
-
-function translateStatus (status: string) {
-  switch (status) {
-    case 'draft':
-      return 'Brouillon';
-    case 'sent':
-      return 'Envoyé';
-    case 'signed':
-      return 'Signé';
-    case 'expired':
-      return 'Expiré';
-    case 'cancelled':
-      return 'Annulé';
-    case 'paid':
-      return 'Payé';
-    case 'overdue':
-      return '';
-    case 'accepted':
-      return '';
-    case 'refused':
-      return '';
-    default:
-      return status;
-  }
-
 }
 </script>

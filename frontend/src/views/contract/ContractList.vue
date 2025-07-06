@@ -27,6 +27,13 @@
       />
     </div>
 
+    <v-progress-linear
+    v-if="isLoading"
+    indeterminate
+    color="primary"
+    class="mb-4"
+    />
+
     <div v-if="documentCards.length > 0">
       <DocumentCardList
         :items="documentCards"
@@ -36,6 +43,7 @@
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
         @convert-to-invoice="handleConvertToInvoice"
+        :isLoading="isLoading"
       />
     </div>
 
@@ -53,6 +61,7 @@
   <TemplateSelectionModal 
     v-model="showTemplateModal"
     :fetchTemplates="fetchContractTemplates"
+    type="contrat"
     @templateSelected="handleTemplateSelected"
   />
 
@@ -69,6 +78,7 @@
   <TemplateSelectionModal
   v-model="showInvoiceTemplateModal"
   :fetchTemplates="fetchInvoiceTemplates"
+  type="contrat"
   @templateSelected="handleInvoiceTemplateSelected"
   />
 
@@ -101,6 +111,7 @@ const showTemplateModal = ref(false);
 const showStatusModal = ref(false);  
 const contracts = computed(() => contractStore.contracts);
 const selectedStatus = ref<string | null>(null);
+const isLoading = computed(() => contractStore.isLoading)
 
 const isDeleteModalOpen = ref(false)
 const selectedContractId = ref<string | null>(null)
@@ -144,6 +155,8 @@ const headers: Header[] = [
 
 async function fetchContractTemplates() {
   await contractTemplateStore.fetchAllTemplates();
+  console.log('bhbjhbk', contracts.value);
+  
   return contractTemplateStore.templates
     .filter(t => !!t.id)
     .map(t => ({
@@ -243,6 +256,8 @@ onMounted(async () => {
   }
 
   await fetchAllContracts();
+  console.log('pssseee');
+  
 });
 
 watch([search, selectedStatus], async () => {

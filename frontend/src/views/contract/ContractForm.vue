@@ -3,6 +3,7 @@
     v-model="showTemplateModal"
     :fetchTemplates="fetchContractTemplates"
     :isForced="true"
+    type="contrat"
     @templateSelected="handleTemplateSelected"
   />
 

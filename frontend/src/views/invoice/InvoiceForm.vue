@@ -4,6 +4,7 @@
     v-model="showTemplateModal"
     :fetchTemplates="fetchInvoiceTemplates"
     :isForced="true"
+    type="facture"
     @templateSelected="handleTemplateSelected"
   />
 

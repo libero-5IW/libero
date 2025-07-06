@@ -27,6 +27,13 @@
       />
     </div>
 
+    <v-progress-linear
+    v-if="isLoading"
+    indeterminate
+    color="primary"
+    class="mb-4"
+    />
+
     <div v-if="documentCards.length > 0">
       <DocumentCardList
         :items="documentCards"
@@ -37,6 +44,7 @@
         @delete="openDeleteConfirmation"
         @convert-to-invoice="handleConvertToInvoice"
         @convert-to-contract="handleConvertToContract"
+        :isLoading="isLoading"
       />
     </div>
 
@@ -52,6 +60,7 @@
 
   <TemplateSelectionModal 
     v-model="showTemplateModal"
+    type="devis"
     :fetchTemplates="fetchQuoteTemplates"
     @templateSelected="handleTemplateSelected"
   />
@@ -68,12 +77,14 @@
 
   <TemplateSelectionModal
     v-model="showInvoiceTemplateModal"
+    type="facture"
     :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleInvoiceTemplateSelected"
   />
 
   <TemplateSelectionModal
     v-model="showContractTemplateModal"
+    type="contrat"
     :fetchTemplates="fetchContractTemplates"
     @templateSelected="handleContractTemplateSelected"
   />
@@ -112,6 +123,7 @@ const router = useRouter();
 const showTemplateModal = ref(false);
 const showStatusModal = ref(false);  
 const quotes = computed(() => quoteStore.quotes);
+const isLoading = computed(() => quoteStore.isLoading)
 
 const isDeleteModalOpen = ref(false);
 const selectedQuoteId = ref<string | null>(null);

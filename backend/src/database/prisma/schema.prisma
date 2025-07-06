@@ -79,6 +79,8 @@ model QuoteTemplate {
   name          String
   contentHtml   String
   userId        String?
+  pdfKey        String
+  previewKey    String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -152,6 +154,8 @@ model InvoiceTemplate {
   name          String
   contentHtml   String
   userId        String?
+  pdfKey        String
+  previewKey    String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -257,6 +261,8 @@ model ContractTemplate {
   name        String
   contentHtml String
   userId      String?
+  pdfKey      String
+  previewKey  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

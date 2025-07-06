@@ -15,11 +15,17 @@ export const InvoiceTemplateVariableSchema = z.object({
 })
 
 export const InvoiceTemplateSchema = z.object({
-  id: z.string().uuid().or(z.literal('defaultTemplate')).optional(),
+  id: z.string().uuid().or(z.literal('defaultTemplate')),
   name: z.string().min(1, 'Le nom du template est requis.'),
   userId: z.string().uuid().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
   contentHtml: z.string().min(1, 'Le contenu HTML est requis.'),
   variables: z.array(InvoiceTemplateVariableSchema),
+  pdfUrl: z.string().nullable().optional(),
+  previewUrl: z.string().nullable().optional(),
+  pdfKey: z.string().optional(),
+  previewKey: z.string().optional(),
 })
 
 export const CreateInvoiceTemplateSchema = z.object({
