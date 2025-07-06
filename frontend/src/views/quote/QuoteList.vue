@@ -8,11 +8,24 @@
       </v-btn>
     </div>
 
-    <SearchInput
-      v-model="search"
-      placeholder="Rechercher un devis"
-      @search="fetchQuotes"
-    />
+    <div class="flex items-center gap-4 mb-6">
+      <SearchInput
+        v-model="search"
+        placeholder="Rechercher un devis"
+        @search="fetchQuotes"
+      />
+
+      <v-select
+        v-model="selectedStatus"
+        :items="statusOptions"
+        item-title="label"
+        item-value="value"
+        label="Filtrer par statut"
+        class="w-64"
+        clearable
+        @update:modelValue="fetchQuotes"
+      />
+    </div>
 
     <v-progress-linear
     v-if="isLoading"
@@ -95,12 +108,14 @@ import { mapQuoteToInvoiceVariables } from '@/utils/mapQuoteToInvoice'
 import { mapQuoteToContractVariables } from '@/utils/mapQuoteToContract'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
 import SearchInput from '@/components/SearchInput.vue'
+import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
 
 const search = ref('')
 const quoteTemplateStore = useQuoteTemplateStore();
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const quoteStore = useQuoteStore();
 const contractTemplateStore = useContractTemplateStore()
+const selectedStatus = ref<string | null>(null);
 
 const { showToast } = useToastHandler();
 const router = useRouter();
@@ -117,6 +132,14 @@ const quoteToConvert = ref<Quote | null>(null)
 
 const showInvoiceTemplateModal = ref(false)
 const showContractTemplateModal = ref(false)
+
+const statusOptions = [
+  { label: 'Tous', value: null },
+  { label: 'Brouillon', value: QUOTE_STATUS.DRAFT },
+  { label: 'Envoyé', value: QUOTE_STATUS.SENT },
+  { label: 'Accepté', value: QUOTE_STATUS.ACCEPTED },
+  { label: 'Refusé', value: QUOTE_STATUS.REFUSED },
+];
 
 const documentCards = computed<DocumentCard[]>(() =>
   quotes.value.map((quote): DocumentCard  => {
@@ -290,11 +313,13 @@ async function confirmDeleteQuote() {
 }
 
 async function fetchQuotes() {
-  const term = search.value.trim()
-  if (term === '') {
-    await quoteStore.fetchAllQuotes()
+  const term = search.value?.trim() || '';
+  const status = selectedStatus.value || undefined;
+
+  if (!term && !status) {
+    await quoteStore.fetchAllQuotes();
   } else {
-    await quoteStore.searchQuotes(term)
+    await quoteStore.searchQuotes(term, status);
   }
 }
 
@@ -309,8 +334,9 @@ onMounted(async () => {
   await fetchAllQuotes();
 });
 
-watch(search, async () => {
-  await fetchQuotes();
+watch([search, selectedStatus], async () => {
+  const term = search.value?.trim() || '';
+  await quoteStore.searchQuotes(term, selectedStatus.value);
 });
 
 </script>

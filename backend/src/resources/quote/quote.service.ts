@@ -268,8 +268,13 @@ export class QuoteService {
     return this.s3Service.generateSignedUrl(quote.previewKey);
   }
 
-  async search(userId: string, search: string) {
-    const where = buildSearchQuery(search, userId, 'devis');
+  async search(userId: string, search: string, status?: QuoteStatus) {
+    const baseWhere = buildSearchQuery(search, userId, 'devis');
+  
+    const where = {
+      ...baseWhere,
+      ...(status ? { status } : {}),
+    };
 
     const quotes = await this.prisma.quote.findMany({
       where,
@@ -305,4 +310,5 @@ export class QuoteService {
       enableImplicitConversion: true,
     });
   }
+  
 }

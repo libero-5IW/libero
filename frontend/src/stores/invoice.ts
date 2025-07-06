@@ -78,10 +78,15 @@ export const useInvoiceStore = defineStore('invoice', () => {
     }
   }  
 
-  async function searchInvoices(search: string) {
+  async function searchInvoices(search: string, status?: string | null) {
     isLoading.value = true;
     try {
-      const { data } = await apiClient.get(`/invoices/search/${search}`);
+      const { data } = await apiClient.get('/invoices/search', {
+        params: {
+          term: search,
+          ...(status ? { status } : {})
+        }
+      });
       invoices.value = data.map((item: Invoice) => InvoiceSchema.parse(item));
     } catch (error) {
       handleError(error, 'Erreur lors de la recherche des factures.');

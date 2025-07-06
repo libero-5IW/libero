@@ -263,9 +263,14 @@ export class ContractService {
     });
   }
 
-  async search(userId: string, search: string) {
-    const where = buildSearchQuery(search, userId, 'contrat');
-
+  async search(userId: string, search: string, status?: ContractStatus) {
+    const baseWhere = buildSearchQuery(search, userId, 'contrat');
+  
+    const where = {
+      ...baseWhere,
+      ...(status ? { status } : {}),
+    };
+  
     const contracts = await this.prisma.contract.findMany({
       where,
       include: {
@@ -300,4 +305,5 @@ export class ContractService {
       enableImplicitConversion: true,
     });
   }
+  
 }

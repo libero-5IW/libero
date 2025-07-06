@@ -264,9 +264,14 @@ export class InvoiceService {
     });
   }
 
-  async search(userId: string, search: string) {
-    const where = buildSearchQuery(search, userId, 'facture');
-
+  async search(userId: string, search: string, status?: InvoiceStatus) {
+    const baseWhere = buildSearchQuery(search, userId, 'facture');
+  
+    const where = {
+      ...baseWhere,
+      ...(status ? { status } : {}),
+    };
+  
     const invoices = await this.prisma.invoice.findMany({
       where,
       include: {
@@ -300,5 +305,6 @@ export class InvoiceService {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
-  }
+  }  
+
 }
