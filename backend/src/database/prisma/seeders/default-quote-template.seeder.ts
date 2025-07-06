@@ -3,7 +3,9 @@ import { PrismaClient, VariableType } from '@prisma/client';
 export async function seedDefaultQuoteTemplate(prisma: PrismaClient) {
   const user = await prisma.user.findFirst();
   if (!user) {
-    throw new Error('No user found. Please seed users before seeding quote templates.');
+    throw new Error(
+      'No user found. Please seed users before seeding quote templates.',
+    );
   }
   const template = {
     id: 'defaultTemplate',
@@ -96,6 +98,8 @@ export async function seedDefaultQuoteTemplate(prisma: PrismaClient) {
         name: template.name,
         contentHtml: template.contentHtml,
         userId: template.userId,
+        pdfKey: '',
+        previewKey: '',
         variables: {
           create: template.variables.map((v) => ({
             variableName: v.variableName,

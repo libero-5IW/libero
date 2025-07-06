@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="ml-4 mt-8">
     <div class="flex items-center justify-between mb-6">
       <span class="text-xl font-semibold">Liste des clients</span>
       <v-btn color="primary" @click="createClient">

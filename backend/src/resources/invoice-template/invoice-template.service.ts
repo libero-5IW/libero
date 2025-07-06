@@ -14,12 +14,16 @@ import { InvoiceTemplateVariableDto } from './dto/invoice-template-variable.dto'
 import { UserService } from '../user/user.service';
 import { VariableType } from 'src/common/enums/variable-type.enum';
 import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery';
+import { S3Service } from 'src/common/s3/s3.service';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 
 @Injectable()
 export class InvoiceTemplateService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly pdfGeneratorService: PdfGeneratorService,
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(
@@ -28,7 +32,7 @@ export class InvoiceTemplateService {
   ): Promise<InvoiceTemplateEntity> {
     const { name, contentHtml, variables = [] } = createInvoiceTemplateDto;
 
-    await this.userService.getUserOrThrow(userId);
+    const user = await this.userService.getUserOrThrow(userId);
 
     const existingTemplate = await this.prisma.invoiceTemplate.findFirst({
       where: { userId, name },
@@ -38,11 +42,23 @@ export class InvoiceTemplateService {
       throw new BadRequestException('Un template avec ce nom existe déjà.');
     }
 
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(contentHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'invoice-templates',
+    );
+
     const template = await this.prisma.invoiceTemplate.create({
       data: {
         name,
         contentHtml,
         userId,
+        pdfKey,
+        previewKey,
         variables: { create: this.mapVariableData(variables) },
       },
       include: {
@@ -67,8 +83,27 @@ export class InvoiceTemplateService {
       where: whereClause,
       include: { variables: true },
     });
+
+    const templatesWithUrls = await Promise.all(
+      templates.map(async (template) => {
+        const previewUrl = template.previewKey
+          ? await this.s3Service.generateSignedUrl(template.previewKey)
+          : null;
+
+        const pdfUrl = template.pdfKey
+          ? await this.s3Service.generateSignedUrl(template.pdfKey)
+          : null;
+
+        return {
+          ...template,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+
     const templatesWithSystemVariables = await Promise.all(
-      templates.map((t) => this.mergeWithSystemVariables(t)),
+      templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
 
     return plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables);
@@ -76,7 +111,20 @@ export class InvoiceTemplateService {
 
   async findOne(id: string, userId: string): Promise<InvoiceTemplateEntity> {
     const template = await this.getTemplateOrThrow(id, userId);
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
+
+    const previewUrl = template.previewKey
+      ? await this.s3Service.generateSignedUrl(template.previewKey)
+      : null;
+
+    const pdfUrl = template.pdfKey
+      ? await this.s3Service.generateSignedUrl(template.pdfKey)
+      : null;
+
+    const templateWithSystemVariables = this.mergeWithSystemVariables({
+      ...template,
+      previewUrl,
+      pdfUrl,
+    });
     return plainToInstance(InvoiceTemplateEntity, templateWithSystemVariables);
   }
 
@@ -87,7 +135,27 @@ export class InvoiceTemplateService {
   ): Promise<InvoiceTemplateEntity> {
     const { name, contentHtml, variables } = updateInvoiceTemplateDto;
 
-    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
+    const existingTemplate = await this.getTemplateOrThrow(id, userId, {
+      allowDefaultTemplate: false,
+    });
+    const user = await this.userService.getUserOrThrow(userId);
+
+    if (existingTemplate.pdfKey) {
+      await this.s3Service.deleteFile(existingTemplate.pdfKey);
+    }
+    if (existingTemplate.previewKey) {
+      await this.s3Service.deleteFile(existingTemplate.previewKey);
+    }
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(contentHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'invoice-templates',
+    );
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
       await tx.invoiceTemplateVariable.deleteMany({
@@ -108,6 +176,8 @@ export class InvoiceTemplateService {
         data: {
           name,
           contentHtml,
+          pdfKey,
+          previewKey,
         },
         include: {
           variables: true,
@@ -122,8 +192,16 @@ export class InvoiceTemplateService {
   }
 
   async remove(id: string, userId: string): Promise<InvoiceTemplateEntity> {
-    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
+    const template = await this.getTemplateOrThrow(id, userId, {
+      allowDefaultTemplate: false,
+    });
 
+    if (template.pdfKey) {
+      await this.s3Service.deleteFile(template.pdfKey);
+    }
+    if (template.previewKey) {
+      await this.s3Service.deleteFile(template.previewKey);
+    }
     const deletedTemplate = await this.prisma.invoiceTemplate.delete({
       where: { id },
     });
@@ -140,11 +218,27 @@ export class InvoiceTemplateService {
       baseName: template.name,
     });
 
+    const user = await this.userService.getUserOrThrow(userId);
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(
+        template.contentHtml,
+      );
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'invoice-templates',
+    );
+
     const duplicatedTemplate = await this.prisma.invoiceTemplate.create({
       data: {
         name,
         contentHtml: template.contentHtml,
         userId,
+        pdfKey,
+        previewKey,
         variables: { create: this.mapVariableData(template.variables) },
       },
       include: {
@@ -189,7 +283,6 @@ export class InvoiceTemplateService {
   }
 
   private mapVariableData(variables: InvoiceTemplateVariableDto[]) {
-
     return variables.map((v) => ({
       variableName: v.variableName,
       label: v.label,
@@ -202,18 +295,39 @@ export class InvoiceTemplateService {
     return mergeSystemVariables(template, 'invoiceTemplateVariable');
   }
 
-  async search(userId: string, rawSearch: string): Promise<InvoiceTemplateEntity[]> {
+  async search(
+    userId: string,
+    rawSearch: string,
+  ): Promise<InvoiceTemplateEntity[]> {
     const whereClause = buildTemplateSearchQuery(rawSearch, userId);
-  
+
     const templates = await this.prisma.invoiceTemplate.findMany({
       where: whereClause,
       include: { variables: true },
     });
-  
-    const templatesWithSystemVariables = await Promise.all(
-      templates.map((t) => this.mergeWithSystemVariables(t)),
+
+    const templatesWithUrls = await Promise.all(
+      templates.map(async (template) => {
+        const previewUrl = template.previewKey
+          ? await this.s3Service.generateSignedUrl(template.previewKey)
+          : null;
+
+        const pdfUrl = template.pdfKey
+          ? await this.s3Service.generateSignedUrl(template.pdfKey)
+          : null;
+
+        return {
+          ...template,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
     );
-  
+
+    const templatesWithSystemVariables = await Promise.all(
+      templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
+    );
+
     return plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables);
   }
 }

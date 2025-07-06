@@ -11,6 +11,7 @@
           :isEdit="isEdit"
           :onSave="saveTemplate"
           :variables="template.variables"
+          :isLoading="isLoading"
           @editor-ready="setEditor"
           @openEditModal="openEditModal"
           @openRemoveModal="removeVariable"
@@ -53,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import router from '@/routes'
 import { useRoute } from 'vue-router'
 import type { Editor } from '@tiptap/vue-3'
@@ -98,6 +99,9 @@ const showVariableForm = ref(false)
 const variableMode = ref<'create' | 'edit'>('create')
 const originalVariableName = ref('')
 const otherTemplates = ref([])
+
+const isLoading = computed(() => contractTemplate.isLoading)
+
 
 onMounted(async () => {
   const idParam = route.params.id

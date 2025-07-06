@@ -1,11 +1,5 @@
 <template>
     <v-card>
-      <v-toolbar flat class="px-4">
-        <slot name="top.title"></slot>
-        <v-divider class="mx-4" inset vertical></v-divider>
-        <v-spacer></v-spacer>
-        <slot name="top.actions"></slot>
-      </v-toolbar>
       <v-data-table-server
           v-bind="$attrs"
           :headers="headers"

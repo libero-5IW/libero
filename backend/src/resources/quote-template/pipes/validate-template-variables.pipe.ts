@@ -3,7 +3,6 @@ import { QuoteTemplateVariableDto } from '../dto/quote-template-variable.dto';
 import { VariableType } from 'src/common/enums/variable-type.enum';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { QuoteTemplateVariableEntity } from '../entities/quote-template-variable.entity';
-import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
 
 @Injectable()
 export class ValidateTemplateVariablesPipe<
@@ -88,20 +87,25 @@ export class ValidateTemplateVariablesPipe<
     contentHtml: string,
     systemVariables: QuoteTemplateVariableEntity[],
   ) {
-    const requiredVariables = [
-      ...variables.filter((v) => v.required).map((v) => v.variableName),
-      ...systemVariables.filter((v) => v.required).map((v) => v.variableName),
-    ];
-  
+    const allVariables = [...variables, ...systemVariables];
+
+    const requiredVariables = allVariables
+      .filter((v) => v.required)
+      .map((v) => v.variableName);
+
     const missingVariables = requiredVariables.filter(
       (name) => !new RegExp(`{{\\s*${name}\\s*}}`).test(contentHtml),
     );
-  
+
     if (missingVariables.length) {
+      const missingDescriptions = missingVariables.map((name) => {
+        const match = allVariables.find((v) => v.variableName === name);
+        const label = match?.label || 'Inconnu';
+        return `${label} (${name})`;
+      });
       throw new BadRequestException(
-        `Le contenu HTML ne contient pas les variables requises suivantes : ${missingVariables.join(', ')}`,
+        `Le contenu HTML ne contient pas les variables requises suivantes : ${missingDescriptions.join(', ')}`,
       );
     }
   }
-
 }

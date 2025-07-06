@@ -17,7 +17,11 @@ export const useContractStore = defineStore('contract', () => {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/contracts');
+      console.log('dataa', data);
+      
       contracts.value = data.map((item: Contract) => ContractSchema.parse(item));
+      console.log('contracts', contracts.value);
+      
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération des contrats.');
     } finally {

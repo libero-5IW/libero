@@ -11,6 +11,7 @@
           @editor-ready="setEditor"
           :onSave="saveTemplate"
           :variables="template.variables"
+          :isLoading="isLoading"
           @openEditModal="openEditModal"
           @openRemoveModal="removeVariable" 
           @openImportModal="showImportModal = true"
@@ -56,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import router from '@/routes'
 import { useRoute } from 'vue-router'
 import type { Editor } from '@tiptap/vue-3'
@@ -87,6 +88,7 @@ const quoteTemplate = useQuoteTemplateStore()
 const templateId = ref<string | null>(null)
 const isEdit = ref(false)
 const isPreviewFullscreen = ref(false)
+const isLoading = computed(() => quoteTemplate.isLoading)
 
 const currentVariable = ref<QuoteTemplateVariable>({
   variableName: '',

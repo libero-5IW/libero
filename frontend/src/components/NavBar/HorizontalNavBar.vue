@@ -22,84 +22,6 @@
       <span>Aide</span>
     </v-tooltip>
 
-    <!-- Notifications dropdown -->
-    <v-menu
-      v-model="showNotifications"
-      :close-on-content-click="false"
-      location="bottom end"
-      offset="5"
-      min-width="300"
-    >
-      <template v-slot:activator="{ props }">
-        <v-btn 
-          icon 
-          v-bind="props"
-          :class="{ 'mr-2': $vuetify.display.lgAndUp, 'mr-1': !$vuetify.display.lgAndUp }"
-        >
-          <v-badge
-            color="error"
-            :content="unreadCount.toString()"
-            :model-value="unreadCount > 0"
-          >
-            <v-icon>mdi-bell-outline</v-icon>
-          </v-badge>
-        </v-btn>
-      </template>
-
-      <v-card>
-        <v-list>
-          <v-list-subheader class="d-flex align-center justify-space-between">
-            Notifications
-            <v-btn
-              v-if="unreadCount > 0"
-              variant="text"
-              density="comfortable"
-              size="small"
-              @click="markAllAsRead"
-            >
-              Mark all as read
-            </v-btn>
-          </v-list-subheader>
-          
-          <v-list-item
-            v-for="notification in notifications"
-            :key="notification.id"
-            :title="notification.title"
-            :subtitle="notification.message"
-            :class="{ 'bg-secondary-lighten-5': !notification.read }"
-            lines="two"
-            @click="handleNotificationClick(notification)"
-          >
-            <template v-slot:prepend>
-              <v-avatar
-                :color="notification.color"
-                variant="tonal"
-                size="32"
-              >
-                <v-icon :icon="notification.icon"></v-icon>
-              </v-avatar>
-            </template>
-          </v-list-item>
-
-          <v-list-item
-            v-if="notifications.length === 0"
-            title="No notifications"
-            subtitle="You're all caught up!"
-          >
-            <template v-slot:prepend>
-              <v-avatar
-                color="secondary"
-                variant="tonal"
-                size="32"
-              >
-                <v-icon>mdi-check-circle</v-icon>
-              </v-avatar>
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-card>
-    </v-menu>
-
     <!-- User profile dropdown -->
     <v-menu
       v-model="showUserMenu"
@@ -160,52 +82,6 @@ const showNotifications = ref(false)
 const showUserMenu = ref(false)
 const authStore = useAuthStore()
 
-// Sample notifications data
-const notifications = ref([
-  {
-    id: 1,
-    title: 'New Message',
-    message: 'You have received a new message from John Doe',
-    icon: 'mdi-message',
-    color: 'primary',
-    read: false,
-    link: '/messages/1'
-  },
-  {
-    id: 2,
-    title: 'Task Completed',
-    message: 'Project milestone has been achieved',
-    icon: 'mdi-check-circle',
-    color: 'success',
-    read: false,
-    link: '/projects/tasks'
-  }
-])
-
-// Computed property for unread notifications count
-const unreadCount = computed(() => 
-  notifications.value.filter(n => !n.read).length
-)
-
-// Notification handlers
-const handleNotificationClick = (notification: any) => {
-  // Mark the notification as read
-  notification.read = true
-  
-  // Close the menu
-  showNotifications.value = false
-  
-  // Navigate to the notification's target page if it has a link
-  if (notification.link) {
-    router.push(notification.link)
-  }
-}
-
-const markAllAsRead = () => {
-  notifications.value.forEach(notification => {
-    notification.read = true
-  })
-}
 const logout = async () => {
   await authStore.logout();
 }

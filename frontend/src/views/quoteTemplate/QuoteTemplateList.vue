@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="ml-4 mt-8">
     <div class="flex items-center justify-between mb-6">
       <span class="text-xl font-semibold">Templates de devis</span>
       <v-btn color="primary" @click="createTemplate">
@@ -14,24 +14,30 @@
       @search="handleSearch"
     />
 
-    <DataTable
-      :headers="headers"
-      :items="templates"
-      :items-length="templates.length"
-      @update:options="fetchAllTemplates"
+    <v-progress-linear
+    v-if="isLoading"
+    indeterminate
+    color="primary"
+    class="mb-4"
+    />
+
+    <div v-if="documentCards.length > 0">
+      <TemplateDocumentCardList
+        :items="documentCards"
+        @edit="editTemplate"
+        @delete="openDeleteConfirmation"
+        @duplicate="duplicateTemplate"
+        :isLoading="isLoading"
+      />
+    </div>
+
+    <div
+      v-else
+      class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
     >
-      <template #item.actions="{ item }">
-        <v-btn icon @click="editTemplate(item.id)">
-          <v-icon>mdi-pencil</v-icon>
-        </v-btn>
-        <v-btn icon @click="duplicateTemplate(item.id)">
-          <v-icon>mdi-content-duplicate</v-icon>
-        </v-btn>
-        <v-btn icon color="primary" @click="openDeleteConfirmation(item.id)">
-          <v-icon>mdi-delete</v-icon>
-        </v-btn>
-      </template>
-    </DataTable>
+      <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
+      <p>Aucun template de devis créé pour le moment.</p>
+    </div>
 
     <ConfirmationModal
       v-model="isDeleteModalOpen"
@@ -48,11 +54,10 @@
 <script setup lang="ts">
   import { useToastHandler } from '@/composables/useToastHandler';
   import { useQuoteTemplateStore } from '@/stores/quoteTemplate';
-  import type { ToastStatus } from '@/types';
-  import type { Header } from '@/types/Header';
+  import type { TemplateDocumentCard, ToastStatus } from '@/types';
   import { ref, computed, onMounted } from 'vue';
   import { useRouter } from 'vue-router';
-  import DataTable from '@/components/DocumentDisplay/DataTable.vue';
+  import TemplateDocumentCardList from '@/components/DocumentDisplay/TemplateDocumentCardList.vue';
   import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
   import SearchInput from '@/components/SearchInput.vue'
 
@@ -62,12 +67,21 @@
   const isDeleteModalOpen = ref(false);
   const selectedTemplateId = ref<string | null>(null);
   const search = ref('')
+  const isLoading = computed(() => quoteTemplate.isLoading)
 
-  const headers: Header[] = [
-    { title: 'Nom', value: 'name', sortable: true },
-    { title: 'Contenu', value: 'contentHtml', sortable: true},
-    { title: 'Actions', value: 'actions', sortable: false },
-  ]
+  const documentCards = computed<TemplateDocumentCard[]>(() =>
+    templates.value.map((template): TemplateDocumentCard  => {
+      return {
+        id: template.id,
+        name: template.name,
+        createdAt: template.createdAt ?? '',
+        updatedAt: template.updatedAt ?? '',
+        previewUrl: template.previewUrl ?? null,
+        pdfUrl: template.pdfUrl ?? null,
+        variablesLength: template.variables.length
+      }
+    })
+  );
 
   const templates =  computed(() => quoteTemplate.templates)
 

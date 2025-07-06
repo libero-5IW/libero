@@ -38,17 +38,20 @@
           class="d-flex flex-wrap"
         >
           <template #item="{ element, index }">
-            <v-chip
-            rounded="pill"
-              class="ma-1 variable-list-chip"
-              :class="{
-                'chip-in-editor': variablesInEditor.has(element.variableName),
-                'chip-not-in-editor': !variablesInEditor.has(element.variableName)
-              }"
-              draggable
-              @dragstart="onDragStart($event, element)"
-            >
-              {{ element.label }}
+            <v-tooltip :text="element.variableName">
+              <template #activator="{ props }">
+                <v-chip
+                  v-bind="props"
+                  rounded="pill"
+                  class="ma-1 variable-list-chip"
+                  :class="{
+                    'chip-in-editor': variablesInEditor.has(element.variableName),
+                    'chip-not-in-editor': !variablesInEditor.has(element.variableName)
+                  }"
+                  draggable
+                  @dragstart="onDragStart($event, element)"
+                >
+                {{ element.label }}
               
               <v-tooltip v-if="!isSystemVariable(element)" text="Modifier la variable">
                 <template #activator="{ props }">
@@ -75,6 +78,8 @@
                 </template>
               </v-tooltip>
             </v-chip>
+            </template>
+            </v-tooltip>
           </template>
         </draggable>
       </div>

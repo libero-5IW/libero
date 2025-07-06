@@ -14,13 +14,22 @@
       @search="fetchInvoices"
     />
 
+    <v-progress-linear
+    v-if="isLoading"
+    indeterminate
+    color="primary"
+    class="mb-4"
+    />
+
     <div v-if="documentCards.length > 0">
       <DocumentCardList
         :items="documentCards"
         titlePrefix="Facture"
+        type="invoice"
         @edit="editInvoice"
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
+        :isLoading="isLoading"
       />
     </div>
 
@@ -36,6 +45,7 @@
 
   <TemplateSelectionModal 
     v-model="showTemplateModal"
+    type="facture"
     :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleTemplateSelected"
   />
@@ -75,6 +85,7 @@ const router = useRouter();
 const showTemplateModal = ref(false);  
 const showStatusModal = ref(false);  
 const invoices = computed(() => invoiceStore.invoices);
+const isLoading = computed(() => invoiceStore.isLoading)
 
 const isDeleteModalOpen = ref(false);
 const selectedInvoiceId = ref<string | null>(null);
