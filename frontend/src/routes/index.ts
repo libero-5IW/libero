@@ -29,8 +29,7 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
       ...profileRoutes,
       ...contractRoutes,
       ...legalRoutes,
-      ...apiRoutes,,
-      ...contractRoutes,
+      ...apiRoutes,
     ]
   },
   
