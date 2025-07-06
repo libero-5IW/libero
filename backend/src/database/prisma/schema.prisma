@@ -6,7 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
-  binaryTargets = ["native", "darwin-arm64", "linux-musl-openssl-3.0.x", "linux-musl-arm64-openssl-3.0.x", "debian-openssl-3.0.x"]
+  binaryTargets = ["native", "darwin-arm64", "linux-arm64-openssl-3.0.x"]
 }
 
 datasource db {
@@ -15,23 +15,31 @@ datasource db {
 }
 
 model User {
-  id                String   @id @default(uuid())
-  firstName         String
-  lastName          String
-  email             String   @unique
-  password          String
-  companyName       String?
-  addressLine       String
-  postalCode        String
-  city              String
-  country           String   @default("France")
-  legalStatus       String
-  siret             String
-  tvaNumber         String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  twoFactorSecret   String?  @db.VarChar(255)
-  isTwoFactorEnabled Boolean @default(false)
+  id                        String   @id @default(uuid())
+  firstName                 String
+  lastName                  String
+  email                     String   @unique
+  password                  String
+  companyName               String?
+  addressLine               String
+  postalCode                String
+  city                      String
+  country                   String   @default("France")
+  legalStatus               String
+  siret                     String
+  tvaNumber                 String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  twoFactorSecret           String?  @db.VarChar(255)
+  isTwoFactorEnabled        Boolean @default(false)
+  resetPasswordToken        String?
+  resetPasswordTokenExpiry  DateTime?
+  lastPasswordUpdate        DateTime @default(now())
+  resetTokenSource          ResetTokenSource?
+  loginAttempts             Int @default(0)
+  lockedUntil               DateTime?
+
+
   quoteTemplates    QuoteTemplate[]
   quotes            Quote[]
   invoiceTemplates  InvoiceTemplate[]
@@ -39,6 +47,12 @@ model User {
   clients           Client[] 
   contractTemplates ContractTemplate[]
   contracts         Contract[]
+}
+
+enum ResetTokenSource {
+  RESET //forgotten password
+  LOCKED
+  EXPIRED
 }
 
 model Client {
@@ -94,16 +108,18 @@ model Quote {
   number          Int
   templateId      String?
   userId          String
-  clientId        String
+  clientId        String?
   status          QuoteStatus @default(draft)
   generatedHtml   String
   issuedAt        DateTime?
   validUntil      DateTime
+  pdfKey          String
+  previewKey      String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  client          Client   @relation(fields: [clientId], references: [id])
+  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   template        QuoteTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   variableValues  QuoteVariableValue[]
 
@@ -165,17 +181,20 @@ model Invoice {
   number          Int
   templateId      String?
   userId          String
-  clientId        String
+  clientId        String?
   quoteId         String?   @unique
   status          InvoiceStatus @default(draft)
   generatedHtml   String
   issuedAt        DateTime?
   dueDate         DateTime
+  pdfKey          String
+  previewKey      String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  client          Client   @relation(fields: [clientId], references: [id])
+  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   template        InvoiceTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   variableValues  InvoiceVariableValue[]
 
@@ -190,18 +209,20 @@ model Contract {
   number          Int
   templateId      String?
   userId          String
-  clientId        String
+  clientId        String?
   quoteId         String?   @unique
   invoiceId       String?   @unique
   status          ContractStatus @default(draft)
   generatedHtml   String
   issuedAt        DateTime?
   validUntil      DateTime
+  pdfKey          String
+  previewKey      String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  client          Client   @relation(fields: [clientId], references: [id])
+  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   template        ContractTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   variableValues  ContractVariableValue[]
 

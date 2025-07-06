@@ -13,7 +13,7 @@ export const CreateInvoiceVariableValueSchema = z.object({
 export const CreateInvoiceSchema = z.object({
   clientId: z.string().uuid({
     message: "L'identifiant du client doit être un UUID valide.",
-  }),
+  }).nullable().optional(),
   templateId: z.string().uuid({
     message: "L'identifiant du template doit être un UUID valide.",
   }),
@@ -33,6 +33,8 @@ export const CreateInvoiceSchema = z.object({
   variableValues: z
     .array(CreateInvoiceVariableValueSchema)
     .min(1, { message: 'Au moins une variable est requise.' }),
+  quoteId: z.string().uuid().optional(),
+  contractId: z.string().uuid().optional(), 
 });
 
 export const InvoiceVariableValueSchema = z.object({
@@ -54,7 +56,11 @@ export const InvoiceSchema = z.object({
   dueDate: z.string(),
   templateId: z.string().uuid().or(z.literal('defaultTemplate')).nullable(),
   userId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  clientId: z.string().uuid().nullable(),
+  pdfUrl: z.string().optional(),
+  previewUrl: z.string().optional(),
+  pdfKey: z.string(),
+  previewKey: z.string(),
   variableValues: z.array(InvoiceVariableValueSchema),
   createdAt: z.string(),
   updatedAt: z.string(),

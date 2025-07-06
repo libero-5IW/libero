@@ -13,7 +13,7 @@ export const CreateContractVariableValueSchema = z.object({
 export const CreateContractSchema = z.object({
   clientId: z.string().uuid({
     message: "L'identifiant du client doit être un UUID valide.",
-  }),
+  }).nullable().optional(),
   templateId: z.string().uuid({
     message: "L'identifiant du template doit être un UUID valide.",
   }),
@@ -33,6 +33,7 @@ export const CreateContractSchema = z.object({
   variableValues: z
     .array(CreateContractVariableValueSchema)
     .min(1, { message: 'Au moins une variable est requise.' }),
+  quoteId: z.string().uuid().optional(),
 });
 
 export const ContractVariableValueSchema = z.object({
@@ -48,13 +49,17 @@ export const ContractVariableValueSchema = z.object({
 export const ContractSchema = z.object({
   id: z.string().uuid(),
   number: z.number(),
-  status: z.enum(['draft', 'signed', 'expired', 'cancelled']),
+  status: z.enum(['draft', 'sent', 'signed', 'declined', 'expired', 'cancelled']),
   generatedHtml: z.string(),
   issuedAt: z.string().nullable().optional(),
   validUntil: z.string(),
   templateId: z.string().uuid().or(z.literal('defaultTemplate')).nullable(),
   userId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  clientId: z.string().uuid().nullable(),
+  pdfUrl: z.string().optional(),
+  previewUrl: z.string().optional(),
+  pdfKey: z.string(),
+  previewKey: z.string(),
   variableValues: z.array(ContractVariableValueSchema),
   createdAt: z.string(),
   updatedAt: z.string(),

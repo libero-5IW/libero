@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import apiClient from '@/config/axios';
-import { handleAxiosError } from '@/utils/handleAxiosError';
+import { handleError } from '@/utils/handleError';
 import {
   ContractSchema,
   type Contract,
@@ -19,7 +19,7 @@ export const useContractStore = defineStore('contract', () => {
       const { data } = await apiClient.get('/contracts');
       contracts.value = data.map((item: Contract) => ContractSchema.parse(item));
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération des contrats.');
+      handleError(error, 'Erreur lors de la récupération des contrats.');
     } finally {
       isLoading.value = false;
     }
@@ -31,7 +31,7 @@ export const useContractStore = defineStore('contract', () => {
       const { data } = await apiClient.get(`/contracts/${id}`);
       currentContract.value = ContractSchema.parse(data);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération du contrat.');
+      handleError(error, 'Erreur lors de la récupération du contrat.');
     } finally {
       isLoading.value = false;
     }
@@ -39,19 +39,25 @@ export const useContractStore = defineStore('contract', () => {
 
   async function createContract(payload: CreateContract) {
     try {
+      isLoading.value = true;
       const { data } = await apiClient.post('/contracts', payload);
       return ContractSchema.parse(data);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la création du contrat.');
+      handleError(error, 'Erreur lors de la création du contrat.');
+    } finally {
+      isLoading.value = false;
     }
   }
 
   async function deleteContract(id: string) {
     try {
+      isLoading.value = true;
       await apiClient.delete(`/contracts/${id}`);
       contracts.value = contracts.value.filter((contract) => contract.id !== id);
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la suppression du contrat.');
+      handleError(error, 'Erreur lors de la suppression du contrat.');
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -60,10 +66,34 @@ export const useContractStore = defineStore('contract', () => {
       const { data } = await apiClient.get('/contracts/next-number');
       return data;
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la récupération du numéro de contrat.');
+      handleError(error, 'Erreur lors de la récupération du numéro de contrat.');
       return null;
     }
   }
+
+  async function updateContract(id: string, payload: Partial<Contract>) {
+    try {
+      isLoading.value = true;
+      const { data } = await apiClient.put(`/contracts/${id}`, payload);
+      return ContractSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de la modification du contrat.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function searchContracts(search: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.get(`/contracts/search/${search}`);
+      contracts.value = data.map((item: Contract) => ContractSchema.parse(item));
+    } catch (error) {
+      handleError(error, 'Erreur lors de la recherche des contrats.');
+    } finally {
+      isLoading.value = false;
+    }
+  }  
 
   return {
     contracts,
@@ -74,5 +104,7 @@ export const useContractStore = defineStore('contract', () => {
     createContract,
     deleteContract,
     fetchNextContractNumber,
+    updateContract,
+    searchContracts
   };
 });

@@ -1,82 +1,138 @@
 <template>
-    <div class="p-4">
-      <h1 class="text-xl font-bold mb-4">Clients</h1>
-      <div class="mb-4 flex justify-between items-center">
-        <input v-model="search" placeholder="Rechercher un client" class="border p-2 rounded" />
-        <router-link to="/clients/new" class="bg-blue-500 text-white px-4 py-2 rounded">
-          Nouveau client
-        </router-link>
-      </div>
-  
-      <table v-if="!store.isLoading" class="w-full table-auto border">
-        <thead class="bg-gray-100">
-          <tr>
-            <th class="p-2">Prénom</th>
-            <th class="p-2">Nom</th>
-            <th class="p-2">Email</th>
-            <th class="p-2">Ville</th>
-            <th class="p-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="filteredClients.length > 0" v-for="client in filteredClients" :key="client.id" class="border-t">
-            <td class="p-2">{{ client.firstName }}</td>
-            <td class="p-2">{{ client.lastName }}</td>
-            <td class="p-2">{{ client.email }}</td>
-            <td class="p-2">{{ client.city }}</td>
-            <td class="p-2 space-x-2">
-              <router-link :to="`/clients/${client.id}/edit`" class="text-blue-600">Modifier</router-link>
-              <button @click="deleteClient(client.id)" class="text-red-500">Supprimer</button>
-            </td>
-          </tr>
-          <tr v-else>
-            <td colspan="5" class="text-center p-4">Aucun client trouvé.</td>
-          </tr>
-        </tbody>
-      </table>
-  
-      <p v-else>Chargement...</p>
+  <div>
+    <div class="flex items-center justify-between mb-6">
+      <span class="text-xl font-semibold">Liste des clients</span>
+      <v-btn color="primary" @click="createClient">
+        <v-icon start>mdi-plus</v-icon>
+        Nouveau client
+      </v-btn>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, computed, onMounted, watchEffect } from 'vue'
-  import { useClientStore } from '@/stores/client'
-  import { useAuthStore } from '@/stores/auth'
-  
-  const store = useClientStore()
-  const authStore = useAuthStore()
-  const search = ref('')
-  
-  onMounted(async () => {
-    if (!authStore.authAlreadyChecked) {
-      await authStore.verifyAuth()
-    }
-    if (authStore.user) {
-      await store.fetchAllClients()
-    } else {
-      console.warn('Aucun utilisateur connecté. Pas de clients à afficher.')
-    }
-  })
-  
-  const filteredClients = computed(() => {
-    const query = search.value.trim().toLowerCase()
-    if (!query) return store.clients
-    return store.clients.filter(client =>
-      (client.firstName?.toLowerCase() ?? '').includes(query) ||
-      (client.lastName?.toLowerCase() ?? '').includes(query) ||
-      (client.email?.toLowerCase() ?? '').includes(query) ||
-      (client.city?.toLowerCase() ?? '').includes(query)
-    )
-  })
-  
-  watchEffect(() => {
-    console.log('Clients visibles à l’écran :', filteredClients.value)
-  })
-  
-  const deleteClient = async (id) => {
-    await store.deleteClient(id)
-    await store.fetchAllClients()
+
+    <SearchInput
+      v-model="search"
+      placeholder="Rechercher un client"
+      @search="handleSearch"
+    />
+
+    <DataTable
+      :headers="headers"
+      :items="clients"
+      :items-length="clients.length"
+      @update:options="fetchAllClients"
+    >
+      <template #item.actions="{ item }">
+        <div class="flex gap-3 items-center">
+          <v-tooltip text="Modifier" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                color="secondary"
+                class="cursor-pointer text-gray-600 hover:text-primary transition-colors duration-200"
+                @click="editClient(item.id)"
+              >
+                mdi-pencil
+              </v-icon>
+            </template>
+          </v-tooltip>
+
+          <v-tooltip text="Supprimer" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                color="primary"
+                class="cursor-pointer"
+                @click="confirmDelete(item.id)"
+              >
+                mdi-delete
+              </v-icon>
+            </template>
+          </v-tooltip>
+        </div>
+      </template>
+    </DataTable>
+
+    <ConfirmationModal
+      v-model="showDeleteModal"
+      title="Confirmer la suppression"
+      message="Êtes-vous sûr de vouloir supprimer ce client ? Cette action est irréversible."
+      confirmText="Supprimer"
+      confirmColor="error"
+      cancelText="Annuler"
+      @confirm="removeClient"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, computed, ref } from 'vue'
+import { useClientStore } from '@/stores/client'
+import { useRouter } from 'vue-router'
+import { useToastHandler } from '@/composables/useToastHandler'
+import type { Header } from '@/types/Header'
+import type { ToastStatus } from '@/types'
+import DataTable from '@/components/DocumentDisplay/DataTable.vue'
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
+import SearchInput from '@/components/SearchInput.vue'
+
+const clientStore = useClientStore()
+const router = useRouter()
+const { showToast } = useToastHandler()
+const search = ref('')
+
+const clientIdToDelete = ref<string | null>(null)
+const showDeleteModal = ref(false)
+
+const clients = computed(() => clientStore.clients)
+
+const headers: Header[] = [
+  { title: 'Prénom', value: 'firstName', sortable: true },
+  { title: 'Nom', value: 'lastName', sortable: true },
+  { title: 'Email', value: 'email', sortable: true },
+  { title: 'Téléphone', value: 'phoneNumber', sortable: true },
+  { title: '', value: 'actions', sortable: false },
+]
+
+const fetchAllClients = async () => {
+  await clientStore.fetchAllClients()
+}
+
+const createClient = () => {
+  router.push({ name: 'ClientCreate' })
+}
+
+const editClient = (id: string) => {
+  router.push({ name: 'ClientEdit', params: { id } })
+}
+
+const confirmDelete = (id: string) => {
+  clientIdToDelete.value = id
+  showDeleteModal.value = true
+}
+
+const removeClient = async () => {
+  if (!clientIdToDelete.value) return
+  await clientStore.deleteClient(clientIdToDelete.value)
+  showToast('success', 'Le client a été supprimé avec succès.')
+  showDeleteModal.value = false
+  clientIdToDelete.value = null
+}
+
+async function handleSearch(term: string) {
+  if (term.trim() === '') {
+    await clientStore.fetchAllClients()
+  } else {
+    await clientStore.searchClients(term)
   }
-  </script>
-  
+}
+
+onMounted(async () => {
+  const status = history.state?.toastStatus as ToastStatus
+  const message = history.state?.toastMessage as string
+
+  if (message && status) {
+    showToast(status, message)
+  }
+
+  await fetchAllClients()
+})
+</script>

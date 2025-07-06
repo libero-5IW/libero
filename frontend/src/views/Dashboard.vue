@@ -36,7 +36,6 @@
 
 
 <script setup lang="ts">
-import HelloWorld from '@/components/HelloWorld.vue';
 import { useAuthStore } from '@/stores/auth';
 import { useUserStore } from '@/stores/user';
 import { computed, onMounted } from 'vue';

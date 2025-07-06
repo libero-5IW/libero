@@ -17,6 +17,7 @@ services:
   backend:
     build:
       context: backend/
+    shm_size: '1gb'
     ports:
       - "8000:3000"
       - "5555:5555"
@@ -24,9 +25,11 @@ services:
       - postgres
     volumes:
       - ./backend:/app/backend
+    env_file:
+      - ./backend/.env.local
 
   frontend:
-    platform: linux/arm64
+    # platform: linux/arm64
     build:
       context: frontend/
     ports:

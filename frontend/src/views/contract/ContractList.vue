@@ -1,98 +1,226 @@
 <template>
-    <DataTable
-      :headers="headers"
-      :items="contracts"
-      :items-length="contracts.length"
-      @update:options="fetchAllContracts"
-    >
-      <template #top.title>
-        <span class="text-xl font-semibold">Liste des contrats</span>
-      </template>
-  
-      <template #top.actions>
-        <v-btn color="primary" @click="showTemplateModal = true">
-          <v-icon start>mdi-plus</v-icon>
-          Nouveau contrat
-        </v-btn>
-      </template>
-  
-      <template #item.actions="{ item }">
-        <v-btn icon @click="viewContract(item.id)">
-          <v-icon>mdi-eye</v-icon>
-        </v-btn>
-      </template>
-    </DataTable>
-  
-    <TemplateSelectionModal 
-      v-model="showTemplateModal"
-      :fetchTemplates="fetchContractTemplates"
-      @templateSelected="handleTemplateSelected"
+  <div class="ml-4 mt-8">
+    <div class="flex items-center justify-between mb-10">
+      <h1 class="text-xl font-bold">Liste des contrats</h1>
+      <v-btn color="primary" @click="showTemplateModal = true">
+        <v-icon start>mdi-plus</v-icon>
+        Nouveau contrat
+      </v-btn>
+    </div>
+
+    <SearchInput
+      v-model="search"
+      placeholder="Rechercher un contrat"
+      @search="fetchContracts"
     />
-  </template>
-  
-  <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue';
-  import { useRouter } from 'vue-router';
-  import { useContractStore } from '@/stores/contract';
-  import { useContractTemplateStore } from '@/stores/contractTemplate';
-  import DataTable from '@/components/Table/DataTable.vue';
-  import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue';
-  import { useToastHandler } from '@/composables/useToastHandler';
-  import type { ToastStatus } from '@/types';
-  import type { Header } from '@/types/Header';
-  
-  const router = useRouter();
-  const contractStore = useContractStore();
-  const contractTemplateStore = useContractTemplateStore();
-  const { showToast } = useToastHandler();
-  
-  const showTemplateModal = ref(false);
-  const contracts = computed(() => contractStore.contracts);
-  
-  const headers: Header[] = [
-    { title: 'Numéro', value: 'number', sortable: true },
-    { title: 'Statut', value: 'status', sortable: true },
-    { title: 'Date de création', value: 'issuedAt', sortable: true },
-    { title: 'Actions', value: 'actions', sortable: false },
-  ];
-  
-  async function fetchContractTemplates() {
-    await contractTemplateStore.fetchAllTemplates();
-  
-    return contractTemplateStore.templates
-      .filter(t => !!t.id)
-      .map(t => ({
-        id: t.id as string,
-        name: t.name,
-      }));
-  }
-  
-  async function fetchAllContracts() {
-    await contractStore.fetchAllContracts();
-  }
-  
-  function viewContract(id: string) {
-    console.log(`Visualiser contrat ${id}`);
-  }
-  
-  function handleTemplateSelected(templateId: string) {
-    showTemplateModal.value = false;
-  
-    router.push({ 
-      name: 'ContractForm', 
-      query: { templateId }   
-    });
-  }
-  
-  onMounted(async () => {
-    const status = history.state?.toastStatus as ToastStatus;
-    const message = history.state?.toastMessage as string;
-  
-    if (message && status) {
-      showToast(status, message);
+
+    <div v-if="documentCards.length > 0">
+      <DocumentCardList
+        :items="documentCards"
+        titlePrefix="Contrat"
+        type="contract"
+        @edit="editContract"
+        @change-status="showStatusModal = true"
+        @delete="openDeleteConfirmation"
+        @convert-to-invoice="handleConvertToInvoice"
+      />
+    </div>
+
+    <div
+      v-else
+      class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+    >
+      <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
+      <p>Aucun contrat créé pour le moment.</p>
+    </div>
+
+
+  </div>
+
+  <TemplateSelectionModal 
+    v-model="showTemplateModal"
+    :fetchTemplates="fetchContractTemplates"
+    @templateSelected="handleTemplateSelected"
+  />
+
+  <ConfirmationModal
+    v-model="isDeleteModalOpen"
+    title="Confirmation de suppression"
+    message="Êtes-vous sûr de vouloir supprimer ce contrat ? Cette action est irréversible."
+    confirmText="Supprimer"
+    cancelText="Annuler"
+    confirmColor="error"
+    @confirm="confirmDeleteContract"
+  />
+
+  <TemplateSelectionModal
+  v-model="showInvoiceTemplateModal"
+  :fetchTemplates="fetchInvoiceTemplates"
+  @templateSelected="handleInvoiceTemplateSelected"
+  />
+
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import { useContractStore } from '@/stores/contract';
+import { useContractTemplateStore } from '@/stores/contractTemplate';
+import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue';
+import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue';
+import { useToastHandler } from '@/composables/useToastHandler';
+import type { DocumentCard, ToastStatus } from '@/types';
+import type { Header } from '@/types/Header';
+import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
+import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
+import { mapContractToInvoiceVariables } from '@/utils/mapContractToInvoice';
+import type { Contract } from '@/schemas/contract.schema';
+import SearchInput from '@/components/SearchInput.vue';
+
+const search = ref('');
+const router = useRouter();
+const contractStore = useContractStore();
+const contractTemplateStore = useContractTemplateStore();
+const { showToast } = useToastHandler();
+
+const showTemplateModal = ref(false);
+const showStatusModal = ref(false);  
+const contracts = computed(() => contractStore.contracts);
+
+const isDeleteModalOpen = ref(false)
+const selectedContractId = ref<string | null>(null)
+const invoiceTemplateStore = useInvoiceTemplateStore();
+const showInvoiceTemplateModal = ref(false);
+const contractToConvert = ref<Contract | null>(null);
+
+const documentCards = computed<DocumentCard[]>(() =>
+  contracts.value.map((contract): DocumentCard  => {
+      const clientNameVar = contract.variableValues?.find(
+          (v) => v.variableName === 'client_name'
+      );
+      
+    return {
+      id: contract.id,
+      number: contract.number,
+      status: contract.status,
+      createdAt: contract.createdAt ?? '',
+      previewUrl: contract.previewUrl ?? null,
+      pdfUrl: contract.pdfUrl ?? null,
+      clientName: clientNameVar?.value || 'Client inconnu'
     }
-  
-    await fetchAllContracts();
+  })
+);
+
+const headers: Header[] = [
+  { title: 'Numéro', value: 'number', sortable: true },
+  { title: 'Statut', value: 'status', sortable: true },
+  { title: 'Date d\'émission', value: 'issuedAt', sortable: true },
+  { title: 'Actions', value: 'actions', sortable: false },
+];
+
+async function fetchContractTemplates() {
+  await contractTemplateStore.fetchAllTemplates();
+  return contractTemplateStore.templates
+    .filter(t => !!t.id)
+    .map(t => ({
+      id: t.id as string,
+      name: t.name,
+    }));
+}
+
+async function fetchAllContracts() {
+  await contractStore.fetchAllContracts();
+}
+
+function editContract(id: string) {
+  router.push({ name: 'ContractEdit', params: { id } });
+}
+
+function handleTemplateSelected(templateId: string) {
+  showTemplateModal.value = false;
+  router.push({ 
+    name: 'ContractForm', 
+    query: { templateId }   
   });
-  </script>
-  
+}
+
+function openDeleteConfirmation(id: string) {
+  selectedContractId.value = id
+  isDeleteModalOpen.value = true
+}
+
+async function confirmDeleteContract() {
+  if (!selectedContractId.value) return
+  await contractStore.deleteContract(selectedContractId.value)
+  await fetchAllContracts()
+  showToast('success', 'Le contrat a été bien supprimé !')
+  selectedContractId.value = null
+}
+
+function handleConvertToInvoice(card: DocumentCard) {
+  const contract = contracts.value.find(c => c.id === card.id);
+
+  if (!contract) {
+    showToast('error', 'Contrat introuvable');
+    return;
+  }
+
+  contractToConvert.value = contract;
+  showInvoiceTemplateModal.value = true;
+}
+
+async function fetchInvoiceTemplates() {
+  await invoiceTemplateStore.fetchAllTemplates();
+  return invoiceTemplateStore.templates.map(t => ({
+    id: t.id!,
+    name: t.name,
+  }));
+}
+
+function handleInvoiceTemplateSelected(templateId: string) {
+  const contract = contractToConvert.value;
+  const template = invoiceTemplateStore.templates.find(t => t.id === templateId);
+
+  if (!contract || !template) {
+    showToast('error', 'Erreur lors de la génération de la facture');
+    return;
+  }
+
+  const mappedVars = mapContractToInvoiceVariables(template.variables, contract.variableValues);
+
+  router.push({
+    name: 'InvoiceForm',
+    state: {
+      fromContractId: contract.id,
+      templateId,
+      clientId: contract.clientId,
+      variables: mappedVars,
+    }
+  });
+}
+
+async function fetchContracts() {
+  const term = search.value.trim()
+  if (term === '') {
+    await contractStore.fetchAllContracts()
+  } else {
+    await contractStore.searchContracts(term)
+  }
+}
+
+onMounted(async () => {
+  const status = history.state?.toastStatus as ToastStatus;
+  const message = history.state?.toastMessage as string;
+
+  if (message && status) {
+    showToast(status, message);
+  }
+
+  await fetchAllContracts();
+});
+
+watch(search, async () => {
+  await fetchContracts();
+});
+
+</script>

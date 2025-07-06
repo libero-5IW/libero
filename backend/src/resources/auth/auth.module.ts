@@ -7,7 +7,7 @@ import { UserModule } from '../user/user.module';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { TwoFactorAuthService } from './2fa/2fa.service';
 import { TwoFactorAuthController } from './2fa/2fa.controller';
-
+import { MailerModule } from '../../common/mailer/mailer.module';
 @Module({
   imports: [
     ConfigModule,
@@ -17,9 +17,10 @@ import { TwoFactorAuthController } from './2fa/2fa.controller';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1d' },
+        signOptions: { expiresIn: '1h' },
       }),
     }),
+    MailerModule,
   ],
   controllers: [AuthController, TwoFactorAuthController],
   providers: [AuthService, JwtStrategy, TwoFactorAuthService],

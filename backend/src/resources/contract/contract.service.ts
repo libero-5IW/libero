@@ -15,6 +15,9 @@ import { ContractStatus, VariableType } from '@prisma/client';
 import { generateNextNumber } from 'src/common/utils/generate-number.util';
 import { CreateContractVariableValueDto } from './dto/create-contract-variable-value.dto';
 import { ContractTemplateVariableEntity } from '../contract-template/entities/contract-template-variable.entity';
+import { S3Service } from 'src/common/s3/s3.service';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util'
 
 @Injectable()
 export class ContractService {
@@ -23,32 +26,56 @@ export class ContractService {
     private readonly userService: UserService,
     private readonly clientService: ClientService,
     private readonly contractTemplateService: ContractTemplateService,
+    private readonly pdfGeneratorService: PdfGeneratorService,
+    private readonly s3Service: S3Service,
   ) {}
 
-  async create(userId: string, dto: CreateContractDto): Promise<ContractEntity> {
-    const { clientId, templateId, generatedHtml, validUntil, variableValues } = dto;
+  async create(
+    userId: string,
+    dto: CreateContractDto,
+  ): Promise<ContractEntity> {
+    const { clientId, templateId, generatedHtml, validUntil, variableValues, quoteId } =
+      dto;
 
-    await this.userService.getUserOrThrow(userId);
-    await this.clientService.getClientOrThrow(clientId, userId);
+    const user = await this.userService.getUserOrThrow(userId);
 
-    const template = await this.contractTemplateService.findOne(templateId, userId);
+    if (clientId) {
+      await this.clientService.getClientOrThrow(clientId, userId);
+    }
+
+    const template = await this.contractTemplateService.findOne(
+      templateId,
+      userId,
+    );
     const nextNumber = await this.getNextContractNumber(userId);
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(generatedHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'contracts',
+    );
 
     const contract = await this.prisma.contract.create({
       data: {
         number: nextNumber,
         template: { connect: { id: templateId } },
         user: { connect: { id: userId } },
-        client: { connect: { id: clientId } },
+        ...(clientId ? { client: { connect: { id: clientId } } } : {}),
+        ...(quoteId ? { quote: { connect: { id: quoteId } } } : {}),
         status: ContractStatus.draft,
         generatedHtml,
         validUntil: new Date(validUntil),
         issuedAt: null,
+        pdfKey,
+        previewKey,
         variableValues: {
           create: this.mapVariableWithTemplateData(
             variableValues,
             template.variables,
-            generatedHtml,
           ),
         },
       },
@@ -67,7 +94,25 @@ export class ContractService {
       include: { variableValues: true },
     });
 
-    return plainToInstance(ContractEntity, contracts, {
+    const contractsWithUrls = await Promise.all(
+      contracts.map(async (contract) => {
+        const previewUrl = contract.previewKey
+          ? await this.s3Service.generateSignedUrl(contract.previewKey)
+          : null;
+
+        const pdfUrl = contract.pdfKey
+          ? await this.s3Service.generateSignedUrl(contract.pdfKey)
+          : null;
+
+        return {
+          ...contract,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+
+    return plainToInstance(ContractEntity, contractsWithUrls, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
@@ -75,7 +120,15 @@ export class ContractService {
 
   async findOne(id: string, userId: string) {
     const contract = await this.getContractOrThrow(id, userId);
-    return plainToInstance(ContractEntity, contract);
+
+    const previewUrl = contract.previewKey
+      ? await this.s3Service.generateSignedUrl(contract.previewKey)
+      : null;
+
+    const pdfUrl = contract.pdfKey
+      ? await this.s3Service.generateSignedUrl(contract.pdfKey)
+      : null;
+    return plainToInstance(ContractEntity, { ...contract, previewUrl, pdfUrl });
   }
 
   async update(id: string, userId: string, dto: UpdateContractDto) {
@@ -83,15 +136,40 @@ export class ContractService {
     const existing = await this.getContractOrThrow(id, userId);
 
     if (existing.status !== ContractStatus.draft) {
-      throw new BadRequestException('Seuls les contrats en brouillon peuvent être modifiés.');
+      throw new BadRequestException(
+        'Seuls les contrats en brouillon peuvent être modifiés.',
+      );
     }
 
-    const template = await this.contractTemplateService.findOne(existing.templateId, userId);
+    const template = await this.contractTemplateService.findOne(
+      existing.templateId,
+      userId,
+    );
 
     const preparedVariables = this.mapVariableWithTemplateData(
       variableValues ?? [],
       template.variables,
-      existing.generatedHtml,
+    );
+
+    const user = await this.userService.getUserOrThrow(userId);
+
+    if (existing.pdfKey) {
+      await this.s3Service.deleteFile(existing.pdfKey);
+    }
+    if (existing.previewKey) {
+      await this.s3Service.deleteFile(existing.previewKey);
+    }
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(
+        otherData.generatedHtml,
+      );
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'contracts',
     );
 
     const updatedContract = await this.prisma.$transaction(async (tx) => {
@@ -114,7 +192,7 @@ export class ContractService {
 
       return tx.contract.update({
         where: { id },
-        data: { ...otherData },
+        data: { ...otherData, pdfKey, previewKey },
         include: { variableValues: true },
       });
     });
@@ -151,16 +229,15 @@ export class ContractService {
   private mapVariableWithTemplateData(
     submitted: CreateContractVariableValueDto[],
     templateVars: ContractTemplateVariableEntity[],
-    html: string,
   ) {
-    const templateMap = new Map(
-      templateVars.map((v) => [v.variableName, v]),
-    );
+    const templateMap = new Map(templateVars.map((v) => [v.variableName, v]));
 
     return submitted.map((v) => {
       const templateVar = templateMap.get(v.variableName);
       if (!templateVar) {
-        throw new Error(`Variable ${v.variableName} non définie dans le template`);
+        throw new Error(
+          `Variable ${v.variableName} non définie dans le template`,
+        );
       }
 
       return {
@@ -172,4 +249,43 @@ export class ContractService {
       };
     });
   }
+
+  async search(userId: string, search: string) {
+    const where = buildSearchQuery(search, userId, 'contrat');
+  
+    const contracts = await this.prisma.contract.findMany({
+      where,
+      include: {
+        variableValues: true,
+        client: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  
+    const contractsWithUrls = await Promise.all(
+      contracts.map(async (contract) => {
+        const previewUrl = contract.previewKey
+          ? await this.s3Service.generateSignedUrl(contract.previewKey)
+          : null;
+  
+        const pdfUrl = contract.pdfKey
+          ? await this.s3Service.generateSignedUrl(contract.pdfKey)
+          : null;
+  
+        return {
+          ...contract,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+  
+    return plainToInstance(ContractEntity, contractsWithUrls, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+
 }

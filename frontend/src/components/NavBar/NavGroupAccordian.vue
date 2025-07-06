@@ -22,7 +22,7 @@
 
     <!-- Container for the continuous line -->
     <div class="absolute left-4 w-6 z-0" ref="timelineContainer">
-      <svg class="absolute top-0 w-full" :class="[`h-[${lineHeight}px]`]">
+      <svg class="absolute top-0 w-full" :style="{ height: `${lineHeight}px` }">
         <line 
           x1="12" 
           y1="24" 
@@ -33,7 +33,6 @@
       </svg>
     </div>
 
-    <!-- List items with just the dots -->
     <div ref="itemsContainer">
       <v-list-item
         v-for="(item, i) in items"
@@ -57,7 +56,7 @@
         </template>
         <v-list-item-title :class="{
           'text-primary': route.path === item.to,
-          'text-text-secondary': route.path !== item.to
+          'text-secondary': route.path !== item.to
         }">{{ item.title }}</v-list-item-title>
       </v-list-item>
     </div>
@@ -113,7 +112,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-/* Remove default padding from list group items */
 :deep(.v-list-group__items) .v-list-item {
   padding-left: 12px !important;
 }

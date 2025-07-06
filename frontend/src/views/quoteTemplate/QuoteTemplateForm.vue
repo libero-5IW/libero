@@ -4,7 +4,6 @@
       </v-card>
   <v-container fluid>
     <v-row>
-      <!-- Editor Column -->
       <v-col cols="12" md="8">
         <QuoteTemplateFormMain
           :template="template"

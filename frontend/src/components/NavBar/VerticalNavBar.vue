@@ -7,7 +7,7 @@
     width="250"
     class="transition-transform duration-300 ease-in-out"
   >
-    <div class="d-flex flex-column h-100 h-full">
+    <div class="d-flex flex-column h-full">
       <div>
         <div class="p-4">
           <img src="@/assets/logo.png" alt="Logo" class="w-1/3 h-auto mx-auto" />
@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue';
+import { ref } from 'vue';
 import NavGroupAccordian from './NavGroupAccordian.vue'
   import NavItemSingle from './NavItemSingle.vue'
 
@@ -70,13 +70,13 @@ import NavGroupAccordian from './NavGroupAccordian.vue'
     permanent?: boolean
   }>()
 
-  defineEmits<{
-    'update:modelValue': [value: boolean]
-  }>()
+defineEmits<{
+  'update:modelValue': [value: boolean]
+}>()
 
-  const activeGroup = ref<string | null>(null)
+const activeGroup = ref<string | null>(null)
 
-  const quoteItems = [
+const quoteItems = [
     {
       title: 'Liste des devis',
       to: '/quote',
@@ -108,8 +108,12 @@ import NavGroupAccordian from './NavGroupAccordian.vue'
       to: '/invoice-template',
     }
   ]
+const clientItems = [
+  { title: 'Liste des clients', to: '/clients' },
+  { title: 'Nouveau client', to: '/clients/new' }
+]
 
-  const legalItems = [
+const legalItems = [
     {
       title: 'CGU',
       to: '/legal/cgu',

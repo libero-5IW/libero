@@ -1,4 +1,5 @@
 import { VariableType } from '@/types';
+import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
 import { z } from 'zod';
 
 export const CreateQuoteVariableValueSchema = z.object({
@@ -13,7 +14,7 @@ export const CreateQuoteVariableValueSchema = z.object({
 export const CreateQuoteSchema = z.object({
   clientId: z.string().uuid({
     message: "L'identifiant du client doit être un UUID valide.",
-  }),
+  }).nullable().optional(),
   templateId: z.string().uuid({
     message: "L'identifiant du template doit être un UUID valide.",
   }),
@@ -30,6 +31,9 @@ export const CreateQuoteSchema = z.object({
       message: "La date d'émission doit être une date ISO valide.",
     })
     .optional(),
+  status: z.nativeEnum(QUOTE_STATUS, {
+    errorMap: () => ({ message: 'Le statut du devis est invalide.' }),
+    }),
   variableValues: z
     .array(CreateQuoteVariableValueSchema)
     .min(1, { message: 'Au moins une variable est requise.' }),
@@ -49,10 +53,14 @@ export const QuoteSchema = z.object({
   id: z.string().uuid(),
   templateId: z.string().uuid().or(z.literal('defaultTemplate')).nullable(),
   userId: z.string().uuid(),
-  clientId: z.string().uuid(),
+  clientId: z.string().uuid().nullable(),
   status: z.enum(['draft', 'sent', 'accepted', 'refused']),
   number: z.number(),
   generatedHtml: z.string(),
+  pdfUrl: z.string().optional(),
+  previewUrl: z.string().optional(),
+  pdfKey: z.string(),
+  previewKey: z.string(),
   issuedAt: z.string().nullable().optional(),
   validUntil: z.string(),  
   createdAt: z.string(),   

@@ -13,7 +13,7 @@ import { UpdateContractDto } from './dto/update-contract.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ValidateContractOnCreatePipe } from './pipes/create-validate-contract-variables.pipe'
+import { ValidateContractOnCreatePipe } from './pipes/create-validate-contract-variables.pipe';
 import { ValidateContractOnUpdatePipe } from './pipes/update-validate-contract.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 
@@ -60,5 +60,13 @@ export class ContractController {
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.contractService.remove(id, user.userId);
+  }
+
+  @Get('search/:term')
+  searchContracts(
+    @Param('term') term: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.contractService.search(user.userId, term);
   }
 }

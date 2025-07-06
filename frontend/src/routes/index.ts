@@ -25,10 +25,12 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
       ...contractTemplateRoutes,
       ...invoiceRoutes,
       ...dashboardRoute,
+      ...clientRoutes,
       ...profileRoutes,
       ...contractRoutes,
       ...legalRoutes,
-      ...apiRoutes,
+      ...apiRoutes,,
+      ...contractRoutes,
     ]
   },
   
@@ -48,17 +50,22 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore();
 
+    if (!authStore.isAuthenticated) {
+      await authStore.isUserAuthenticated();
+    }
+    
     const requiresAuth = to.meta.requiresAuth ?? true;
+    const publicOnly = to.meta.publicOnly ?? false;
 
-    if (!authStore.isAuthenticated && !authStore.authAlreadyChecked) {
+    if (requiresAuth && !authStore.isAuthenticated && !authStore.authAlreadyChecked) {
       await authStore.verifyAuth();
     }
-  
+    
     if (requiresAuth && !authStore.isAuthenticated) {
       return next({ name: 'Login' });
     }
-  
-    if (to.name === 'Login' && authStore.isAuthenticated) {
+    
+    if (publicOnly && authStore.isAuthenticated) {
       return next({ name: 'Dashboard' });
     }
 

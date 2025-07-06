@@ -44,4 +44,14 @@ export type VariableValue = {
     required: boolean
     value: string
 }
+
+export interface DocumentCard {
+  id: string;
+  number: number;
+  status: string;
+  createdAt: string;
+  previewUrl?: string | null;
+  pdfUrl?: string| null;
+  clientName: string;
+}
   

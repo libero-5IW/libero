@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ResetTokenSource } from '@prisma/client';
 import { Exclude, Expose } from 'class-transformer';
-
+import { IsEnum, IsOptional } from 'class-validator';
 export class UserEntity {
   @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
   @Expose()
@@ -46,13 +47,43 @@ export class UserEntity {
   @Expose()
   siret: string;
 
+  @IsOptional()
   @ApiProperty({ example: 'BE0123456789' })
   @Expose()
-  tvaNumber: string;
+  tvaNumber?: string;
 
   @ApiProperty({ example: 'hashedpassword', description: 'Mot de passe haché' })
   @Exclude()
   password: string;
+
+  @ApiProperty({ example: 'Asjeuu76....' })
+  @Exclude()
+  resetPasswordToken: string;
+
+  @ApiProperty({ example: '2025-03-10T12:34:56Z' })
+  @Exclude()
+  resetPasswordTokenExpiry: Date;
+
+  @ApiProperty({ example: 'Asjeuu76....' })
+  @Exclude()
+  lastPasswordUpdate: Date;
+
+  @IsOptional()
+  @ApiProperty({ example: 'reset' })
+  @IsEnum(ResetTokenSource, {
+    message: 'Le statut doit être RESET, LOCKED ou EXPIRED',
+  })
+  @Exclude()
+  resetTokenSource?: ResetTokenSource;
+
+  @ApiProperty({ example: '2025-03-10T12:34:56Z' })
+  @Exclude()
+  loginAttempts: number;
+
+  @IsOptional()
+  @ApiProperty({ example: '2025-03-10T12:34:56Z' })
+  @Exclude()
+  lockedUntil?: Date;
 
   @ApiProperty({ example: '2025-03-10T12:34:56Z' })
   @Expose()

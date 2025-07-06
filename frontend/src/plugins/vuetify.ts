@@ -2,19 +2,21 @@ import { createVuetify, type ThemeDefinition } from 'vuetify'
 import { md3 } from 'vuetify/blueprints'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
+import { fr } from 'vuetify/locale'
 
 const customLightTheme: ThemeDefinition = {
   dark: false,
   colors: {
     background: '#FAFAFA',
+    appbar: '#27282c',
     surface: '#FFFFFF',
     primary: '#3F51B5',     
     secondary: '#7986CB',   
-    accent: '#FF7043',       
-    error: '#F44336',
+    accent: '#FF8A65',       
+    error: '#E57373',
     info: '#2196F3',
-    success: '#4CAF50',
-    warning: '#FFC107',
+    success: '#43A047',
+    warning: '#FFD54F',
     'on-background': '#212121',
     'on-surface': '#212121',
     'on-primary': '#FFFFFF',
@@ -67,12 +69,25 @@ export default createVuetify({
     defaultTheme: 'customLight',
     themes: {
       customLight: customLightTheme,
-      customDark: customDarkTheme
+      customDark: customDarkTheme,
     },
     variations: {
       colors: ['primary', 'secondary', 'accent'],
       lighten: 5,
       darken: 5,
-    }
+    },
+  },
+  locale: {
+    locale: 'fr',
+    messages: {
+      fr: {
+        ...fr,
+        dataIterator: {
+          ...fr.dataIterator,
+          itemsPerPageText: 'Éléments par page :',
+          noResultsText: 'Aucun résultat trouvé',
+        },
+      },
+    },
   },
 })

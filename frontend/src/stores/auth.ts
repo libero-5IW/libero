@@ -4,8 +4,8 @@ import { useRouter } from 'vue-router';
 import apiClient from '@/config/axios';
 import { cleanAllStates } from '@/composables/useStateCleaner';
 import { type ApiCurrentUser, ApiCurrentUserSchema, type LoginData, type RegisterData } from '@/schemas/user.schema';
-import { handleAxiosError } from '@/utils/handleAxiosError';
-// force push
+import { handleError } from '@/utils/handleError';
+
 export const useAuthStore = defineStore('auth', () => {
   const router = useRouter();
 
@@ -38,7 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
       router.push('/dashboard');
 
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de la connexion.')
+      handleError(error, 'Erreur lors de la connexion.')
     } finally {
       loading.value = false;
     }
@@ -55,12 +55,8 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
     try {
       await apiClient.post('/auth/register', data);
-      router.push({
-        path: '/login',
-        state: { toastStatus : 'success', toastMessage: 'Le compte a été crée avec succès, connectez-vous !' }
-    });
     } catch (error) {
-      handleAxiosError(error, 'Erreur lors de l’inscription.')
+      handleError(error, 'Erreur lors de l’inscription.')
     } finally {
       loading.value = false;
     }
@@ -83,6 +79,52 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  const isUserAuthenticated = async () => {
+    const response = await apiClient.get('/auth/is-authenticated');     
+    isAuthenticated.value = response.data;
+  };
+
+  const sendResetPasswordEmail = async (email: string) => {
+  clearState();
+  loading.value = true;
+  try {
+    await apiClient.post('/auth/request-reset-password', { email });
+    return true;
+  } catch (error) {
+    handleError(error, 'Erreur lors de la demande de réinitialisation.');
+    return false;
+  } finally {
+    loading.value = false;
+  }
+};
+
+  const resetPassword = async (token: string, newPassword: string) => {
+    clearState();
+    loading.value = true;
+    try {
+      await apiClient.post('/auth/reset-password', {
+        token,
+        newPassword
+      });
+      return true;
+    } catch (error) {
+      handleError(error, 'Erreur lors de la réinitialisation du mot de passe.');
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const checkResetToken = async (token: string) => {
+    try {
+      await apiClient.get(`/auth/reset-password/validate?token=${token}`);
+      return true;
+    } catch (error) {
+      handleError(error, 'Token invalide ou expiré.');
+      return false;
+    }
+  };
+
   return {
     user,
     isAuthenticated,
@@ -93,6 +135,10 @@ export const useAuthStore = defineStore('auth', () => {
     errorMessage,
     clearState,
     verifyAuth,
-    authAlreadyChecked
+    authAlreadyChecked,
+    sendResetPasswordEmail,
+    resetPassword,
+    checkResetToken,
+    isUserAuthenticated
   };
 });

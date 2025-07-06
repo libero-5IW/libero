@@ -82,4 +82,12 @@ export class QuoteTemplateController {
   duplicate(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.quoteTemplateService.duplicate(id, user.userId);
   }
+
+  @Get('search/:term')
+  search(
+    @Param('term') term: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.quoteTemplateService.search(user.userId, term);
+  }  
 }

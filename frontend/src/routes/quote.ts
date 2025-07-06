@@ -8,9 +8,11 @@ const routes: Array<RouteRecordRaw> = [
         children: [
           { path: '', name: 'QuoteList', component: QuoteList },
           { path: 'new', name: 'QuoteForm', component: QuoteForm },
+          { path: ':id/edit', name: 'QuoteEdit', component: QuoteForm, props: true },
         ],
       }
       
 ];
 
 export default routes;
+

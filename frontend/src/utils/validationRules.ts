@@ -60,11 +60,11 @@ export const passwordRules = (options: {
 } = {}) => {
   const {
       required = true,
-      minLength = 1,
-      uppercase = false,
-      lowercase = false,
-      digit = false,
-      specialChar = false
+      minLength = 12,
+      uppercase = true,
+      lowercase = true,
+      digit = true,
+      specialChar = true
   } = options;
 
   const rules = [
@@ -96,5 +96,22 @@ export function passwordMatchRule(target: string) {
       (v: string) => v === target || "Les mots de passe ne correspondent pas",
   ];
 }
+
+export const phoneNumberRules = (required: boolean = true) => {
+  const rules: ((v: string) => boolean | string)[] = [
+    (v: string) =>
+      /^(\+?\d{1,4})?[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/.test(v) ||
+      'Numéro de téléphone invalide',
+    (v: string) =>
+      v.replace(/\D/g, '').length <= 15 ||
+      'Le numéro de téléphone doit contenir au maximum 15 chiffres',
+  ];
+
+  if (required) {
+    rules.unshift(requiredRule('Téléphone'));
+  }
+
+  return rules;
+};
 
   

@@ -122,4 +122,5 @@ async function onCreateInvoice() {
 onMounted(async () => {
   await clientStore.fetchAllClients();
 });
+
 </script>

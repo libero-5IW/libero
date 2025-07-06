@@ -33,9 +33,7 @@ export class ClientService {
     });
 
     if (existingClient) {
-      throw new ConflictException(
-        'Ce client existe déjà pour cet utilisateur.',
-      );
+      throw new ConflictException('Cet email est déjà utilisé par un client.');
     }
 
     const client = await this.prisma.client.create({
@@ -89,7 +87,7 @@ export class ClientService {
       where: { id },
       data: {
         ...updateClientDto,
-        userId
+        userId,
       },
     });
 
@@ -115,4 +113,24 @@ export class ClientService {
     }
     return client;
   }
+
+  async search(userId: string, term: string): Promise<ClientEntity[]> {
+    const raw = term.trim().toLowerCase();
+  
+    const clients = await this.prisma.client.findMany({
+      where: {
+        userId,
+        OR: [
+          { firstName: { contains: raw, mode: 'insensitive' } },
+          { lastName: { contains: raw, mode: 'insensitive' } },
+          { email: { contains: raw, mode: 'insensitive' } },
+          { phoneNumber: { contains: raw, mode: 'insensitive' } },
+          { city: { contains: raw, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  
+    return plainToInstance(ClientEntity, clients);
+  }  
 }

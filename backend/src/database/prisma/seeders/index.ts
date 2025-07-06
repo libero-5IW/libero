@@ -12,10 +12,11 @@ async function main() {
   console.log('Démarrage du seeding…\n');
 
   await seedUsers(prisma);
-  const user = await prisma.user.findFirst();
 
-  if (!user) { 
-    await seedClients(prisma, user.id); 
+  const users = await prisma.user.findMany();
+
+  for (const user of users) {
+    await seedClients(prisma, user.id);
   }
   
   await seedDefaultQuoteTemplate(prisma);

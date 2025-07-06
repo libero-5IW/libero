@@ -1,16 +1,11 @@
 <template>
   <CenteredContainer>
     <div class="shadow-lg shadow-gray-300 border">
-      <LoginForm
-        v-if="!twoFARequired"
-        :form="form"
-        :loading="loading"
-        @submit="handleLogin"
-      >
+      <LoginForm v-if="!twoFARequired" :form="form" :loading="loading" @submit="handleLogin">
         <template v-slot:header>
           <div class="flex justify-center py-4">
             <div>
-              <v-img :src="logo" width="100"></v-img>
+              <v-img :src="logo" width="140"></v-img>
             </div>
           </div>
         </template>
@@ -21,7 +16,7 @@
           </div>
           <div class="text-center">
             <p class="text-gray-600">Mot de passe oublié ?</p>
-            <router-link to="/EmailResetPassword">Réinitialiser</router-link>
+            <router-link to="/email-reset-password">Réinitialiser</router-link>
           </div>
         </template>
       </LoginForm>
@@ -91,7 +86,6 @@ const handleLogin = async (form: LoginData) => {
       twoFARequired.value = true;
       userId.value = res.data.userId;
     } else {
-      // handle normal login (store JWT, redirect, etc.)
       await authStore.login(form);
     }
   } catch (err: any) {
@@ -105,16 +99,13 @@ const handle2FAVerify = async () => {
       userId: userId.value,
       token: twoFAToken.value,
     });
-    // 1. Store the token
     const token = res.data.token;
     localStorage.setItem('token', token);
 
-    // 2. Fetch user info
     const me = await apiClient.get('/auth/me');
     authStore.user = me.data;
     authStore.isAuthenticated = true;
 
-    // 3. Redirect
     router.push('/dashboard');
   } catch (err: any) {
     showToast('error', err.response?.data?.message || 'Code 2FA invalide');
