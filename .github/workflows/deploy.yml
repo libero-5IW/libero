@@ -5,18 +5,24 @@ on:
     branches:
       - clusterisation-v2
 
+env:
+  GH_OWNER: ${{ github.repository_owner }}
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     env:
       REGISTRY: ghcr.io
-      IMAGE_BACKEND: ghcr.io/${{ github.repository_owner }}/libero-backend:latest
-      IMAGE_FRONTEND: ghcr.io/${{ github.repository_owner }}/libero-frontend:latest
+      IMAGE_BACKEND: ghcr.io/${{ env.GH_OWNER_LOWER }}/libero-backend:latest
+      IMAGE_FRONTEND: ghcr.io/${{ env.GH_OWNER_LOWER }}/libero-frontend:latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Force lowercase for GH_OWNER
+        run: echo "GH_OWNER_LOWER=${GH_OWNER,,}" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
