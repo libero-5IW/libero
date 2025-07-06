@@ -56,7 +56,3 @@ import HorizontalNavBar from '@/components/NavBar/HorizontalNavBar.vue'
 const { mdAndUp } = useDisplay()
 const drawer = ref(true)
 </script>
-
-<style scoped>
-/* Removed: .search-field :deep(.v-field) { border-radius: 8px !important; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important; } */
-</style> 
