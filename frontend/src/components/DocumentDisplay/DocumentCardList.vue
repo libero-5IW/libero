@@ -70,13 +70,8 @@
         </v-menu>
       </div>
 
-      <v-card-title class="text-xl font-semibold px-4 pt-4 text-gray-900 dark:text-white">
-        <span class="text-primary">{{ titlePrefix }} #{{ item.number }}</span>
-        <span class="text-gray-600 dark:text-gray-300 ml-1">– {{ item.clientName ?? '—' }}</span>
-      </v-card-title>
-
-      <v-card-subtitle class="px-4 pb-4 text-sm text-gray-500 dark:text-gray-400">
-        Créé le {{ formatDate(item.createdAt) }} — <span class="capitalize">{{ item.status }}</span>
+      <v-card-subtitle class="pb-4 text-sm text-gray-600">
+        Créé le {{ formatDate(item.createdAt) }} — <span class="capitalize">{{ translateStatus(item.status) }}</span>
       </v-card-subtitle>
     </v-card>
   </div>
@@ -128,5 +123,31 @@ function onConvertToContract(item: DocumentCard) {
 
 function onChangeStatus(item: DocumentCard) {
   emit('change-status', item.id)
+}
+
+function translateStatus (status: string) {
+  switch (status) {
+    case 'draft':
+      return 'Brouillon';
+    case 'sent':
+      return 'Envoyé';
+    case 'signed':
+      return 'Signé';
+    case 'expired':
+      return 'Expiré';
+    case 'cancelled':
+      return 'Annulé';
+    case 'paid':
+      return 'Payé';
+    case 'overdue':
+      return '';
+    case 'accepted':
+      return '';
+    case 'refused':
+      return '';
+    default:
+      return status;
+  }
+
 }
 </script>
