@@ -3,6 +3,7 @@
       v-model="showTemplateModal" 
       :fetchTemplates="fetchQuoteTemplates"
       :isForced="true"
+      type="devis"
       @templateSelected="handleTemplateSelected"
     />
 

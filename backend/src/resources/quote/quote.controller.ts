@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Put,
+  Query
 } from '@nestjs/common';
 import { QuoteService } from './quote.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
@@ -16,6 +17,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ValidateQuoteOnCreatePipe } from './pipes/create-validate-quote.pipe';
 import { ValidateQuoteOnUpdatePipe } from './pipes/update-validate-quote.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { QuoteStatus } from '@prisma/client';
 
 @ApiBearerAuth()
 @ApiTags('Quotes')
@@ -42,6 +44,16 @@ export class QuoteController {
     return await this.quoteService.getNextQuoteNumber(user.userId);
   }  
 
+
+  @Get('search')
+  searchQuotes(
+    @Query('term') term: string,
+    @Query('status') status: QuoteStatus,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.quoteService.search(user.userId, term, status);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.quoteService.findOne(id, user.userId);
@@ -62,11 +74,5 @@ export class QuoteController {
     return this.quoteService.remove(id, user.userId);
   }
 
-  @Get('search/:term')
-  searchQuotes(
-    @Param('term') term: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    return this.quoteService.search(user.userId, term);
-  }
+  
 }

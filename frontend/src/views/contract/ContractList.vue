@@ -8,10 +8,30 @@
       </v-btn>
     </div>
 
-    <SearchInput
-      v-model="search"
-      placeholder="Rechercher un contrat"
-      @search="fetchContracts"
+    <div class="flex items-center gap-4 mb-6">
+      <SearchInput
+        v-model="search"
+        placeholder="Rechercher un contrat"
+        @search="fetchContracts"
+      />
+
+      <v-select
+        v-model="selectedStatus"
+        :items="statusOptions"
+        item-title="label"
+        item-value="value"
+        label="Filtrer par statut"
+        class="w-64"
+        clearable
+        @update:modelValue="fetchContracts"
+      />
+    </div>
+
+    <v-progress-linear
+    v-if="isLoading"
+    indeterminate
+    color="primary"
+    class="mb-4"
     />
 
     <div v-if="documentCards.length > 0">
@@ -23,6 +43,7 @@
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
         @convert-to-invoice="handleConvertToInvoice"
+        :isLoading="isLoading"
       />
     </div>
 
@@ -40,6 +61,7 @@
   <TemplateSelectionModal 
     v-model="showTemplateModal"
     :fetchTemplates="fetchContractTemplates"
+    type="contrat"
     @templateSelected="handleTemplateSelected"
   />
 
@@ -56,6 +78,7 @@
   <TemplateSelectionModal
   v-model="showInvoiceTemplateModal"
   :fetchTemplates="fetchInvoiceTemplates"
+  type="contrat"
   @templateSelected="handleInvoiceTemplateSelected"
   />
 
@@ -76,6 +99,7 @@ import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 import { mapContractToInvoiceVariables } from '@/utils/mapContractToInvoice';
 import type { Contract } from '@/schemas/contract.schema';
 import SearchInput from '@/components/SearchInput.vue';
+import { CONTRACT_STATUS } from '@/constants/status/contract-status.constant';
 
 const search = ref('');
 const router = useRouter();
@@ -86,12 +110,23 @@ const { showToast } = useToastHandler();
 const showTemplateModal = ref(false);
 const showStatusModal = ref(false);  
 const contracts = computed(() => contractStore.contracts);
+const selectedStatus = ref<string | null>(null);
+const isLoading = computed(() => contractStore.isLoading)
 
 const isDeleteModalOpen = ref(false)
 const selectedContractId = ref<string | null>(null)
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const showInvoiceTemplateModal = ref(false);
 const contractToConvert = ref<Contract | null>(null);
+
+const statusOptions = [
+  { label: 'Tous', value: null },
+  { label: 'Brouillon', value: CONTRACT_STATUS.DRAFT },
+  { label: 'Envoyé', value: CONTRACT_STATUS.SENT },
+  { label: 'Signé', value: CONTRACT_STATUS.SIGNED },
+  { label: 'Expiré', value: CONTRACT_STATUS.EXPIRED },
+  { label: 'Annulé', value: CONTRACT_STATUS.CANCELLED },
+];
 
 const documentCards = computed<DocumentCard[]>(() =>
   contracts.value.map((contract): DocumentCard  => {
@@ -120,6 +155,8 @@ const headers: Header[] = [
 
 async function fetchContractTemplates() {
   await contractTemplateStore.fetchAllTemplates();
+  console.log('bhbjhbk', contracts.value);
+  
   return contractTemplateStore.templates
     .filter(t => !!t.id)
     .map(t => ({
@@ -200,11 +237,13 @@ function handleInvoiceTemplateSelected(templateId: string) {
 }
 
 async function fetchContracts() {
-  const term = search.value.trim()
-  if (term === '') {
-    await contractStore.fetchAllContracts()
+  const term = search.value.trim();
+  const status = selectedStatus.value || undefined;
+
+  if (!term && !status) {
+    await contractStore.fetchAllContracts();
   } else {
-    await contractStore.searchContracts(term)
+    await contractStore.searchContracts(term, status);
   }
 }
 
@@ -217,9 +256,11 @@ onMounted(async () => {
   }
 
   await fetchAllContracts();
+  console.log('pssseee');
+  
 });
 
-watch(search, async () => {
+watch([search, selectedStatus], async () => {
   await fetchContracts();
 });
 

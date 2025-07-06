@@ -8,19 +8,41 @@
       </v-btn>
     </div>
 
-    <SearchInput
-      v-model="search"
-      placeholder="Rechercher une facture"
-      @search="fetchInvoices"
+    <div class="flex items-center gap-4 mb-6">
+      <SearchInput
+        v-model="search"
+        placeholder="Rechercher une facture"
+        @search="fetchInvoices"
+      />
+
+      <v-select
+        v-model="selectedStatus"
+        :items="statusOptions"
+        item-title="label"
+        item-value="value"
+        label="Filtrer par statut"
+        class="w-64"
+        clearable
+        @update:modelValue="fetchInvoices"
+      />
+    </div>
+
+    <v-progress-linear
+    v-if="isLoading"
+    indeterminate
+    color="primary"
+    class="mb-4"
     />
 
     <div v-if="documentCards.length > 0">
       <DocumentCardList
         :items="documentCards"
         titlePrefix="Facture"
+        type="invoice"
         @edit="editInvoice"
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
+        :isLoading="isLoading"
       />
     </div>
 
@@ -36,6 +58,7 @@
 
   <TemplateSelectionModal 
     v-model="showTemplateModal"
+    type="facture"
     :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleTemplateSelected"
   />
@@ -64,10 +87,12 @@ import { useRouter } from 'vue-router';
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
 import SearchInput from '@/components/SearchInput.vue';
+import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
 
 const search = ref('');
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const invoiceStore = useInvoiceStore();
+const selectedStatus = ref<string | null>(null);
 
 const { showToast } = useToastHandler();
 const router = useRouter();
@@ -75,9 +100,19 @@ const router = useRouter();
 const showTemplateModal = ref(false);  
 const showStatusModal = ref(false);  
 const invoices = computed(() => invoiceStore.invoices);
+const isLoading = computed(() => invoiceStore.isLoading)
 
 const isDeleteModalOpen = ref(false);
 const selectedInvoiceId = ref<string | null>(null);
+
+const statusOptions = [
+  { label: 'Tous', value: null },
+  { label: 'Brouillon', value: INVOICE_STATUS.DRAFT },
+  { label: 'Envoyée', value: INVOICE_STATUS.SENT },
+  { label: 'Payée', value: INVOICE_STATUS.PAID },
+  { label: 'En retard', value: INVOICE_STATUS.OVERDUE },
+  { label: 'Annulée', value: INVOICE_STATUS.CANCELLED },
+];
 
 const documentCards = computed<DocumentCard[]>(() =>
   invoices.value.map((invoice): DocumentCard  => {
@@ -152,10 +187,12 @@ async function confirmDeleteInvoice() {
 
 async function fetchInvoices() {
   const term = search.value.trim();
-  if (term === '') {
+  const status = selectedStatus.value || undefined;
+
+  if (!term && !status) {
     await fetchAllInvoices();
   } else {
-    await invoiceStore.searchInvoices(term);
+    await invoiceStore.searchInvoices(term, status);
   }
 }
 
@@ -170,7 +207,7 @@ onMounted(async () => {
   await fetchAllInvoices();
 });
 
-watch(search, async () => {
+watch([search, selectedStatus], async () => {
   await fetchInvoices();
 });
 

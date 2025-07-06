@@ -210,7 +210,14 @@ export class InvoiceService {
   }
 
   async remove(id: string, userId: string) {
-    await this.getInvoiceOrThrow(id, userId);
+    const invoice = await this.getInvoiceOrThrow(id, userId);
+
+    if (invoice.pdfKey) {
+      await this.s3Service.deleteFile(invoice.pdfKey);
+    }
+    if (invoice.previewKey) {
+      await this.s3Service.deleteFile(invoice.previewKey);
+    }
     const deleted = await this.prisma.invoice.delete({ where: { id } });
     return plainToInstance(InvoiceEntity, deleted);
   }
@@ -254,8 +261,13 @@ export class InvoiceService {
     });
   }
 
-  async search(userId: string, search: string) {
-    const where = buildSearchQuery(search, userId, 'facture');
+  async search(userId: string, search: string, status?: InvoiceStatus) {
+    const baseWhere = buildSearchQuery(search, userId, 'facture');
+
+    const where = {
+      ...baseWhere,
+      ...(status ? { status } : {}),
+    };
 
     const invoices = await this.prisma.invoice.findMany({
       where,

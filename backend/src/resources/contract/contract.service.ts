@@ -17,7 +17,7 @@ import { CreateContractVariableValueDto } from './dto/create-contract-variable-v
 import { ContractTemplateVariableEntity } from '../contract-template/entities/contract-template-variable.entity';
 import { S3Service } from 'src/common/s3/s3.service';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
-import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util'
+import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
 
 @Injectable()
 export class ContractService {
@@ -34,8 +34,14 @@ export class ContractService {
     userId: string,
     dto: CreateContractDto,
   ): Promise<ContractEntity> {
-    const { clientId, templateId, generatedHtml, validUntil, variableValues, quoteId } =
-      dto;
+    const {
+      clientId,
+      templateId,
+      generatedHtml,
+      validUntil,
+      variableValues,
+      quoteId,
+    } = dto;
 
     const user = await this.userService.getUserOrThrow(userId);
 
@@ -204,7 +210,14 @@ export class ContractService {
   }
 
   async remove(id: string, userId: string) {
-    await this.getContractOrThrow(id, userId);
+    const contract = await this.getContractOrThrow(id, userId);
+
+    if (contract.pdfKey) {
+      await this.s3Service.deleteFile(contract.pdfKey);
+    }
+    if (contract.previewKey) {
+      await this.s3Service.deleteFile(contract.previewKey);
+    }
     const deleted = await this.prisma.contract.delete({ where: { id } });
     return plainToInstance(ContractEntity, deleted);
   }
@@ -250,8 +263,13 @@ export class ContractService {
     });
   }
 
-  async search(userId: string, search: string) {
-    const where = buildSearchQuery(search, userId, 'contrat');
+  async search(userId: string, search: string, status?: ContractStatus) {
+    const baseWhere = buildSearchQuery(search, userId, 'contrat');
+  
+    const where = {
+      ...baseWhere,
+      ...(status ? { status } : {}),
+    };
   
     const contracts = await this.prisma.contract.findMany({
       where,
@@ -263,17 +281,17 @@ export class ContractService {
         createdAt: 'desc',
       },
     });
-  
+
     const contractsWithUrls = await Promise.all(
       contracts.map(async (contract) => {
         const previewUrl = contract.previewKey
           ? await this.s3Service.generateSignedUrl(contract.previewKey)
           : null;
-  
+
         const pdfUrl = contract.pdfKey
           ? await this.s3Service.generateSignedUrl(contract.pdfKey)
           : null;
-  
+
         return {
           ...contract,
           previewUrl,
@@ -281,11 +299,11 @@ export class ContractService {
         };
       }),
     );
-  
+
     return plainToInstance(ContractEntity, contractsWithUrls, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
   }
-
+  
 }

@@ -38,15 +38,19 @@
           class="d-flex flex-wrap"
         >
           <template #item="{ element, index }">
-            <v-chip
-              class="ma-1 flex items-center gap-2"
-              :color="variablesInEditor.has(element.variableName) ? 'secondary' : 'primary'"
-              variant="flat"
-              rounded="pill"
-              draggable
-              @dragstart="onDragStart($event, element)"
-            >
-              {{ element.label }}
+            <v-tooltip :text="element.variableName">
+              <template #activator="{ props }">
+                <v-chip
+                  v-bind="props"
+                  rounded="pill"
+                  variant="flat"
+                  class="ma-1 flex items-center gap-2"
+                  :color="variablesInEditor.has(element.variableName) ? 'secondary' : 'primary'"
+                  draggable
+                  @dragstart="onDragStart($event, element)"
+                >
+                {{ element.label }}
+              
               <v-tooltip v-if="!isSystemVariable(element)" text="Modifier la variable">
                 <template #activator="{ props }">
                   <v-icon
@@ -86,6 +90,8 @@
                 </template>
               </v-tooltip>
             </v-chip>
+            </template>
+            </v-tooltip>
           </template>
         </draggable>
       </div>

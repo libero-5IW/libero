@@ -12,6 +12,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 export class S3Service {
   private s3: S3Client;
   private bucket: string;
+  private env: string;
 
   constructor(private configService: ConfigService) {
     this.s3 = new S3Client({
@@ -23,6 +24,7 @@ export class S3Service {
     });
 
     this.bucket = configService.get('AWS_BUCKET_NAME');
+    this.env = process.env.NODE_ENV || 'development';
   }
 
   async uploadFile(
@@ -44,10 +46,16 @@ export class S3Service {
     pdfBuffer: Buffer,
     imageBuffer: Buffer,
     userEmail: string,
-    documentType: 'quotes' | 'contracts' | 'invoices',
+    documentType:
+      | 'quotes'
+      | 'contracts'
+      | 'invoices'
+      | 'quote-templates'
+      | 'contract-templates'
+      | 'invoice-templates',
   ): Promise<{ pdfKey: string; previewKey: string }> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const baseName = `${userEmail}/${documentType}`;
+    const baseName = `${this.env}/${userEmail}/${documentType}`;
 
     const pdfKey = `${baseName}/pdf/${timestamp}.pdf`;
     const previewKey = `${baseName}/preview/${timestamp}.preview.png`;

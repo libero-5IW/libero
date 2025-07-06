@@ -12,9 +12,17 @@
   </v-card>
 
   <v-card flat class="text-right mt-4">
-    <v-btn color="primary" @click="onSave">
-      <v-icon start>mdi-content-save</v-icon>
-      {{ isEdit ? 'Modifier' : 'Créer' }}
+    <v-btn color="primary" @click="onSave" :disabled="isLoading">
+        <template v-if="!isLoading">
+          <v-icon start>mdi-content-save</v-icon>
+          {{ isEdit ? 'Modifier' : 'Créer' }}
+        </template>
+        <v-progress-circular
+          v-else
+          indeterminate
+          size="20"
+          color="secondary"
+        />
     </v-btn>
   </v-card>
 </template>
@@ -27,6 +35,7 @@ import type { ContractTemplateVariable } from '@/schemas/contractTemplate.schema
 defineProps<{
   template: any
   isEdit: boolean
+  isLoading: boolean
   onSave: () => void
   variables: ContractTemplateVariable[]
 }>()

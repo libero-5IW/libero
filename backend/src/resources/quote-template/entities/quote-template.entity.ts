@@ -27,6 +27,25 @@ export class QuoteTemplateEntity {
   @Type(() => QuoteTemplateVariableEntity)
   variables: QuoteTemplateVariableEntity[];
 
+  @ApiProperty({ example: 'user@email.com/quote-templates/pdf/2025-06-20.pdf' })
+  @Expose()
+  pdfKey: string;
+
+  @ApiProperty({
+    example: 'user@email.com/quote-templates/preview/2025-06-20.preview.png',
+  })
+  @Expose()
+  previewKey: string;
+
+  @Expose()
+  pdfUrl?: string;
+
+  @ApiProperty({
+    example: 'user@email.com/quote-templates/preview/2025-06-20.preview.png',
+  })
+  @Expose()
+  previewUrl?: string;
+
   @ApiProperty({ example: '2025-03-26T15:30:00Z' })
   @Expose()
   createdAt: Date;

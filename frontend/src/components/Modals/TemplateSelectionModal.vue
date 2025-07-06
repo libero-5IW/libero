@@ -1,7 +1,7 @@
 <template>
     <v-dialog v-model="isOpen" max-width="500" persistent>
     <v-card>
-        <v-card-title>Choisir un template</v-card-title>
+        <v-card-title>Choisir un template de {{props.type}}</v-card-title>
         <v-card-text>
         <v-select
             v-model="selectedTemplate"
@@ -30,6 +30,7 @@
     modelValue: boolean;
     fetchTemplates: () => Promise<{ id: string; name: string }[]>;
     isForced?: boolean;
+    type: 'devis' | 'contrat' |'facture'
   }>();
 
   const emit = defineEmits(['update:modelValue', 'templateSelected']);

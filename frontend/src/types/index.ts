@@ -54,4 +54,14 @@ export interface DocumentCard {
   pdfUrl?: string| null;
   clientName: string;
 }
+
+export interface TemplateDocumentCard {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+  previewUrl?: string | null;
+  pdfUrl?: string| null;
+  variablesLength: number;
+}
   
