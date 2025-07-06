@@ -10,9 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      REGISTRY: ghcr.io
-      IMAGE_BACKEND: ghcr.io/libero-5iw/libero-backend:latest
-      IMAGE_FRONTEND: ghcr.io/libero-5iw/libero-frontend:latest
+      REGISTRY: docker.io
+      IMAGE_BACKEND: docker.io/projetlibero/libero-backend:latest
+      IMAGE_FRONTEND: docker.io/projetlibero/libero-frontend:latest
 
     steps:
       - name: Checkout code
@@ -21,12 +21,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push backend
         uses: docker/build-push-action@v5
