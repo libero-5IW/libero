@@ -41,6 +41,15 @@ jobs:
           push: true
           tags: ${{ env.IMAGE_FRONTEND }}
 
+      - name: Upload docker-stack.yml to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OVH_HOST }}
+          username: ${{ secrets.OVH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-stack.yml"
+          target: "/home/ubuntu/libero/docker-stack.yml"
+
       - name: Deploy to OVH Swarm
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -76,4 +85,4 @@ jobs:
             sleep 10
             docker service rm libero_migrate || true
 
-            docker stack deploy -c docker-stack.yml libero
+            docker stack deploy -c /home/ubuntu/libero/docker-stack.yml libero
