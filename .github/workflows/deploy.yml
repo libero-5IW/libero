@@ -84,6 +84,9 @@ jobs:
             sleep 15
             docker service rm libero_migrate || true
 
+            docker stack rm libero || true
+            sleep 20
+
             docker stack deploy -c /home/ubuntu/libero/docker-stack.yml libero
 
             docker service ls
