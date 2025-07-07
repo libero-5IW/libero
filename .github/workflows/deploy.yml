@@ -50,7 +50,6 @@ jobs:
           source: "docker-stack.yml"
           target: "/home/ubuntu/libero/"
 
-
       - name: Deploy to OVH Swarm
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -58,10 +57,16 @@ jobs:
           username: ${{ secrets.OVH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker service update --image ${{ env.IMAGE_BACKEND }} libero_backend || \
+            set -e
+
+            docker service rm libero_backend || true
+            docker service rm libero_frontend || true
+            docker service rm libero_migrate || true
+
+            sleep 10
+
             docker service create --name libero_backend --network libero_libero-net --replicas 2 -p 3000:3000 ${{ env.IMAGE_BACKEND }}
 
-            docker service update --image ${{ env.IMAGE_FRONTEND }} libero_frontend || \
             docker service create --name libero_frontend --network libero_libero-net --replicas 3 -p 80:5173 ${{ env.IMAGE_FRONTEND }}
 
             docker service create \
@@ -81,9 +86,16 @@ jobs:
               -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
               -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
               -e AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }} \
-              ${{ env.IMAGE_BACKEND }} npx prisma migrate deploy || echo "Migration service already exists"
+              ${{ env.IMAGE_BACKEND }} npx prisma migrate deploy
 
-            sleep 10
+            sleep 15
             docker service rm libero_migrate || true
 
             docker stack deploy -c /home/ubuntu/libero/docker-stack.yml libero
+
+            docker service ls
+            docker service ps libero_backend
+            docker service ps libero_frontend
+
+            docker service logs --tail 50 libero_backend || true
+            docker service logs --tail 50 libero_frontend || true
