@@ -44,15 +44,19 @@ export class QuoteController {
     return await this.quoteService.getNextQuoteNumber(user.userId);
   }
 
-
   @Get('search')
   searchQuotes(
     @Query('term') term: string,
     @Query('status') status: QuoteStatus,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.quoteService.search(user.userId, term, status);
-  }
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.quoteService.search(user.userId, term, status, parsedStart, parsedEnd);
+  }  
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {

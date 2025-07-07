@@ -25,6 +25,20 @@
         clearable
         @update:modelValue="fetchQuotes"
       />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+      />
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+      />
+
     </div>
 
     <v-progress-linear
@@ -116,6 +130,8 @@ const invoiceTemplateStore = useInvoiceTemplateStore();
 const quoteStore = useQuoteStore();
 const contractTemplateStore = useContractTemplateStore()
 const selectedStatus = ref<string | null>(null);
+const startDate = ref<string | null>(null)
+const endDate = ref<string | null>(null)
 
 const { showToast } = useToastHandler();
 const router = useRouter();
@@ -315,11 +331,13 @@ async function confirmDeleteQuote() {
 async function fetchQuotes() {
   const term = search.value?.trim() || '';
   const status = selectedStatus.value || undefined;
+  const start = startDate.value || null;
+  const end = endDate.value || null;
 
-  if (!term && !status) {
+  if (!term && !status && !start && !end) {
     await quoteStore.fetchAllQuotes();
   } else {
-    await quoteStore.searchQuotes(term, status);
+    await quoteStore.searchQuotes(term, status, start, end);
   }
 }
 
@@ -334,9 +352,8 @@ onMounted(async () => {
   await fetchAllQuotes();
 });
 
-watch([search, selectedStatus], async () => {
-  const term = search.value?.trim() || '';
-  await quoteStore.searchQuotes(term, selectedStatus.value);
+watch([search, selectedStatus, startDate, endDate], async () => {
+  await fetchQuotes();
 });
 
 </script>
