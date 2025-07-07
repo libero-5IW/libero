@@ -48,7 +48,8 @@ jobs:
           username: ${{ secrets.OVH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-stack.yml"
-          target: "/home/ubuntu/libero/docker-stack.yml"
+          target: "/home/ubuntu/libero/"
+
 
       - name: Deploy to OVH Swarm
         uses: appleboy/ssh-action@v1.0.3
