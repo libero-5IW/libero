@@ -59,15 +59,27 @@ jobs:
           script: |
             set -e
 
-            docker service rm libero_backend || true
-            docker service rm libero_frontend || true
+            # Update backend service if exists, else create
+            if docker service ls | grep -q libero_backend; then
+              echo "Updating libero_backend..."
+              docker service update --image ${{ env.IMAGE_BACKEND }} libero_backend
+            else
+              echo "Creating libero_backend..."
+              docker service create --name libero_backend --network libero_libero-net --replicas 2 -p 3000:3000 ${{ env.IMAGE_BACKEND }}
+            fi
+
+            # Update frontend service if exists, else create
+            if docker service ls | grep -q libero_frontend; then
+              echo "Updating libero_frontend..."
+              docker service update --image ${{ env.IMAGE_FRONTEND }} libero_frontend
+            else
+              echo "Creating libero_frontend..."
+              docker service create --name libero_frontend --network libero_libero-net --replicas 3 -p 80:5173 ${{ env.IMAGE_FRONTEND }}
+            fi
+
+            # Run prisma migration using a temporary service
             docker service rm libero_migrate || true
-
-            sleep 10
-
-            docker service create --name libero_backend --network libero_libero-net --replicas 2 -p 3000:3000 ${{ env.IMAGE_BACKEND }}
-
-            docker service create --name libero_frontend --network libero_libero-net --replicas 3 -p 80:5173 ${{ env.IMAGE_FRONTEND }}
+            sleep 5
 
             docker service create \
               --name libero_migrate \
@@ -91,8 +103,10 @@ jobs:
             sleep 15
             docker service rm libero_migrate || true
 
+            # Deploy stack with updated images
             docker stack deploy -c /home/ubuntu/libero/docker-stack.yml libero
 
+            # Display logs and services for debugging
             docker service ls
             docker service ps libero_backend
             docker service ps libero_frontend
