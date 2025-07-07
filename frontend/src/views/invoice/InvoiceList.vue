@@ -25,6 +25,19 @@
         clearable
         @update:modelValue="fetchInvoices"
       />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+      />
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+      />
     </div>
 
     <v-progress-linear
@@ -96,6 +109,8 @@ const selectedStatus = ref<string | null>(null);
 
 const { showToast } = useToastHandler();
 const router = useRouter();
+const startDate = ref<string | null>(null)
+const endDate = ref<string | null>(null)
 
 const showTemplateModal = ref(false);  
 const showStatusModal = ref(false);  
@@ -188,11 +203,13 @@ async function confirmDeleteInvoice() {
 async function fetchInvoices() {
   const term = search.value.trim();
   const status = selectedStatus.value || undefined;
+  const start = startDate.value || null;
+  const end = endDate.value || null;
 
-  if (!term && !status) {
+  if (!term && !status && !start && !end) {
     await fetchAllInvoices();
   } else {
-    await invoiceStore.searchInvoices(term, status);
+    await invoiceStore.searchInvoices(term, status, start, end);
   }
 }
 
@@ -207,7 +224,7 @@ onMounted(async () => {
   await fetchAllInvoices();
 });
 
-watch([search, selectedStatus], async () => {
+watch([search, selectedStatus, startDate, endDate], async () => {
   await fetchInvoices();
 });
 

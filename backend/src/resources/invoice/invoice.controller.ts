@@ -48,11 +48,15 @@ export class InvoiceController {
   searchInvoices(
     @Query('term') term: string,
     @Query('status') status: InvoiceStatus,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.invoiceService.search(user.userId, term, status);
-  }
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
   
+    return this.invoiceService.search(user.userId, term, status, parsedStart, parsedEnd);
+  }  
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
