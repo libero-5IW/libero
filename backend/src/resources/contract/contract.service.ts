@@ -263,12 +263,33 @@ export class ContractService {
     });
   }
 
-  async search(userId: string, search: string, status?: ContractStatus) {
+  async search(
+    userId: string,
+    search: string,
+    status?: ContractStatus,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
     const baseWhere = buildSearchQuery(search, userId, 'contrat');
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
   
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
+      ...issuedAtFilter,
     };
   
     const contracts = await this.prisma.contract.findMany({
@@ -281,29 +302,23 @@ export class ContractService {
         createdAt: 'desc',
       },
     });
-
+  
     const contractsWithUrls = await Promise.all(
-      contracts.map(async (contract) => {
-        const previewUrl = contract.previewKey
+      contracts.map(async (contract) => ({
+        ...contract,
+        previewUrl: contract.previewKey
           ? await this.s3Service.generateSignedUrl(contract.previewKey)
-          : null;
-
-        const pdfUrl = contract.pdfKey
+          : null,
+        pdfUrl: contract.pdfKey
           ? await this.s3Service.generateSignedUrl(contract.pdfKey)
-          : null;
-
-        return {
-          ...contract,
-          previewUrl,
-          pdfUrl,
-        };
-      }),
+          : null,
+      })),
     );
-
+  
     return plainToInstance(ContractEntity, contractsWithUrls, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
-  }
+  }  
   
 }

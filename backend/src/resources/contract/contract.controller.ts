@@ -47,11 +47,16 @@ export class ContractController {
   @Get('search')
   searchContracts(
     @Query('term') term: string,
-    @Query('status') status: ContractStatus, 
+    @Query('status') status: ContractStatus,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.contractService.search(user.userId, term, status); 
-  }
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.contractService.search(user.userId, term, status, parsedStart, parsedEnd);
+  }  
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {

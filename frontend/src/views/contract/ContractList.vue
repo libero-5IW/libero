@@ -25,6 +25,19 @@
         clearable
         @update:modelValue="fetchContracts"
       />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+      />
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+      />
     </div>
 
     <v-progress-linear
@@ -118,6 +131,8 @@ const selectedContractId = ref<string | null>(null)
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const showInvoiceTemplateModal = ref(false);
 const contractToConvert = ref<Contract | null>(null);
+const startDate = ref<string | null>(null);
+const endDate = ref<string | null>(null);
 
 const statusOptions = [
   { label: 'Tous', value: null },
@@ -239,11 +254,13 @@ function handleInvoiceTemplateSelected(templateId: string) {
 async function fetchContracts() {
   const term = search.value.trim();
   const status = selectedStatus.value || undefined;
+  const start = startDate.value || null;
+  const end = endDate.value || null;
 
-  if (!term && !status) {
+  if (!term && !status && !start && !end) {
     await contractStore.fetchAllContracts();
   } else {
-    await contractStore.searchContracts(term, status);
+    await contractStore.searchContracts(term, status, start, end);
   }
 }
 
@@ -260,7 +277,7 @@ onMounted(async () => {
   
 });
 
-watch([search, selectedStatus], async () => {
+watch([search, selectedStatus, startDate, endDate], async () => {
   await fetchContracts();
 });
 
