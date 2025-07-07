@@ -87,10 +87,20 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     }
   }
 
-  async function searchTemplates(term: string) {
+  async function searchTemplates(
+    term: string,
+    startDate?: string | null,
+    endDate?: string | null
+  ) {
     isLoading.value = true
     try {
-      const { data } = await apiClient.get(`/quote-templates/search/${encodeURIComponent(term)}`)
+      const { data } = await apiClient.get(`/quote-templates/search`, {
+        params: {
+          term,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {})
+        }
+      })
       templates.value = data.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
     } catch (error) {
       templates.value = []
@@ -98,8 +108,8 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     } finally {
       isLoading.value = false
     }
-  }  
-
+  }
+  
   return {
     templates,
     currentTemplate,

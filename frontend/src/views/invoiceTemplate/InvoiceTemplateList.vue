@@ -8,11 +8,30 @@
       </v-btn>
     </div>
 
-    <SearchInput
-      v-model="search"
-      placeholder="Rechercher un template"
-      @search="handleSearch"
-    />
+    <div class="flex items-center gap-4 mb-6">
+      <SearchInput
+        v-model="search"
+        placeholder="Rechercher un template"
+      />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        density="compact"
+        class="w-48"
+        hide-details
+      />
+
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        density="compact"
+        class="w-48"
+        hide-details
+      />
+    </div>
 
     <v-progress-linear
     v-if="isLoading"
@@ -55,7 +74,7 @@
 import { useToastHandler } from '@/composables/useToastHandler'
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate'
 import type { TemplateDocumentCard, ToastStatus } from '@/types'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import TemplateDocumentCardList from '@/components/DocumentDisplay/TemplateDocumentCardList.vue';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
@@ -68,6 +87,8 @@ const { showToast } = useToastHandler()
 const isDeleteModalOpen = ref(false)
 const selectedTemplateId = ref<string | null>(null)
 const isLoading = computed(() => invoiceTemplate.isLoading)
+const startDate = ref<string | null>(null)
+const endDate = ref<string | null>(null)
 
 const documentCards = computed<TemplateDocumentCard[]>(() =>
   templates.value.map((template): TemplateDocumentCard  => {
@@ -120,12 +141,16 @@ async function confirmDeleteTemplate() {
 }
 
 async function handleSearch(term: string) {
-  if (term.trim() === '') {
+  if (term.trim() === '' && !startDate.value && !endDate.value) {
     await invoiceTemplate.fetchAllTemplates(false)
   } else {
-    await invoiceTemplate.searchTemplates(term)
+    await invoiceTemplate.searchTemplates(term, startDate.value, endDate.value)
   }
 }
+
+watch([search, startDate, endDate], async () => {
+  await handleSearch(search.value)
+})
 
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus
