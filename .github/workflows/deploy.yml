@@ -84,15 +84,6 @@ jobs:
             sleep 15
             docker service rm libero_migrate || true
 
-            docker stack rm libero || true
-
-            while docker stack ls | grep -q libero; do
-              echo "Waiting for stack libero to be fully removed..."
-              sleep 5
-            done
-
-            sleep 10
-
             docker stack deploy -c /home/ubuntu/libero/docker-stack.yml libero
 
             docker service ls
