@@ -40,8 +40,9 @@
         titlePrefix="Devis"
         type="quote"
         @edit="editQuote"
-        @change-status="showStatusModal = true"
+        @change-status="openStatusModal"
         @delete="openDeleteConfirmation"
+        @sent-to-client="openSentConfirmation"
         @convert-to-invoice="handleConvertToInvoice"
         @convert-to-contract="handleConvertToContract"
         :isLoading="isLoading"
@@ -58,21 +59,38 @@
 
   </div>
 
+  <ConfirmationModal
+  v-model="isEmailSentModalOpen"
+  title="Confirmation d'envoi d'email"
+  message="Souhaitez-vous envoyer par email ce devis au client ? Le statut du devis restera ou sera changé à Envoyé."
+  confirmText="Envoyer"
+  cancelText="Annuler"
+  confirmColor="success"
+  @confirm="confirmSentQuote"
+  />
+  
+  <ConfirmationModal
+  v-model="isDeleteModalOpen"
+  title="Confirmation de suppression"
+  message="Êtes-vous sûr de vouloir supprimer ce devis ? Cette action est irréversible."
+  confirmText="Supprimer"
+  cancelText="Annuler"
+  confirmColor="error"
+  @confirm="confirmDeleteQuote"
+  />
+
+  <StatusChangingModal
+  v-model="isStatusModalOpen"
+  :current-status="selectedQuoteStatus"
+  :available-statuses="statusModalAvailableStatuses"
+  @change="updateQuoteStatus"
+  />
+  
   <TemplateSelectionModal 
     v-model="showTemplateModal"
     type="devis"
     :fetchTemplates="fetchQuoteTemplates"
     @templateSelected="handleTemplateSelected"
-  />
-
-  <ConfirmationModal
-    v-model="isDeleteModalOpen"
-    title="Confirmation de suppression"
-    message="Êtes-vous sûr de vouloir supprimer ce devis ? Cette action est irréversible."
-    confirmText="Supprimer"
-    cancelText="Annuler"
-    confirmColor="error"
-    @confirm="confirmDeleteQuote"
   />
 
   <TemplateSelectionModal
@@ -97,7 +115,6 @@ import { useQuoteStore } from '@/stores/quote';
 import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue'; 
 import { useToastHandler } from '@/composables/useToastHandler';
 import type { DocumentCard, ToastStatus } from '@/types';
-import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useQuoteTemplateStore } from '@/stores/quoteTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
@@ -109,6 +126,7 @@ import { mapQuoteToContractVariables } from '@/utils/mapQuoteToContract'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
 import SearchInput from '@/components/SearchInput.vue'
 import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
+import StatusChangingModal from '@/components/Modals/StatusChangingModal.vue';
 
 const search = ref('')
 const quoteTemplateStore = useQuoteTemplateStore();
@@ -121,12 +139,16 @@ const { showToast } = useToastHandler();
 const router = useRouter();
 
 const showTemplateModal = ref(false);
-const showStatusModal = ref(false);  
 const quotes = computed(() => quoteStore.quotes);
 const isLoading = computed(() => quoteStore.isLoading)
 
-const isDeleteModalOpen = ref(false);
 const selectedQuoteId = ref<string | null>(null);
+const isEmailSentModalOpen = ref(false);
+const isDeleteModalOpen = ref(false);
+
+const isStatusModalOpen = ref(false)
+const selectedQuoteStatus = ref<string>('draft');
+const statusModalAvailableStatuses = ref<{ value: string; label: string; description?: string }[]>([]);
 
 const quoteToConvert = ref<Quote | null>(null)
 
@@ -159,12 +181,36 @@ const documentCards = computed<DocumentCard[]>(() =>
   })
 );
 
-const headers: Header[] = [
-  { title: 'Numéro', value: 'number', sortable: true },
-  { title: 'Statut', value: 'status', sortable: true },
-  { title: 'Date d\'émission', value: 'issuedAt', sortable: true },
-  { title: 'Actions', value: 'actions', sortable: false },
+const allStatuses = [
+  { value: QUOTE_STATUS.SENT, label: 'Envoyé', description: 'Envoyé au client' },
+  { value: QUOTE_STATUS.ACCEPTED, label: 'Accepté' },
+  { value: QUOTE_STATUS.REFUSED, label: 'Refusé' },
 ];
+
+function getAvailableStatuses(currentStatus: string) {
+  switch (currentStatus) {
+    case 'draft':
+      return [allStatuses[0]]; // sent
+    case QUOTE_STATUS.SENT:
+      return [allStatuses[1], allStatuses[2]]; // accepted, refused
+    case QUOTE_STATUS.ACCEPTED:
+      return [allStatuses[0], allStatuses[2]]; // sent, refused
+    case QUOTE_STATUS.REFUSED:
+      return [allStatuses[0], allStatuses[1]]; // sent, accepted
+    default:
+      return [];
+  }
+}
+
+async function updateQuoteStatus(newStatus: string) {
+  if (!selectedQuoteId.value) return;
+
+  const quote = await quoteStore.changeStatus(selectedQuoteId.value, newStatus);
+  await fetchAllQuotes();
+  isStatusModalOpen.value = false;
+  showToast('success', `Statut mis à jour avec succès pour le devis ${quote?.number} !`);
+  selectedQuoteId.value = null;
+}
 
 async function fetchQuoteTemplates() {
   await quoteTemplateStore.fetchAllTemplates();
@@ -227,6 +273,21 @@ const editQuote = (id: string) => {
 function openDeleteConfirmation(id: string) {
   selectedQuoteId.value = id;
   isDeleteModalOpen.value = true;
+}
+
+function openSentConfirmation(id: string) {
+  selectedQuoteId.value = id;
+  isEmailSentModalOpen.value = true;
+}
+
+function openStatusModal(id: string) {
+  const quote = quoteStore.quotes.find(q => q.id === id);
+  if (!quote) return;
+
+  selectedQuoteId.value = id;
+  selectedQuoteStatus.value = quote.status;
+  statusModalAvailableStatuses.value = getAvailableStatuses(quote.status);
+  isStatusModalOpen.value = true;
 }
 
 async function fetchInvoiceTemplates() {
@@ -309,6 +370,16 @@ async function confirmDeleteQuote() {
   await quoteStore.deleteQuote(selectedQuoteId.value);
   await fetchAllQuotes();
   showToast('success', 'Le devis a été bien supprimé !');
+  selectedQuoteId.value = null;
+}
+
+async function confirmSentQuote() {
+  if (!selectedQuoteId.value) return;
+  const client = await quoteStore.sentQuoteToClient(selectedQuoteId.value);
+  if (client) {
+    await fetchAllQuotes();
+    showToast('success', `Le devis a été bien été envoyé à ${client.firstName} ${client.lastName.toUpperCase()}!`);
+  }
   selectedQuoteId.value = null;
 }
 

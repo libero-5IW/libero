@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import apiClient from '@/config/axios';
 import { handleError } from '@/utils/handleError';
 import { QuoteSchema, type Quote, type CreateQuote } from '@/schemas/quote.schema';
+import { ClientSchema } from '@/schemas/client.schema';
 
 export const useQuoteStore = defineStore('quote', () => {
   const quotes = ref<Quote[]>([]);
@@ -95,7 +96,33 @@ export const useQuoteStore = defineStore('quote', () => {
     } finally {
       isLoading.value = false;
     }
-  }  
+  } 
+
+  async function changeStatus(id: string, newStatus: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/quotes/${id}/change-status`, { newStatus } );
+      console.log('data', data);
+      
+      return QuoteSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors du changement vers le nouveau statut.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  
+  async function sentQuoteToClient(id: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/quotes/${id}/send`);
+      return ClientSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’envoi du devis au client.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
 
   return {
     quotes,
@@ -107,6 +134,8 @@ export const useQuoteStore = defineStore('quote', () => {
     deleteQuote,
     fetchNextQuoteNumber,
     updateQuote,
-    searchQuotes
+    searchQuotes,
+    sentQuoteToClient,
+    changeStatus
   };
 });

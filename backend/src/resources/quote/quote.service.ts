@@ -19,6 +19,8 @@ import { QuoteTemplateVariableEntity } from '../quote-template/entities/quote-te
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
+import { MailerService } from 'src/common/mailer/mailer.service';
+import { ClientEntity } from '../client/entities/client.entity';
 
 @Injectable()
 export class QuoteService {
@@ -29,6 +31,7 @@ export class QuoteService {
     private readonly quoteTemplateService: QuoteTemplateService,
     private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly s3Service: S3Service,
+    private readonly mailerService: MailerService,
   ) {}
 
   async create(
@@ -257,7 +260,7 @@ export class QuoteService {
       };
     });
   }
-
+  //a supp?
   async getPreviewSignedUrl(id: string, userId: string): Promise<string> {
     const quote = await this.prisma.quote.findUnique({ where: { id } });
 
@@ -270,7 +273,7 @@ export class QuoteService {
 
   async search(userId: string, search: string, status?: QuoteStatus) {
     const baseWhere = buildSearchQuery(search, userId, 'devis');
-  
+
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
@@ -310,5 +313,87 @@ export class QuoteService {
       enableImplicitConversion: true,
     });
   }
-  
+
+  async changeStatus(
+    id: string,
+    userId: string,
+    newStatus: QuoteStatus,
+  ): Promise<QuoteEntity> {
+    const quote = await this.getQuoteOrThrow(id, userId);
+    const currentStatus = quote.status;
+
+    if (newStatus === currentStatus) {
+      return plainToInstance(QuoteEntity, quote, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      });
+    }
+
+    const allowedManualTransitions: Record<QuoteStatus, QuoteStatus[]> = {
+      [QuoteStatus.sent]: [QuoteStatus.accepted, QuoteStatus.refused],
+      [QuoteStatus.accepted]: [QuoteStatus.refused, QuoteStatus.sent],
+      [QuoteStatus.refused]: [QuoteStatus.accepted, QuoteStatus.sent],
+      [QuoteStatus.draft]: [QuoteStatus.sent],
+    };
+
+    if (allowedManualTransitions[currentStatus]?.includes(newStatus)) {
+      const updateData: any = {
+        status: newStatus,
+      };
+
+      if (newStatus === QuoteStatus.sent) {
+        updateData.issuedAt = new Date();
+      }
+      const updatedQuote = await this.prisma.quote.update({
+        where: { id },
+        data: updateData,
+        include: {
+          variableValues: true,
+        },
+      });
+
+      return plainToInstance(QuoteEntity, updatedQuote, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      });
+    }
+
+    throw new BadRequestException(
+      `Transition du statut "${currentStatus}" vers "${newStatus}" non autorisée.`,
+    );
+  }
+
+  async sendQuoteToClient(id: string, userId: string) {
+    const user = await this.userService.getUserOrThrow(userId);
+    const quote = await this.getQuoteOrThrow(id, userId);
+
+    if (
+      quote.status !== QuoteStatus.draft &&
+      quote.status !== QuoteStatus.sent
+    ) {
+      throw new BadRequestException(
+        `Impossible d’envoyer le devis : statut "${quote.status}".`,
+      );
+    }
+
+    const client = await this.clientService.getClientOrThrow(
+      quote.clientId,
+      userId,
+    );
+
+    const pdfBuffer = await this.s3Service.getFileBuffer(quote.pdfKey);
+    const clientName = `${client.firstName} ${client.lastName.toUpperCase()}`;
+
+    await this.mailerService.sendQuoteByEmail(
+      client.email,
+      clientName,
+      user,
+      quote.number,
+      pdfBuffer,
+    );
+
+    await this.changeStatus(id, userId, QuoteStatus.sent);
+
+    return plainToInstance(ClientEntity, client);
+  }
 }

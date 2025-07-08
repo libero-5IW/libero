@@ -38,29 +38,30 @@
             </v-list-item>
 
             <v-list-item 
-              v-if="item.pdfUrl"
-              :href="item.pdfUrl"
-              target="_blank"
+              v-if="item.status === 'draft' || item.status === 'sent' || item.status === 'accepted' || item.status === 'paid'"
+              @click.stop="onSentToClient(item.id)"
             >
-              <v-list-item-title>Envoyer le PDF</v-list-item-title>
+              <v-list-item-title v-if="item.status === 'draft'">Envoyer le PDF</v-list-item-title>
+              <v-list-item-title v-else >Renvoyer le PDF</v-list-item-title>
             </v-list-item>
 
-            <v-list-item @click.stop="onEdit(item.id)">
-              <v-list-item-title>Éditer</v-list-item-title>
-            </v-list-item>
-
+            
             <v-list-item
               v-if="props.type === 'quote'"
               @click.stop="onConvertToContract(item)"
-            >
+              >
               <v-list-item-title>Transformer en Contrat</v-list-item-title>
             </v-list-item>
-
+          
             <v-list-item
               v-if="props.type === 'quote' || props.type === 'contract'"
               @click.stop="onConvertToInvoice(item)"
-            >
+              >
               <v-list-item-title>Transformer en Facture</v-list-item-title>
+            </v-list-item>
+        
+            <v-list-item @click.stop="onEdit(item.id)">
+              <v-list-item-title class="text-orange-400">Éditer</v-list-item-title>
             </v-list-item>
 
             <v-list-item @click.stop="onDelete(item.id)">
@@ -71,7 +72,7 @@
       </div>
 
       <v-card-subtitle class="pb-4 text-sm text-gray-600">
-        Créé le {{ formatDate(item.createdAt) }} — <span class="capitalize">{{ translateStatus(item.status) }}</span>
+        Créé le {{ formatDate(item.createdAt) }} — <strong class="uppercase text-black">{{ translateStatus(item.status) }}</strong>
       </v-card-subtitle>
     </v-card>
   </div>
@@ -79,6 +80,7 @@
 
 <script setup lang="ts">
 import type { DocumentCard } from '@/types'
+import { translateStatus } from '@/utils/status'
 
 const props = defineProps<{
   items: DocumentCard[]
@@ -91,6 +93,7 @@ const emit = defineEmits<{
   (e: 'edit', id: string): void
   (e: 'delete', id: string): void
   (e: 'change-status', id: string): void
+  (e: 'sent-to-client', id: string): void
   (e: 'convert-to-invoice', item: DocumentCard): void
   (e: 'convert-to-contract', item: DocumentCard): void
 }>()
@@ -113,6 +116,10 @@ function onDelete(id: string) {
   emit('delete', id)
 }
 
+function onSentToClient(id: string) {
+  emit('sent-to-client', id)
+}
+
 function onConvertToInvoice(item: DocumentCard) {
   emit('convert-to-invoice', item)
 }
@@ -123,31 +130,5 @@ function onConvertToContract(item: DocumentCard) {
 
 function onChangeStatus(item: DocumentCard) {
   emit('change-status', item.id)
-}
-
-function translateStatus (status: string) {
-  switch (status) {
-    case 'draft':
-      return 'Brouillon';
-    case 'sent':
-      return 'Envoyé';
-    case 'signed':
-      return 'Signé';
-    case 'expired':
-      return 'Expiré';
-    case 'cancelled':
-      return 'Annulé';
-    case 'paid':
-      return 'Payé';
-    case 'overdue':
-      return '';
-    case 'accepted':
-      return '';
-    case 'refused':
-      return '';
-    default:
-      return status;
-  }
-
 }
 </script>

@@ -6,7 +6,8 @@ import {
   Param,
   Delete,
   Put,
-  Query
+  Query,
+  Patch,
 } from '@nestjs/common';
 import { QuoteService } from './quote.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
@@ -40,10 +41,9 @@ export class QuoteController {
   }
 
   @Get('next-number')
-  async getNextQuoteNumber(@CurrentUser() user: JwtPayload) {
-    return await this.quoteService.getNextQuoteNumber(user.userId);
+  getNextQuoteNumber(@CurrentUser() user: JwtPayload) {
+    return this.quoteService.getNextQuoteNumber(user.userId);
   }
-
 
   @Get('search')
   searchQuotes(
@@ -74,5 +74,19 @@ export class QuoteController {
     return this.quoteService.remove(id, user.userId);
   }
 
-  
+  @Patch(':id/change-status')
+  changeStatus(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() body: { newStatus: QuoteStatus },
+  ) {
+    console.log('new', body.newStatus);
+
+    return this.quoteService.changeStatus(id, user.userId, body.newStatus);
+  }
+
+  @Patch(':id/send')
+  sendQuoteToClient(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+    return this.quoteService.sendQuoteToClient(id, user.userId);
+  }
 }

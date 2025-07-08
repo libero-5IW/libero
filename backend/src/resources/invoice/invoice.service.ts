@@ -271,7 +271,7 @@ export class InvoiceService {
       ...baseWhere,
       ...(status ? { status } : {}),
     };
-  
+
     const invoices = await this.prisma.invoice.findMany({
       where,
       include: {
@@ -305,6 +305,5 @@ export class InvoiceService {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
-  }  
-
+  }
 }
