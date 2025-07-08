@@ -76,4 +76,4 @@ jobs:
             -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
             -e AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }} \
             ${{ env.IMAGE_BACKEND }} \
-            sh -c "for i in {1..10}; do npx prisma migrate deploy && exit 0 || echo 'Prisma migrate failed, retrying in 5s...' && sleep 5; done; exit 1"
+            sh -c "echo 'Waiting 15s for Postgres to initialize...' && sleep 15 && for i in {1..10}; do npx prisma migrate deploy && exit 0 || echo 'Prisma migrate failed, retrying in 5s...' && sleep 5; done; exit 1"
