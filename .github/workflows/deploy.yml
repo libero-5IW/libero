@@ -60,7 +60,7 @@ jobs:
             set -e
 
             docker run --rm \
-            --network libero_libero-net \
+            --network libero-net \
             -e NODE_ENV=production \
             -e PORT=3000 \
             -e POSTGRES_HOST=postgres \
