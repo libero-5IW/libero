@@ -18,7 +18,7 @@ services:
           - node.role == worker
 
   backend:
-    image: libero-backend:latest
+    image: projetlibero/libero-backend:latest
     environment:
       DATABASE_URL: postgres://admin:admin@postgres:5432/libero
     depends_on:
@@ -33,7 +33,7 @@ services:
         condition: on-failure
 
   frontend:
-    image: libero-frontend:latest
+    image: projetlibero/libero-frontend:latest
     depends_on:
       - backend
     networks:
@@ -51,4 +51,3 @@ volumes:
 networks:
   libero-net:
     external: true
-
