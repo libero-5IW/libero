@@ -63,13 +63,13 @@ jobs:
             --network libero_libero-net \
             -e NODE_ENV=production \
             -e PORT=3000 \
-            -e POSTGRES_HOST=libero_postgres \
+            -e POSTGRES_HOST=postgres \
             -e POSTGRES_PORT=5432 \
             -e POSTGRES_DB=libero \
             -e FRONTEND_URL=http://frontend \
             -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
             -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-            -e DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@libero_postgres:5432/libero \
+            -e DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/libero \
             -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
             -e AWS_REGION=${{ secrets.AWS_REGION }} \
             -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
