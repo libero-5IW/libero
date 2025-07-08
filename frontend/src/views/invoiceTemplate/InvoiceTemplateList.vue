@@ -12,6 +12,9 @@
       <SearchInput
         v-model="search"
         placeholder="Rechercher un template"
+        class="w-64"
+        density="compact"
+        hide-details
       />
 
       <v-text-field
@@ -21,7 +24,20 @@
         density="compact"
         class="w-48"
         hide-details
-      />
+      >
+        <template #append-inner>
+          <v-tooltip text="Date de création" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
 
       <v-text-field
         v-model="endDate"
@@ -30,7 +46,20 @@
         density="compact"
         class="w-48"
         hide-details
-      />
+      >
+        <template #append-inner>
+          <v-tooltip text="Date de création" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
     </div>
 
     <v-progress-linear

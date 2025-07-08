@@ -13,6 +13,9 @@
         v-model="search"
         placeholder="Rechercher un devis"
         @search="fetchQuotes"
+        class="w-64"
+        density="compact"
+        hide-details
       />
 
       <v-select
@@ -21,24 +24,56 @@
         item-title="label"
         item-value="value"
         label="Filtrer par statut"
-        class="w-64"
+        density="compact"
+        hide-details
+        class="w-48"
         clearable
         @update:modelValue="fetchQuotes"
       />
 
       <v-text-field
-        v-model="startDate"
-        label="Date de début"
-        type="date"
-        class="w-48"
-      />
-      <v-text-field
-        v-model="endDate"
-        label="Date de fin"
-        type="date"
-        class="w-48"
-      />
+          v-model="startDate"
+          label="Date de début"
+          type="date"
+          density="compact"
+          hide-details
+          class="w-48"
+        >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
 
+      <v-text-field
+          v-model="endDate"
+          label="Date de fin"
+          type="date"
+          density="compact"
+          hide-details
+          class="w-48"
+        >
+          <template #append-inner>
+            <v-tooltip text="Date d'envoi" location="top">
+              <template #activator="{ props }">
+                <v-icon
+                  v-bind="props"
+                  icon="mdi-information-outline"
+                  class="ml-1"
+                  size="18"
+                />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-text-field>
     </div>
 
     <v-progress-linear
