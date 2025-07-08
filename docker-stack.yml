@@ -50,4 +50,5 @@ volumes:
 
 networks:
   libero-net:
-    driver: overlay
+    external: true
+
