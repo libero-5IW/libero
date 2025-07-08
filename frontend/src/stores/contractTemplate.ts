@@ -99,11 +99,23 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
     }
   }
 
-  async function searchTemplates(term: string) {
+  async function searchTemplates(
+    term: string,
+    startDate?: string | null,
+    endDate?: string | null
+  ) {
     isLoading.value = true
     try {
-      const { data } = await apiClient.get(`/contract-templates/search/${encodeURIComponent(term)}`)
-      templates.value = data.map((item: ContractTemplate) => ContractTemplateSchema.parse(item))
+      const { data } = await apiClient.get(`/contract-templates/search`, {
+        params: {
+          term,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {})
+        }
+      })
+      templates.value = data.map((item: ContractTemplate) =>
+        ContractTemplateSchema.parse(item)
+      )
     } catch (error) {
       templates.value = []
       handleError(error, 'Erreur lors de la recherche des templates de contrat.')

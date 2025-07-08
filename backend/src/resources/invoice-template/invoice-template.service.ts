@@ -298,24 +298,44 @@ export class InvoiceTemplateService {
   async search(
     userId: string,
     rawSearch: string,
+    startDate?: Date,
+    endDate?: Date,
   ): Promise<InvoiceTemplateEntity[]> {
-    const whereClause = buildTemplateSearchQuery(rawSearch, userId);
-
+    const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const createdAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            createdAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
+  
     const templates = await this.prisma.invoiceTemplate.findMany({
-      where: whereClause,
+      where: {
+        ...baseWhere,
+        ...createdAtFilter,
+      },
       include: { variables: true },
+      orderBy: { createdAt: 'desc' },
     });
-
+  
     const templatesWithUrls = await Promise.all(
       templates.map(async (template) => {
         const previewUrl = template.previewKey
           ? await this.s3Service.generateSignedUrl(template.previewKey)
           : null;
-
+  
         const pdfUrl = template.pdfKey
           ? await this.s3Service.generateSignedUrl(template.pdfKey)
           : null;
-
+  
         return {
           ...template,
           previewUrl,
@@ -323,11 +343,11 @@ export class InvoiceTemplateService {
         };
       }),
     );
-
+  
     const templatesWithSystemVariables = await Promise.all(
       templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
-
+  
     return plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables);
-  }
+  }  
 }

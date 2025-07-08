@@ -9,11 +9,59 @@
       </v-btn>
     </div>
     
-    <SearchInput
-    v-model="search"
-    placeholder="Rechercher un template"
-    @search="handleSearch"
-    />
+    <div class="flex items-center gap-4 mb-6">
+      <SearchInput
+        v-model="search"
+        placeholder="Rechercher un template"
+        class="w-64"
+        density="compact"
+        hide-details
+      />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date de création" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date de création" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+    </div>
 
     <v-progress-linear
     v-if="isLoading"
@@ -56,7 +104,7 @@
 import { useToastHandler } from '@/composables/useToastHandler'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
 import type { TemplateDocumentCard, ToastStatus } from '@/types'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 import TemplateDocumentCardList from '@/components/DocumentDisplay/TemplateDocumentCardList.vue';
@@ -69,6 +117,8 @@ const { showToast } = useToastHandler()
 const isDeleteModalOpen = ref(false)
 const selectedTemplateId = ref<string | null>(null)
 const isLoading = computed(() => contractTemplate.isLoading)
+const startDate = ref<string | null>(null)
+const endDate = ref<string | null>(null)
 
 const documentCards = computed<TemplateDocumentCard[]>(() =>
   templates.value.map((template): TemplateDocumentCard  => {
@@ -121,12 +171,16 @@ async function confirmDeleteTemplate() {
 }
 
 async function handleSearch(term: string) {
-  if (term.trim() === '') {
+  if (term.trim() === '' && !startDate.value && !endDate.value) {
     await contractTemplate.fetchAllTemplates(false)
   } else {
-    await contractTemplate.searchTemplates(term)
+    await contractTemplate.searchTemplates(term, startDate.value, endDate.value)
   }
 }
+
+watch([search, startDate, endDate], async () => {
+  await handleSearch(search.value)
+})
 
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus

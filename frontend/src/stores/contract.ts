@@ -87,14 +87,21 @@ export const useContractStore = defineStore('contract', () => {
     }
   }
 
-  async function searchContracts(search: string, status?: string | null) {
+  async function searchContracts(
+    search: string,
+    status?: string | null,
+    startDate?: string | null,
+    endDate?: string | null
+  ) {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/contracts/search', {
         params: {
           term: search,
-          ...(status ? { status } : {})
-        }
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
       });
       contracts.value = data.map((item: Contract) => ContractSchema.parse(item));
     } catch (error) {
@@ -102,7 +109,7 @@ export const useContractStore = defineStore('contract', () => {
     } finally {
       isLoading.value = false;
     }
-  } 
+  }  
 
   return {
     contracts,

@@ -12,6 +12,9 @@
       <SearchInput
         v-model="search"
         placeholder="Rechercher un contrat"
+        class="w-64"
+        density="compact"
+        hide-details
         @search="fetchContracts"
       />
 
@@ -21,10 +24,56 @@
         item-title="label"
         item-value="value"
         label="Filtrer par statut"
-        class="w-64"
+        class="w-48"
+        density="compact"
+        hide-details
         clearable
         @update:modelValue="fetchContracts"
       />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
     </div>
 
     <v-progress-linear
@@ -118,6 +167,8 @@ const selectedContractId = ref<string | null>(null)
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const showInvoiceTemplateModal = ref(false);
 const contractToConvert = ref<Contract | null>(null);
+const startDate = ref<string | null>(null);
+const endDate = ref<string | null>(null);
 
 const statusOptions = [
   { label: 'Tous', value: null },
@@ -239,11 +290,13 @@ function handleInvoiceTemplateSelected(templateId: string) {
 async function fetchContracts() {
   const term = search.value.trim();
   const status = selectedStatus.value || undefined;
+  const start = startDate.value || null;
+  const end = endDate.value || null;
 
-  if (!term && !status) {
+  if (!term && !status && !start && !end) {
     await contractStore.fetchAllContracts();
   } else {
-    await contractStore.searchContracts(term, status);
+    await contractStore.searchContracts(term, status, start, end);
   }
 }
 
@@ -260,7 +313,7 @@ onMounted(async () => {
   
 });
 
-watch([search, selectedStatus], async () => {
+watch([search, selectedStatus, startDate, endDate], async () => {
   await fetchContracts();
 });
 

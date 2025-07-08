@@ -300,24 +300,40 @@ export class QuoteTemplateService {
   async search(
     userId: string,
     rawSearch: string,
+    startDate?: Date,
+    endDate?: Date,
   ): Promise<QuoteTemplateEntity[]> {
-    const whereClause = buildTemplateSearchQuery(rawSearch, userId);
-
+    const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
+  
+    const whereClause = {
+      ...baseWhere,
+      ...(startDate || endDate
+        ? {
+            createdAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(endDate ? {
+                lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+              } : {})
+            }
+          }
+        : {})
+    };
+  
     const templates = await this.prisma.quoteTemplate.findMany({
       where: whereClause,
       include: { variables: true },
     });
-
+  
     const templatesWithUrls = await Promise.all(
       templates.map(async (template) => {
         const previewUrl = template.previewKey
           ? await this.s3Service.generateSignedUrl(template.previewKey)
           : null;
-
+  
         const pdfUrl = template.pdfKey
           ? await this.s3Service.generateSignedUrl(template.pdfKey)
           : null;
-
+  
         return {
           ...template,
           previewUrl,
@@ -325,11 +341,12 @@ export class QuoteTemplateService {
         };
       }),
     );
-
+  
     const templatesWithSystemVariables = await Promise.all(
       templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
-
+  
     return plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables);
   }
+  
 }

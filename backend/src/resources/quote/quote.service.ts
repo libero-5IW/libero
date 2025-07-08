@@ -268,14 +268,35 @@ export class QuoteService {
     return this.s3Service.generateSignedUrl(quote.previewKey);
   }
 
-  async search(userId: string, search: string, status?: QuoteStatus) {
+  async search(
+    userId: string,
+    search: string,
+    status?: QuoteStatus,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
     const baseWhere = buildSearchQuery(search, userId, 'devis');
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
   
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
+      ...issuedAtFilter,
     };
-
+  
     const quotes = await this.prisma.quote.findMany({
       where,
       include: {
@@ -286,25 +307,19 @@ export class QuoteService {
         createdAt: 'desc',
       },
     });
-
+  
     const quotesWithUrls = await Promise.all(
-      quotes.map(async (quote) => {
-        const previewUrl = quote.previewKey
+      quotes.map(async (quote) => ({
+        ...quote,
+        previewUrl: quote.previewKey
           ? await this.s3Service.generateSignedUrl(quote.previewKey)
-          : null;
-
-        const pdfUrl = quote.pdfKey
+          : null,
+        pdfUrl: quote.pdfKey
           ? await this.s3Service.generateSignedUrl(quote.pdfKey)
-          : null;
-
-        return {
-          ...quote,
-          previewUrl,
-          pdfUrl,
-        };
-      }),
+          : null,
+      })),
     );
-
+  
     return plainToInstance(QuoteEntity, quotesWithUrls, {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
