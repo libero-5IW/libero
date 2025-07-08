@@ -1,6 +1,5 @@
 name: Deploy Libero to Swarm
 
-
 on:
   push:
     branches:
@@ -60,21 +59,28 @@ jobs:
           script: |
             set -e
 
+            echo "Running Prisma Migrations before deploy"
             docker run --rm \
-            --network libero-net \
-            -e NODE_ENV=production \
-            -e PORT=3000 \
-            -e POSTGRES_HOST=postgres \
-            -e POSTGRES_PORT=5432 \
-            -e POSTGRES_DB=libero \
-            -e FRONTEND_URL=http://frontend \
-            -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
-            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
-            -e DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/libero \
-            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            -e AWS_REGION=${{ secrets.AWS_REGION }} \
-            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            -e AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }} \
-            ${{ env.IMAGE_BACKEND }} \
-            sh -c "echo 'Waiting 15s for Postgres to initialize...' && sleep 15 && for i in {1..10}; do npx prisma migrate deploy && exit 0 || echo 'Prisma migrate failed, retrying in 5s...' && sleep 5; done; exit 1"
+              --network libero-net \
+              -e NODE_ENV=production \
+              -e PORT=3000 \
+              -e POSTGRES_HOST=postgres \
+              -e POSTGRES_PORT=5432 \
+              -e POSTGRES_DB=libero \
+              -e FRONTEND_URL=http://frontend \
+              -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+              -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+              -e DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/libero \
+              -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              -e AWS_REGION=${{ secrets.AWS_REGION }} \
+              -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+              -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+              -e AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }} \
+              ${{ env.IMAGE_BACKEND }} \
+              sh -c "echo 'Waiting for Postgres...' && sleep 15 && npx prisma migrate deploy"
+
+            echo "Deploying updated stack to Swarm"
+            export JWT_SECRET=${{ secrets.JWT_SECRET }}
+            docker stack deploy -c /home/ubuntu/libero/docker-stack.yml libero
+
+            echo "Deployment finished"
