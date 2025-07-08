@@ -142,6 +142,67 @@ export class MailerService {
     });
   }
 
+  async sendInvoiceToPayEmail(
+    email: string,
+    clientName: string,
+    freelance: UserEntity,
+    invoiceNumber: number,
+    pdfBuffer: Buffer,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Facture à régler - Libero`,
+      template: 'invoice-to-pay',
+      context: {
+        clientName,
+        freelanceName:
+          freelance.firstName + ' ' + freelance.lastName.toUpperCase(),
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        year: new Date().getFullYear(),
+        title: `Facture ${invoiceNumber}`,
+      },
+      attachments: [
+        this.getLogoAttachment(),
+        {
+          filename: `Facture_${invoiceNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+  }
+
+  async sendInvoicePaidEmail(
+    email: string,
+    clientName: string,
+    freelance: UserEntity,
+    invoiceNumber: number,
+    pdfBuffer: Buffer,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Facture acquittée - Libero`,
+      template: 'invoice-paid',
+      context: {
+        clientName,
+        freelanceName: `${freelance.firstName} ${freelance.lastName.toUpperCase()}`,
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        year: new Date().getFullYear(),
+        title: `Facture ${invoiceNumber}`,
+      },
+      attachments: [
+        this.getLogoAttachment(),
+        {
+          filename: `Facture_${invoiceNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+  }
+
   private getLogoAttachment() {
     return {
       filename: 'logo.png',

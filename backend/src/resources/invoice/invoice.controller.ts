@@ -6,7 +6,8 @@ import {
   Param,
   Delete,
   Put,
-  Query
+  Query,
+  Patch,
 } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -52,7 +53,6 @@ export class InvoiceController {
   ) {
     return this.invoiceService.search(user.userId, term, status);
   }
-  
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -73,5 +73,34 @@ export class InvoiceController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.invoiceService.remove(id, user.userId);
   }
-  
+
+  @Patch(':id/change-status')
+  changeStatus(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() body: { newStatus: InvoiceStatus },
+  ) {
+    return this.invoiceService.changeStatus(
+      id,
+      user.userId,
+      user.email,
+      body.newStatus,
+    );
+  }
+
+  @Patch(':id/send')
+  sendInvoiceToClient(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.invoiceService.sendInvoiceToClient(id, user.userId);
+  }
+
+  @Patch(':id/send-paid')
+  sendPaidInvoiceToClient(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.invoiceService.sendPaidInvoiceToClient(id, user.userId);
+  }
 }

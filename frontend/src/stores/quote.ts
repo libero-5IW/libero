@@ -102,8 +102,6 @@ export const useQuoteStore = defineStore('quote', () => {
     isLoading.value = true;
     try {
       const { data } = await apiClient.patch(`/quotes/${id}/change-status`, { newStatus } );
-      console.log('data', data);
-      
       return QuoteSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors du changement vers le nouveau statut.');

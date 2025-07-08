@@ -38,11 +38,17 @@
             </v-list-item>
 
             <v-list-item 
-              v-if="item.status === 'draft' || item.status === 'sent' || item.status === 'accepted' || item.status === 'paid'"
+              v-if="item.status === 'draft' || item.status === 'sent' || item.status === 'accepted'"
               @click.stop="onSentToClient(item.id)"
             >
-              <v-list-item-title v-if="item.status === 'draft'">Envoyer le PDF</v-list-item-title>
-              <v-list-item-title v-else >Renvoyer le PDF</v-list-item-title>
+              <v-list-item-title>{{ sentLabel(item.status, false) }} </v-list-item-title>
+            </v-list-item>
+
+            <v-list-item 
+              v-if="item.status === 'paid' || item.status === 'sent'"
+              @click.stop="onSentPaidToClient(item.id)"
+            >
+              <v-list-item-title>{{ sentLabel(item.status, true) }} </v-list-item-title>
             </v-list-item>
 
             
@@ -60,7 +66,7 @@
               <v-list-item-title>Transformer en Facture</v-list-item-title>
             </v-list-item>
         
-            <v-list-item @click.stop="onEdit(item.id)">
+            <v-list-item v-if="item.status === 'draft'" @click.stop="onEdit(item.id)">
               <v-list-item-title class="text-orange-400">Éditer</v-list-item-title>
             </v-list-item>
 
@@ -94,9 +100,29 @@ const emit = defineEmits<{
   (e: 'delete', id: string): void
   (e: 'change-status', id: string): void
   (e: 'sent-to-client', id: string): void
+  (e: 'sent-paid-to-client', id: string): void
   (e: 'convert-to-invoice', item: DocumentCard): void
   (e: 'convert-to-contract', item: DocumentCard): void
 }>()
+
+function sentLabel (status: string, invoicePaid: boolean) {
+  let message = 'Renvoyer';
+  if (status === 'draft') {
+    message = 'Envoyer'
+  }
+  if(props.type === 'quote') {
+    message += ' le devis' 
+  } else if (props.type === 'contract') {
+    message += ' le contrat'
+  } else {
+    if(invoicePaid && (status === 'paid' || status === 'sent')) {
+      message = 'Envoyer la facture acquittée'
+    } else {
+            message += ' la facture non acquittée'
+    }
+  }
+  return message
+}
 
 function onEdit(id: string) {
   emit('edit', id)
@@ -118,6 +144,10 @@ function onDelete(id: string) {
 
 function onSentToClient(id: string) {
   emit('sent-to-client', id)
+}
+
+function onSentPaidToClient(id: string) {
+  emit('sent-paid-to-client', id)
 }
 
 function onConvertToInvoice(item: DocumentCard) {

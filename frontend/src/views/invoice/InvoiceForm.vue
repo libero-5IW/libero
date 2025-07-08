@@ -189,9 +189,9 @@ onMounted(async () => {
       });
 
       selectedClientId.value = invoice.clientId ?? null;
+      selectedTemplateId.value = invoice.templateId ?? null;
 
       if (invoice.templateId) {
-        selectedTemplateId.value = invoice.templateId;
         await invoiceTemplateStore.fetchTemplate(invoice.templateId);
         await handleTemplateSelected(invoice.templateId);
 
@@ -210,44 +210,29 @@ onMounted(async () => {
 });
 
 async function initialize() {
-  await clientStore.fetchAllClients();
-
-  const state = window.history.state;
-  const templateIdFromState = state?.templateId as string | undefined;
   const templateIdFromQuery = route.query.templateId as string | undefined;
-
-  const templateId = templateIdFromState || templateIdFromQuery;
-
-  if (state?.fromQuoteId && templateIdFromState) {
-    form.value.templateId = templateIdFromState;
-    form.value.clientId = state.clientId;
-    form.value.quoteId = state.fromQuoteId;
-    variablesValue.value = state.variables;
-    selectedTemplateId.value = templateIdFromState;
-  }
-
-  else if (state?.fromContractId && templateIdFromState) {
-    form.value.templateId = templateIdFromState;
-    form.value.clientId = state.clientId;
-    form.value.contractId = state.fromContractId;
-    variablesValue.value = state.variables;
-    selectedTemplateId.value = templateIdFromState;
-  }
+  const templateId = selectedTemplateId.value  || templateIdFromQuery;
+  
+  await clientStore.fetchAllClients();
 
   if (!templateId && !isEditMode.value) {
     showTemplateModal.value = true;
     return;
   }
 
-  await invoiceTemplateStore.fetchTemplate(templateId!);
+  if (templateId) {
+    await invoiceTemplateStore.fetchTemplate(templateId);
 
-  if (!invoiceTemplateStore.currentTemplate) {
+    if (!invoiceTemplateStore.currentTemplate) {
+      showTemplateModal.value = true;
+      return;
+    }
+
+    selectedTemplateId.value = templateId;
+    await handleTemplateSelected(templateId);
+  } else if (!isEditMode.value) {
     showTemplateModal.value = true;
-    return;
   }
-
-  selectedTemplateId.value = templateId!;
-  await handleTemplateSelected(templateId!);
 }
 
 async function fetchInvoiceTemplates() {

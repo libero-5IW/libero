@@ -182,14 +182,14 @@ const documentCards = computed<DocumentCard[]>(() =>
 );
 
 const allStatuses = [
-  { value: QUOTE_STATUS.SENT, label: 'Envoyé', description: 'Envoyé au client' },
+  { value: QUOTE_STATUS.SENT, label: 'Envoyé', description: 'Pas d\'email avec modification manuelle' },
   { value: QUOTE_STATUS.ACCEPTED, label: 'Accepté' },
   { value: QUOTE_STATUS.REFUSED, label: 'Refusé' },
 ];
 
 function getAvailableStatuses(currentStatus: string) {
   switch (currentStatus) {
-    case 'draft':
+    case QUOTE_STATUS.DRAFT:
       return [allStatuses[0]]; // sent
     case QUOTE_STATUS.SENT:
       return [allStatuses[1], allStatuses[2]]; // accepted, refused

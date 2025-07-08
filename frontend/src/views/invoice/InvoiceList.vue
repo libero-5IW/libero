@@ -40,7 +40,9 @@
         titlePrefix="Facture"
         type="invoice"
         @edit="editInvoice"
-        @change-status="showStatusModal = true"
+        @change-status="openStatusModal"
+        @sent-to-client="openSentConfirmation"
+        @sent-paid-to-client="openSentPaidConfirmation"
         @delete="openDeleteConfirmation"
         :isLoading="isLoading"
       />
@@ -61,6 +63,33 @@
     type="facture"
     :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleTemplateSelected"
+  />
+
+  <ConfirmationModal
+  v-model="isEmailSentModalOpen"
+  title="Confirmation d'envoi d'email"
+  message="Souhaitez-vous envoyer par email cette facture au client ? Le statut de la facture restera ou sera changé à Envoyé."
+  confirmText="Envoyer"
+  cancelText="Annuler"
+  confirmColor="success"
+  @confirm="confirmSentInvoice"
+  />
+
+  <ConfirmationModal
+  v-model="isEmailSentPaidModalOpen"
+  title="Confirmation d'envoi d'email"
+  message="Souhaitez-vous envoyer cette facture marquée comme payée au client ? Un e-mail de confirmation avec la facture acquittée sera envoyé."
+  confirmText="Envoyer"
+  cancelText="Annuler"
+  confirmColor="success"
+  @confirm="confirmSentPaidInvoice"
+  />
+
+  <StatusChangingModal
+  v-model="isStatusModalOpen"
+  :current-status="selectedInvoiceStatus"
+  :available-statuses="statusModalAvailableStatuses"
+  @change="updateInvoiceStatus"
   />
 
   <ConfirmationModal
@@ -88,6 +117,7 @@ import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
 import SearchInput from '@/components/SearchInput.vue';
 import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
+import StatusChangingModal from '@/components/Modals/StatusChangingModal.vue';
 
 const search = ref('');
 const invoiceTemplateStore = useInvoiceTemplateStore();
@@ -98,12 +128,17 @@ const { showToast } = useToastHandler();
 const router = useRouter();
 
 const showTemplateModal = ref(false);  
-const showStatusModal = ref(false);  
 const invoices = computed(() => invoiceStore.invoices);
 const isLoading = computed(() => invoiceStore.isLoading)
 
 const isDeleteModalOpen = ref(false);
 const selectedInvoiceId = ref<string | null>(null);
+const isEmailSentModalOpen = ref(false);
+const isEmailSentPaidModalOpen = ref(false);
+
+const isStatusModalOpen = ref(false)
+const selectedInvoiceStatus = ref<string>('draft');
+const statusModalAvailableStatuses = ref<{ value: string; label: string; description?: string }[]>([]);
 
 const statusOptions = [
   { label: 'Tous', value: null },
@@ -132,12 +167,35 @@ const documentCards = computed<DocumentCard[]>(() =>
   })
 );
 
-const headers: Header[] = [
-  { title: 'Numéro', value: 'number', sortable: true },
-  { title: 'Statut', value: 'status', sortable: true },
-  { title: 'Date d\'émission', value: 'issuedAt', sortable: true },
-  { title: 'Actions', value: 'actions', sortable: false },
+const allStatuses = [
+  { value: INVOICE_STATUS.SENT, label: 'Envoyée', description: 'Pas d\'email avec modification manuelle' },
+  { value: INVOICE_STATUS.PAID, label: 'Payée', description: 'La facture sera modifié avec une mention acquittée' },
+  { value: INVOICE_STATUS.CANCELLED, label: 'Annulée', description: 'Facture annulée par le freelance (vous)' },
+  { value: INVOICE_STATUS.OVERDUE, label: 'En retard' },
+
 ];
+
+function getAvailableStatuses(currentStatus: string) {
+  switch (currentStatus) {
+    case INVOICE_STATUS.DRAFT:
+      return [allStatuses[0]]; // sent
+    case INVOICE_STATUS.SENT:
+      return [allStatuses[1], allStatuses[2]]; // paid, cancelled
+    case INVOICE_STATUS.OVERDUE:
+      return [allStatuses[1], allStatuses[2]]; // paid, cancelled
+    default:
+      return [];
+  }
+}
+
+async function updateInvoiceStatus(newStatus: string) {
+  if (!selectedInvoiceId.value) return;
+  const invoice = await invoiceStore.changeStatus(selectedInvoiceId.value, newStatus);
+  await fetchAllInvoices();
+  isStatusModalOpen.value = false;
+  showToast('success', `Statut mis à jour avec succès pour la facture ${invoice?.number} !`);
+  selectedInvoiceId.value = null;
+}
 
 async function fetchInvoiceTemplates() {
   await invoiceTemplateStore.fetchAllTemplates();
@@ -177,11 +235,50 @@ function openDeleteConfirmation(id: string) {
   isDeleteModalOpen.value = true;
 }
 
+function openSentConfirmation(id: string) {
+  selectedInvoiceId.value = id;
+  isEmailSentModalOpen.value = true;
+}
+
+function openSentPaidConfirmation(id: string) {
+  selectedInvoiceId.value = id;
+  isEmailSentPaidModalOpen.value = true;
+}
+
+function openStatusModal(id: string) {
+  const invoice = invoiceStore.invoices.find(q => q.id === id);
+  if (!invoice) return;
+  selectedInvoiceId.value = id;
+  selectedInvoiceStatus.value = invoice.status;
+  statusModalAvailableStatuses.value = getAvailableStatuses(invoice.status);
+  isStatusModalOpen.value = true;
+}
+
 async function confirmDeleteInvoice() {
   if (!selectedInvoiceId.value) return;
   await invoiceStore.deleteInvoice(selectedInvoiceId.value);
   await fetchAllInvoices();
   showToast('success', 'La facture a été bien supprimée !');
+  selectedInvoiceId.value = null;
+}
+
+async function confirmSentInvoice() {
+  if (!selectedInvoiceId.value) return;
+  const client = await invoiceStore.sentInvoiceToClient(selectedInvoiceId.value);
+  if (client) {
+    await fetchAllInvoices();
+    showToast('success', `La facture a bien été envoyée à ${client.firstName} ${client.lastName.toUpperCase()}!`);
+  }
+  selectedInvoiceId.value = null;
+}
+
+async function confirmSentPaidInvoice() {
+  if (!selectedInvoiceId.value) return;
+  const client = await invoiceStore.sentPaidInvoiceToClient(selectedInvoiceId.value);
+  if (client) {
+    await fetchAllInvoices();
+    showToast('success', `La facture acquittée a bien été envoyée à ${client.firstName} ${client.lastName.toUpperCase()}!`);
+  }
   selectedInvoiceId.value = null;
 }
 

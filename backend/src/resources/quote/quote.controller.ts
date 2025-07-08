@@ -80,8 +80,6 @@ export class QuoteController {
     @Param('id') id: string,
     @Body() body: { newStatus: QuoteStatus },
   ) {
-    console.log('new', body.newStatus);
-
     return this.quoteService.changeStatus(id, user.userId, body.newStatus);
   }
 

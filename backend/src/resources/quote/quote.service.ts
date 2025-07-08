@@ -336,31 +336,29 @@ export class QuoteService {
       [QuoteStatus.draft]: [QuoteStatus.sent],
     };
 
-    if (allowedManualTransitions[currentStatus]?.includes(newStatus)) {
-      const updateData: any = {
-        status: newStatus,
-      };
-
-      if (newStatus === QuoteStatus.sent) {
-        updateData.issuedAt = new Date();
-      }
-      const updatedQuote = await this.prisma.quote.update({
-        where: { id },
-        data: updateData,
-        include: {
-          variableValues: true,
-        },
-      });
-
-      return plainToInstance(QuoteEntity, updatedQuote, {
-        excludeExtraneousValues: true,
-        enableImplicitConversion: true,
-      });
+    if (!allowedManualTransitions[currentStatus]?.includes(newStatus)) {
+      throw new BadRequestException(
+        `Transition du statut "${currentStatus}" vers "${newStatus}" non autorisée.`,
+      );
     }
 
-    throw new BadRequestException(
-      `Transition du statut "${currentStatus}" vers "${newStatus}" non autorisée.`,
-    );
+    const updateData: any = {
+      status: newStatus,
+    };
+
+    if (newStatus === QuoteStatus.sent) {
+      updateData.issuedAt = new Date();
+    }
+    const updatedQuote = await this.prisma.quote.update({
+      where: { id },
+      data: updateData,
+      include: { variableValues: true },
+    });
+
+    return plainToInstance(QuoteEntity, updatedQuote, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
   }
 
   async sendQuoteToClient(id: string, userId: string) {
@@ -369,7 +367,8 @@ export class QuoteService {
 
     if (
       quote.status !== QuoteStatus.draft &&
-      quote.status !== QuoteStatus.sent
+      quote.status !== QuoteStatus.sent &&
+      quote.status !== QuoteStatus.accepted
     ) {
       throw new BadRequestException(
         `Impossible d’envoyer le devis : statut "${quote.status}".`,

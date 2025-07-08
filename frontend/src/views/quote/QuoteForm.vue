@@ -153,8 +153,6 @@ import { generateFinalHtml } from '@/utils/generateFinalHtml';
   const clients = computed(() => clientStore.clients);
   const isLoading = computed(() => quoteStore.isLoading)
 
-  onMounted(initialize);
-
   onMounted(async () => {
     await initialize();
 

@@ -155,8 +155,6 @@ const headers: Header[] = [
 
 async function fetchContractTemplates() {
   await contractTemplateStore.fetchAllTemplates();
-  console.log('bhbjhbk', contracts.value);
-  
   return contractTemplateStore.templates
     .filter(t => !!t.id)
     .map(t => ({
@@ -256,8 +254,6 @@ onMounted(async () => {
   }
 
   await fetchAllContracts();
-  console.log('pssseee');
-  
 });
 
 watch([search, selectedStatus], async () => {
