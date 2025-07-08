@@ -10,7 +10,7 @@
           elevation="0"
       >
         <template v-slot:title>
-          <span class="font-weight-black">Connexionn</span>
+          <span class="font-weight-black">Connexionnh</span>
         </template>
 
         <v-card-text>
