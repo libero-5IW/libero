@@ -5,15 +5,17 @@ services:
   traefik:
     image: traefik:v3.0
     command:
+      - --providers.swarm=true
       - --providers.docker=true
-      - --providers.docker.swarmMode=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge=true
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.le.acme.email=rachaafaf15@email.com
       - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
       - --api.dashboard=true
+      - --log.level=INFO
     ports:
       - "80:80"
       - "443:443"
@@ -27,6 +29,12 @@ services:
       placement:
         constraints:
           - node.role == manager
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.traefik.rule=Host(`traefik.liberogestion.fr`)"
+        - "traefik.http.routers.traefik.entrypoints=websecure"
+        - "traefik.http.routers.traefik.tls.certresolver=le"
+        - "traefik.http.services.traefik.loadbalancer.server.port=8080"
 
   postgres:
     image: postgres:16-alpine
@@ -59,10 +67,10 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.libero-backend.rule=Host(`api.liberogestion.fr`)"
-        - "traefik.http.routers.libero-backend.entrypoints=websecure"
-        - "traefik.http.routers.libero-backend.tls.certresolver=le"
-        - "traefik.http.services.libero-backend.loadbalancer.server.port=3000"
+        - "traefik.http.routers.backend.rule=Host(`api.liberogestion.fr`)"
+        - "traefik.http.routers.backend.entrypoints=websecure"
+        - "traefik.http.routers.backend.tls.certresolver=le"
+        - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
   frontend:
     image: projetlibero/libero-frontend:latest
@@ -76,10 +84,10 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.libero-frontend.rule=Host(`liberogestion.fr`,`www.liberogestion.fr`)"
-        - "traefik.http.routers.libero-frontend.entrypoints=websecure"
-        - "traefik.http.routers.libero-frontend.tls.certresolver=le"
-        - "traefik.http.services.libero-frontend.loadbalancer.server.port=5173"
+        - "traefik.http.routers.frontend.rule=Host(`liberogestion.fr`,`www.liberogestion.fr`)"
+        - "traefik.http.routers.frontend.entrypoints=websecure"
+        - "traefik.http.routers.frontend.tls.certresolver=le"
+        - "traefik.http.services.frontend.loadbalancer.server.port=5173"
 
 volumes:
   postgres_data:
