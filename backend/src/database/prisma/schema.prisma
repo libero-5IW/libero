@@ -15,29 +15,41 @@ datasource db {
 }
 
 model User {
-  id                String   @id @default(uuid())
-  firstName         String
-  lastName          String
-  email             String   @unique
-  password          String
-  companyName       String?
-  addressLine       String
-  postalCode        String
-  city              String
-  country           String   @default("France")
-  legalStatus       String
-  siret             String
-  tvaNumber         String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                        String   @id @default(uuid())
+  firstName                 String
+  lastName                  String
+  email                     String   @unique
+  password                  String
+  companyName               String?
+  addressLine               String
+  postalCode                String
+  city                      String
+  country                   String   @default("France")
+  legalStatus               String
+  siret                     String
+  tvaNumber                 String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  resetPasswordToken        String?
+  resetPasswordTokenExpiry  DateTime?
+  lastPasswordUpdate        DateTime @default(now())
+  resetTokenSource          ResetTokenSource?
+  loginAttempts             Int @default(0)
+  lockedUntil               DateTime?
 
-  quoteTemplates    QuoteTemplate[]
-  quotes            Quote[]
-  invoiceTemplates  InvoiceTemplate[]
-  invoices          Invoice[]
-  clients           Client[] 
-  contractTemplates ContractTemplate[]
-  contracts         Contract[]
+  quoteTemplates            QuoteTemplate[]
+  quotes                    Quote[]
+  invoiceTemplates          InvoiceTemplate[]
+  invoices                  Invoice[]
+  clients                   Client[] 
+  contractTemplates         ContractTemplate[]
+  contracts                 Contract[]
+}
+
+enum ResetTokenSource {
+  RESET //forgotten password
+  LOCKED
+  EXPIRED
 }
 
 model Client {
@@ -67,6 +79,8 @@ model QuoteTemplate {
   name          String
   contentHtml   String
   userId        String?
+  pdfKey        String
+  previewKey    String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -140,6 +154,8 @@ model InvoiceTemplate {
   name          String
   contentHtml   String
   userId        String?
+  pdfKey        String
+  previewKey    String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -245,6 +261,8 @@ model ContractTemplate {
   name        String
   contentHtml String
   userId      String?
+  pdfKey      String
+  previewKey  String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

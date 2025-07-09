@@ -25,6 +25,8 @@ services:
       - postgres
     volumes:
       - ./backend:/app/backend
+    env_file:
+      - ./backend/.env.local
 
   frontend:
     # platform: linux/arm64

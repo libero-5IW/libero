@@ -1,3 +1,4 @@
+#FROM --platform=linux/arm64 node:20-slim
 FROM node:20-slim
 
 RUN apt-get update && apt-get install -y \
@@ -29,6 +30,9 @@ RUN apt-get update && apt-get install -y \
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
+# MISE EN PROD: NODE_ENV=development -> NODE_ENV=production
+ENV NODE_ENV=production
+
 WORKDIR /app/backend
 
 COPY package*.json ./
@@ -39,19 +43,11 @@ COPY . .
 
 #prod
 # Génération Prisma
+# RUN npx prisma migrate
 RUN npx prisma generate
 
-# Build en production
-RUN npm run build
-
-EXPOSE 3000
+EXPOSE 3000 5555
+# MISE EN PROD: npm run start:dev -> npm run start:prod 
+# CMD sh -c "nohup npx prisma studio --port 5555 & npm run start:dev"
 
 CMD ["npm", "run", "start:prod"]
-
-#dev 
-# RUN npx prisma migrate
-# RUN npx prisma generate
-
-# EXPOSE 3000 5555
-
-# CMD sh -c "nohup npx prisma studio --port 5555 & npm run start:dev"

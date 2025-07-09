@@ -152,7 +152,7 @@
                     class="d-flex align-center ma-0 pa-0"
                     style="font-size: 0.85rem; color: #4a4a4a; line-height: 1.1;"
                     >
-                    <v-icon :color="rule.valid ? 'green' : 'red'" class="mr-2">
+                    <v-icon :color="rule.valid ? 'success' : 'error'" class="mr-2">
                         {{ rule.valid ? 'mdi-check-circle' : 'mdi-close-circle' }}
                     </v-icon>
                     <span>{{ rule.text }}</span>
@@ -257,10 +257,11 @@
       const isFormValid = await formRef.value?.validate();
       if (!isFormValid) return;
       if (!validateForm()) return;
-      const { confirmPassword, customLegalStatus, ...rest } = form.value;
+      const { confirmPassword, customLegalStatus, email, ...rest } = form.value;
 
       const payload: RegisterData = {
         ...rest,
+        email: email.trim().toLowerCase(),
         legalStatus:
           form.value.legalStatus === 'Autre'
             ? form.value.customLegalStatus.trim()

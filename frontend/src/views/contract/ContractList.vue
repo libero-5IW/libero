@@ -8,13 +8,91 @@
       </v-btn>
     </div>
 
+    <div class="flex items-center gap-4 mb-6">
+      <SearchInput
+        v-model="search"
+        placeholder="Rechercher un contrat"
+        class="w-64"
+        density="compact"
+        hide-details
+        @search="fetchContracts"
+      />
+
+      <v-select
+        v-model="selectedStatus"
+        :items="statusOptions"
+        item-title="label"
+        item-value="value"
+        label="Filtrer par statut"
+        class="w-48"
+        density="compact"
+        hide-details
+        clearable
+        @update:modelValue="fetchContracts"
+      />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+    </div>
+
+    <v-progress-linear
+    v-if="isLoading"
+    indeterminate
+    color="primary"
+    class="mb-4"
+    />
+
     <div v-if="documentCards.length > 0">
       <DocumentCardList
         :items="documentCards"
         titlePrefix="Contrat"
+        type="contract"
         @edit="editContract"
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
+        @convert-to-invoice="handleConvertToInvoice"
+        :isLoading="isLoading"
       />
     </div>
 
@@ -32,6 +110,7 @@
   <TemplateSelectionModal 
     v-model="showTemplateModal"
     :fetchTemplates="fetchContractTemplates"
+    type="contrat"
     @templateSelected="handleTemplateSelected"
   />
 
@@ -44,10 +123,18 @@
     confirmColor="error"
     @confirm="confirmDeleteContract"
   />
+
+  <TemplateSelectionModal
+  v-model="showInvoiceTemplateModal"
+  :fetchTemplates="fetchInvoiceTemplates"
+  type="contrat"
+  @templateSelected="handleInvoiceTemplateSelected"
+  />
+
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useContractStore } from '@/stores/contract';
 import { useContractTemplateStore } from '@/stores/contractTemplate';
@@ -57,7 +144,13 @@ import { useToastHandler } from '@/composables/useToastHandler';
 import type { DocumentCard, ToastStatus } from '@/types';
 import type { Header } from '@/types/Header';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
+import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
+import { mapContractToInvoiceVariables } from '@/utils/mapContractToInvoice';
+import type { Contract } from '@/schemas/contract.schema';
+import SearchInput from '@/components/SearchInput.vue';
+import { CONTRACT_STATUS } from '@/constants/status/contract-status.constant';
 
+const search = ref('');
 const router = useRouter();
 const contractStore = useContractStore();
 const contractTemplateStore = useContractTemplateStore();
@@ -66,9 +159,25 @@ const { showToast } = useToastHandler();
 const showTemplateModal = ref(false);
 const showStatusModal = ref(false);  
 const contracts = computed(() => contractStore.contracts);
+const selectedStatus = ref<string | null>(null);
+const isLoading = computed(() => contractStore.isLoading)
 
 const isDeleteModalOpen = ref(false)
 const selectedContractId = ref<string | null>(null)
+const invoiceTemplateStore = useInvoiceTemplateStore();
+const showInvoiceTemplateModal = ref(false);
+const contractToConvert = ref<Contract | null>(null);
+const startDate = ref<string | null>(null);
+const endDate = ref<string | null>(null);
+
+const statusOptions = [
+  { label: 'Tous', value: null },
+  { label: 'Brouillon', value: CONTRACT_STATUS.DRAFT },
+  { label: 'Envoyé', value: CONTRACT_STATUS.SENT },
+  { label: 'Signé', value: CONTRACT_STATUS.SIGNED },
+  { label: 'Expiré', value: CONTRACT_STATUS.EXPIRED },
+  { label: 'Annulé', value: CONTRACT_STATUS.CANCELLED },
+];
 
 const documentCards = computed<DocumentCard[]>(() =>
   contracts.value.map((contract): DocumentCard  => {
@@ -97,6 +206,8 @@ const headers: Header[] = [
 
 async function fetchContractTemplates() {
   await contractTemplateStore.fetchAllTemplates();
+  console.log('bhbjhbk', contracts.value);
+  
   return contractTemplateStore.templates
     .filter(t => !!t.id)
     .map(t => ({
@@ -134,6 +245,61 @@ async function confirmDeleteContract() {
   selectedContractId.value = null
 }
 
+function handleConvertToInvoice(card: DocumentCard) {
+  const contract = contracts.value.find(c => c.id === card.id);
+
+  if (!contract) {
+    showToast('error', 'Contrat introuvable');
+    return;
+  }
+
+  contractToConvert.value = contract;
+  showInvoiceTemplateModal.value = true;
+}
+
+async function fetchInvoiceTemplates() {
+  await invoiceTemplateStore.fetchAllTemplates();
+  return invoiceTemplateStore.templates.map(t => ({
+    id: t.id!,
+    name: t.name,
+  }));
+}
+
+function handleInvoiceTemplateSelected(templateId: string) {
+  const contract = contractToConvert.value;
+  const template = invoiceTemplateStore.templates.find(t => t.id === templateId);
+
+  if (!contract || !template) {
+    showToast('error', 'Erreur lors de la génération de la facture');
+    return;
+  }
+
+  const mappedVars = mapContractToInvoiceVariables(template.variables, contract.variableValues);
+
+  router.push({
+    name: 'InvoiceForm',
+    state: {
+      fromContractId: contract.id,
+      templateId,
+      clientId: contract.clientId,
+      variables: mappedVars,
+    }
+  });
+}
+
+async function fetchContracts() {
+  const term = search.value.trim();
+  const status = selectedStatus.value || undefined;
+  const start = startDate.value || null;
+  const end = endDate.value || null;
+
+  if (!term && !status && !start && !end) {
+    await contractStore.fetchAllContracts();
+  } else {
+    await contractStore.searchContracts(term, status, start, end);
+  }
+}
+
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
   const message = history.state?.toastMessage as string;
@@ -143,5 +309,12 @@ onMounted(async () => {
   }
 
   await fetchAllContracts();
+  console.log('pssseee');
+  
 });
+
+watch([search, selectedStatus, startDate, endDate], async () => {
+  await fetchContracts();
+});
+
 </script>

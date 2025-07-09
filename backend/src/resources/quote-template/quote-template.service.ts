@@ -13,13 +13,17 @@ import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.ut
 import { QuoteTemplateVariableDto } from './dto/quote-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { VariableType } from 'src/common/enums/variable-type.enum';
-import { extractVariablesFromHtml } from 'src/common/utils/variable-parser.util';
+import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { S3Service } from 'src/common/s3/s3.service';
 
 @Injectable()
 export class QuoteTemplateService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly pdfGeneratorService: PdfGeneratorService,
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(
@@ -27,22 +31,34 @@ export class QuoteTemplateService {
     createQuoteTemplateDto: CreateQuoteTemplateDto,
   ): Promise<QuoteTemplateEntity> {
     const { name, contentHtml, variables = [] } = createQuoteTemplateDto;
-  
-    await this.userService.getUserOrThrow(userId);
-  
+
+    const user = await this.userService.getUserOrThrow(userId);
+
     const existingTemplate = await this.prisma.quoteTemplate.findFirst({
       where: { userId, name },
     });
-  
+
     if (existingTemplate) {
       throw new BadRequestException('Un template avec ce nom existe déjà.');
     }
-  
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(contentHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'quote-templates',
+    );
+
     const template = await this.prisma.quoteTemplate.create({
       data: {
         name,
         contentHtml,
         userId,
+        pdfKey,
+        previewKey,
         variables: {
           create: this.mapVariableData(variables),
         },
@@ -51,12 +67,12 @@ export class QuoteTemplateService {
         variables: true,
       },
     });
-  
+
     const mergedTemplate = this.mergeWithSystemVariables(template);
-  
+
     return plainToInstance(QuoteTemplateEntity, mergedTemplate);
   }
-  
+
   async findAll(
     userId: string,
     includeDefaultTemplate: boolean,
@@ -69,8 +85,27 @@ export class QuoteTemplateService {
       where: whereClause,
       include: { variables: true },
     });
+
+    const templatesWithUrls = await Promise.all(
+      templates.map(async (template) => {
+        const previewUrl = template.previewKey
+          ? await this.s3Service.generateSignedUrl(template.previewKey)
+          : null;
+
+        const pdfUrl = template.pdfKey
+          ? await this.s3Service.generateSignedUrl(template.pdfKey)
+          : null;
+
+        return {
+          ...template,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+
     const templatesWithSystemVariables = await Promise.all(
-      templates.map((t) => this.mergeWithSystemVariables(t)),
+      templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
 
     return plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables);
@@ -78,7 +113,20 @@ export class QuoteTemplateService {
 
   async findOne(id: string, userId: string): Promise<QuoteTemplateEntity> {
     const template = await this.getTemplateOrThrow(id, userId);
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
+
+    const previewUrl = template.previewKey
+      ? await this.s3Service.generateSignedUrl(template.previewKey)
+      : null;
+
+    const pdfUrl = template.pdfKey
+      ? await this.s3Service.generateSignedUrl(template.pdfKey)
+      : null;
+
+    const templateWithSystemVariables = this.mergeWithSystemVariables({
+      ...template,
+      previewUrl,
+      pdfUrl,
+    });
     return plainToInstance(QuoteTemplateEntity, templateWithSystemVariables);
   }
 
@@ -89,7 +137,27 @@ export class QuoteTemplateService {
   ): Promise<QuoteTemplateEntity> {
     const { name, contentHtml, variables } = updateQuoteTemplateDto;
 
-    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
+    const existingTemplate = await this.getTemplateOrThrow(id, userId, {
+      allowDefaultTemplate: false,
+    });
+    const user = await this.userService.getUserOrThrow(userId);
+
+    if (existingTemplate.pdfKey) {
+      await this.s3Service.deleteFile(existingTemplate.pdfKey);
+    }
+    if (existingTemplate.previewKey) {
+      await this.s3Service.deleteFile(existingTemplate.previewKey);
+    }
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(contentHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'quote-templates',
+    );
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
       if (variables?.length) {
@@ -110,6 +178,8 @@ export class QuoteTemplateService {
         data: {
           name,
           contentHtml,
+          pdfKey,
+          previewKey,
         },
         include: {
           variables: true,
@@ -124,8 +194,16 @@ export class QuoteTemplateService {
   }
 
   async remove(id: string, userId: string): Promise<QuoteTemplateEntity> {
-    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
+    const template = await this.getTemplateOrThrow(id, userId, {
+      allowDefaultTemplate: false,
+    });
 
+    if (template.pdfKey) {
+      await this.s3Service.deleteFile(template.pdfKey);
+    }
+    if (template.previewKey) {
+      await this.s3Service.deleteFile(template.previewKey);
+    }
     const deletedQuoteTemplate = await this.prisma.quoteTemplate.delete({
       where: { id },
     });
@@ -142,11 +220,27 @@ export class QuoteTemplateService {
       baseName: template.name,
     });
 
+    const user = await this.userService.getUserOrThrow(userId);
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(
+        template.contentHtml,
+      );
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'quote-templates',
+    );
+
     const duplicatedTemplate = await this.prisma.quoteTemplate.create({
       data: {
         name,
         contentHtml: template.contentHtml,
         userId,
+        pdfKey: pdfKey,
+        previewKey: previewKey,
         variables: { create: this.mapVariableData(template.variables) },
       },
       include: {
@@ -202,4 +296,57 @@ export class QuoteTemplateService {
   private mergeWithSystemVariables(template: QuoteTemplateEntity) {
     return mergeSystemVariables(template, 'quoteTemplateVariable');
   }
+
+  async search(
+    userId: string,
+    rawSearch: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<QuoteTemplateEntity[]> {
+    const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
+  
+    const whereClause = {
+      ...baseWhere,
+      ...(startDate || endDate
+        ? {
+            createdAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(endDate ? {
+                lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
+              } : {})
+            }
+          }
+        : {})
+    };
+  
+    const templates = await this.prisma.quoteTemplate.findMany({
+      where: whereClause,
+      include: { variables: true },
+    });
+  
+    const templatesWithUrls = await Promise.all(
+      templates.map(async (template) => {
+        const previewUrl = template.previewKey
+          ? await this.s3Service.generateSignedUrl(template.previewKey)
+          : null;
+  
+        const pdfUrl = template.pdfKey
+          ? await this.s3Service.generateSignedUrl(template.pdfKey)
+          : null;
+  
+        return {
+          ...template,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+  
+    const templatesWithSystemVariables = await Promise.all(
+      templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
+    );
+  
+    return plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables);
+  }
+  
 }

@@ -8,13 +8,90 @@
       </v-btn>
     </div>
 
+    <div class="flex items-center gap-4 mb-6">
+      <SearchInput
+        v-model="search"
+        placeholder="Rechercher une facture"
+        class="w-64"
+        density="compact"
+        hide-details
+        @search="fetchInvoices"
+      />
+
+      <v-select
+        v-model="selectedStatus"
+        :items="statusOptions"
+        item-title="label"
+        item-value="value"
+        label="Filtrer par statut"
+        class="w-48"
+        density="compact"
+        hide-details
+        clearable
+        @update:modelValue="fetchInvoices"
+      />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+    </div>
+
+    <v-progress-linear
+    v-if="isLoading"
+    indeterminate
+    color="primary"
+    class="mb-4"
+    />
+
     <div v-if="documentCards.length > 0">
       <DocumentCardList
         :items="documentCards"
         titlePrefix="Facture"
+        type="invoice"
         @edit="editInvoice"
         @change-status="showStatusModal = true"
         @delete="openDeleteConfirmation"
+        :isLoading="isLoading"
       />
     </div>
 
@@ -30,6 +107,7 @@
 
   <TemplateSelectionModal 
     v-model="showTemplateModal"
+    type="facture"
     :fetchTemplates="fetchInvoiceTemplates"
     @templateSelected="handleTemplateSelected"
   />
@@ -47,7 +125,7 @@
 
 <script setup lang="ts">
 
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useInvoiceStore } from '@/stores/invoice';
 import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue';
 import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue'; 
@@ -57,19 +135,35 @@ import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
+import SearchInput from '@/components/SearchInput.vue';
+import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
 
+const search = ref('');
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const invoiceStore = useInvoiceStore();
+const selectedStatus = ref<string | null>(null);
 
 const { showToast } = useToastHandler();
 const router = useRouter();
+const startDate = ref<string | null>(null)
+const endDate = ref<string | null>(null)
 
 const showTemplateModal = ref(false);  
 const showStatusModal = ref(false);  
 const invoices = computed(() => invoiceStore.invoices);
+const isLoading = computed(() => invoiceStore.isLoading)
 
 const isDeleteModalOpen = ref(false);
 const selectedInvoiceId = ref<string | null>(null);
+
+const statusOptions = [
+  { label: 'Tous', value: null },
+  { label: 'Brouillon', value: INVOICE_STATUS.DRAFT },
+  { label: 'Envoyée', value: INVOICE_STATUS.SENT },
+  { label: 'Payée', value: INVOICE_STATUS.PAID },
+  { label: 'En retard', value: INVOICE_STATUS.OVERDUE },
+  { label: 'Annulée', value: INVOICE_STATUS.CANCELLED },
+];
 
 const documentCards = computed<DocumentCard[]>(() =>
   invoices.value.map((invoice): DocumentCard  => {
@@ -142,6 +236,19 @@ async function confirmDeleteInvoice() {
   selectedInvoiceId.value = null;
 }
 
+async function fetchInvoices() {
+  const term = search.value.trim();
+  const status = selectedStatus.value || undefined;
+  const start = startDate.value || null;
+  const end = endDate.value || null;
+
+  if (!term && !status && !start && !end) {
+    await fetchAllInvoices();
+  } else {
+    await invoiceStore.searchInvoices(term, status, start, end);
+  }
+}
+
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
   const message = history.state?.toastMessage as string;
@@ -151,6 +258,10 @@ onMounted(async () => {
   }
 
   await fetchAllInvoices();
+});
+
+watch([search, selectedStatus, startDate, endDate], async () => {
+  await fetchInvoices();
 });
 
 </script>

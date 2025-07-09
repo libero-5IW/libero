@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Put,
+  Query
 } from '@nestjs/common';
 import { ContractService } from './contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -16,6 +17,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ValidateContractOnCreatePipe } from './pipes/create-validate-contract-variables.pipe';
 import { ValidateContractOnUpdatePipe } from './pipes/update-validate-contract.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { ContractStatus } from '@prisma/client';
 
 @ApiBearerAuth()
 @ApiTags('Contracts')
@@ -42,6 +44,20 @@ export class ContractController {
     return this.contractService.getNextContractNumber(user.userId);
   }
 
+  @Get('search')
+  searchContracts(
+    @Query('term') term: string,
+    @Query('status') status: ContractStatus,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.contractService.search(user.userId, term, status, parsedStart, parsedEnd);
+  }  
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.contractService.findOne(id, user.userId);
@@ -61,4 +77,5 @@ export class ContractController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.contractService.remove(id, user.userId);
   }
+
 }

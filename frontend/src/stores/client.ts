@@ -20,7 +20,6 @@ export const useClientStore = defineStore('client', () => {
       isLoading.value = false;
     }
   }
-  
 
   async function fetchClient(id: string) {
     isLoading.value = true
@@ -63,6 +62,19 @@ export const useClientStore = defineStore('client', () => {
     }
   }
 
+  async function searchClients(term: string) {
+    isLoading.value = true
+    try {
+      const { data } = await apiClient.get(`/clients/search/${encodeURIComponent(term)}`)
+      clients.value = data.map((item: any) => ClientSchema.parse(item))
+    } catch (error) {
+      clients.value = []
+      handleError(error, 'Erreur lors de la recherche des clients.')
+    } finally {
+      isLoading.value = false
+    }
+  }  
+
   return {
     clients,
     currentClient,
@@ -71,6 +83,7 @@ export const useClientStore = defineStore('client', () => {
     fetchClient,
     createClient,
     updateClient,
-    deleteClient
+    deleteClient,
+    searchClients
   }
 })

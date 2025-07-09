@@ -1,8 +1,10 @@
 <template>
   <TemplateSelectionModal
+    v-if="showTemplateModal"
     v-model="showTemplateModal"
     :fetchTemplates="fetchInvoiceTemplates"
     :isForced="true"
+    type="facture"
     @templateSelected="handleTemplateSelected"
   />
 
@@ -143,7 +145,7 @@ const form = ref<CreateInvoice>({
 
 const invoiceId = computed(() => route.params.id as string | undefined);
 const isEditMode = computed(() => !!invoiceId.value);
-
+const state = window.history.state
 
 const currentUser = computed(() => userStore.user);
 const currentTemplate = computed(() => invoiceTemplateStore.currentTemplate);
@@ -161,76 +163,91 @@ const previewVariables = computed(() => {
   return result;
 });
 
-onMounted(initialize);
-
 onMounted(async () => {
+  await initialize();
+
   if (isEditMode.value && invoiceId.value) {
     await invoiceStore.fetchInvoice(invoiceId.value);
     const invoice = invoiceStore.currentInvoice;
 
     if (invoice) {
       Object.assign(form.value, {
-      templateId: invoice.templateId ?? '',
-      generatedHtml: invoice.generatedHtml,
-      dueDate: invoice.dueDate,
-      clientId: invoice.clientId,
-      issuedAt: invoice.issuedAt,
-      variableValues: invoice.variableValues.map(v => ({
-        id: v.id,
-        variableName: v.variableName,
-        value: v.value,
-        label: v.label,
-        type: v.type,
-        required: v.required,
-        invoiceId: invoice.id,
-      })),
-    });
+        templateId: invoice.templateId ?? '',
+        generatedHtml: invoice.generatedHtml,
+        dueDate: invoice.dueDate,
+        clientId: invoice.clientId,
+        issuedAt: invoice.issuedAt,
+        variableValues: invoice.variableValues.map(v => ({
+          id: v.id,
+          variableName: v.variableName,
+          value: v.value,
+          label: v.label,
+          type: v.type,
+          required: v.required,
+          invoiceId: invoice.id,
+        })),
+      });
 
-    selectedClientId.value = invoice.clientId ?? null; 
+      selectedClientId.value = invoice.clientId ?? null;
 
-    if (invoice.templateId) {
-      selectedTemplateId.value = invoice.templateId;
-      await invoiceTemplateStore.fetchTemplate(invoice.templateId);
-      await handleTemplateSelected(invoice.templateId);
+      if (invoice.templateId) {
+        selectedTemplateId.value = invoice.templateId;
+        await invoiceTemplateStore.fetchTemplate(invoice.templateId);
+        await handleTemplateSelected(invoice.templateId);
 
-      variablesValue.value = invoice.variableValues.map(v => ({
-        id: v.id,
-        variableName: v.variableName,
-        value: v.value,
-        label: v.label,
-        type: v.type,
-        required: v.required,
-        invoiceId: invoice.id,
-      }));
-
+        variablesValue.value = invoice.variableValues.map(v => ({
+          id: v.id,
+          variableName: v.variableName,
+          value: v.value,
+          label: v.label,
+          type: v.type,
+          required: v.required,
+          invoiceId: invoice.id,
+        }));
+      }
     }
-}}});
-
+  }
+});
 
 async function initialize() {
-  const templateIdFromQuery = route.query.templateId as string | undefined;
-  const templateId = selectedTemplateId.value || templateIdFromQuery;
-
   await clientStore.fetchAllClients();
 
-  if (!templateId && !isEditMode.value) {
-  showTemplateModal.value = true;
-  return;
+  const state = window.history.state;
+  const templateIdFromState = state?.templateId as string | undefined;
+  const templateIdFromQuery = route.query.templateId as string | undefined;
+
+  const templateId = templateIdFromState || templateIdFromQuery;
+
+  if (state?.fromQuoteId && templateIdFromState) {
+    form.value.templateId = templateIdFromState;
+    form.value.clientId = state.clientId;
+    form.value.quoteId = state.fromQuoteId;
+    variablesValue.value = state.variables;
+    selectedTemplateId.value = templateIdFromState;
   }
 
-if (templateId) {
-  await invoiceTemplateStore.fetchTemplate(templateId);
+  else if (state?.fromContractId && templateIdFromState) {
+    form.value.templateId = templateIdFromState;
+    form.value.clientId = state.clientId;
+    form.value.contractId = state.fromContractId;
+    variablesValue.value = state.variables;
+    selectedTemplateId.value = templateIdFromState;
+  }
+
+  if (!templateId && !isEditMode.value) {
+    showTemplateModal.value = true;
+    return;
+  }
+
+  await invoiceTemplateStore.fetchTemplate(templateId!);
 
   if (!invoiceTemplateStore.currentTemplate) {
     showTemplateModal.value = true;
     return;
   }
 
-  selectedTemplateId.value = templateId;
-  handleTemplateSelected(templateId);
-} else if (!isEditMode.value) {
-  showTemplateModal.value = true;
-}
+  selectedTemplateId.value = templateId!;
+  await handleTemplateSelected(templateId!);
 }
 
 async function fetchInvoiceTemplates() {
@@ -433,6 +450,8 @@ async function onCreateInvoice() {
   const payload: CreateInvoice = {
     templateId: selectedTemplateId.value!,
     ...(selectedClientId.value ? { clientId: selectedClientId.value } : {clientId: null}),
+    ...(history.state?.fromQuoteId ? { quoteId: history.state.fromQuoteId } : {}),
+    ...(history.state?.fromContractId ? { contractId: history.state.fromContractId } : {}),
     issuedAt: new Date().toISOString(),
     dueDate: new Date(Date.now() + THIRTY_DAYS_IN_MS).toISOString(),
     generatedHtml: generateFinalHtml(previewHtml.value, variablesValue.value),

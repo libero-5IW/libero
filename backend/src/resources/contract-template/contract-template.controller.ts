@@ -39,6 +39,19 @@ export class ContractTemplateController {
     );
   }
 
+  @Get('search')
+  search(
+    @Query('term') term: string,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.contractTemplateService.search(user.userId, term, parsedStart, parsedEnd);
+  }
+
   @Get()
   findAll(
     @CurrentUser() user: JwtPayload,
@@ -82,4 +95,5 @@ export class ContractTemplateController {
   duplicate(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.contractTemplateService.duplicate(id, user.userId);
   }
+  
 }

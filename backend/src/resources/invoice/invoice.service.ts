@@ -17,6 +17,7 @@ import { CreateInvoiceVariableValueDto } from './dto/create-invoice-variable-val
 import { InvoiceTemplateVariableEntity } from '../invoice-template/entities/invoice-template-variable.entity';
 import { S3Service } from 'src/common/s3/s3.service';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
 
 @Injectable()
 export class InvoiceService {
@@ -30,8 +31,15 @@ export class InvoiceService {
   ) {}
 
   async create(userId: string, dto: CreateInvoiceDto): Promise<InvoiceEntity> {
-    const { clientId, templateId, generatedHtml, dueDate, variableValues } =
-      dto;
+    const {
+      clientId,
+      templateId,
+      generatedHtml,
+      dueDate,
+      variableValues,
+      quoteId,
+      contractId,
+    } = dto;
 
     const user = await this.userService.getUserOrThrow(userId);
 
@@ -61,6 +69,8 @@ export class InvoiceService {
         template: { connect: { id: templateId } },
         user: { connect: { id: userId } },
         ...(clientId ? { client: { connect: { id: clientId } } } : {}),
+        ...(quoteId ? { quote: { connect: { id: quoteId } } } : {}),
+        ...(contractId ? { contract: { connect: { id: contractId } } } : {}),
         status: InvoiceStatus.draft,
         generatedHtml,
         dueDate: new Date(dueDate),
@@ -203,7 +213,14 @@ export class InvoiceService {
   }
 
   async remove(id: string, userId: string) {
-    await this.getInvoiceOrThrow(id, userId);
+    const invoice = await this.getInvoiceOrThrow(id, userId);
+
+    if (invoice.pdfKey) {
+      await this.s3Service.deleteFile(invoice.pdfKey);
+    }
+    if (invoice.previewKey) {
+      await this.s3Service.deleteFile(invoice.previewKey);
+    }
     const deleted = await this.prisma.invoice.delete({ where: { id } });
     return plainToInstance(InvoiceEntity, deleted);
   }
@@ -246,4 +263,63 @@ export class InvoiceService {
       };
     });
   }
+
+  async search(
+    userId: string,
+    search: string,
+    status?: InvoiceStatus,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
+    const baseWhere = buildSearchQuery(search, userId, 'facture');
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
+  
+    const where = {
+      ...baseWhere,
+      ...(status ? { status } : {}),
+      ...issuedAtFilter,
+    };
+  
+    const invoices = await this.prisma.invoice.findMany({
+      where,
+      include: {
+        variableValues: true,
+        client: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  
+    const invoicesWithUrls = await Promise.all(
+      invoices.map(async (invoice) => ({
+        ...invoice,
+        previewUrl: invoice.previewKey
+          ? await this.s3Service.generateSignedUrl(invoice.previewKey)
+          : null,
+        pdfUrl: invoice.pdfKey
+          ? await this.s3Service.generateSignedUrl(invoice.pdfKey)
+          : null,
+      })),
+    );
+  
+    return plainToInstance(InvoiceEntity, invoicesWithUrls, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }  
+
 }

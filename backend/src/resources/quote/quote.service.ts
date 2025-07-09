@@ -18,6 +18,7 @@ import { CreateQuoteVariableValueDto } from './dto/create-quote-variable-value.d
 import { QuoteTemplateVariableEntity } from '../quote-template/entities/quote-template-variable.entity';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
+import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
 
 @Injectable()
 export class QuoteService {
@@ -203,7 +204,14 @@ export class QuoteService {
   }
 
   async remove(id: string, userId: string) {
-    await this.getQuoteOrThrow(id, userId);
+    const quote = await this.getQuoteOrThrow(id, userId);
+
+    if (quote.pdfKey) {
+      await this.s3Service.deleteFile(quote.pdfKey);
+    }
+    if (quote.previewKey) {
+      await this.s3Service.deleteFile(quote.previewKey);
+    }
     const deletedQuote = this.prisma.quote.delete({ where: { id } });
 
     return plainToInstance(QuoteEntity, deletedQuote);
@@ -259,4 +267,63 @@ export class QuoteService {
 
     return this.s3Service.generateSignedUrl(quote.previewKey);
   }
+
+  async search(
+    userId: string,
+    search: string,
+    status?: QuoteStatus,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
+    const baseWhere = buildSearchQuery(search, userId, 'devis');
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
+  
+    const where = {
+      ...baseWhere,
+      ...(status ? { status } : {}),
+      ...issuedAtFilter,
+    };
+  
+    const quotes = await this.prisma.quote.findMany({
+      where,
+      include: {
+        variableValues: true,
+        client: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  
+    const quotesWithUrls = await Promise.all(
+      quotes.map(async (quote) => ({
+        ...quote,
+        previewUrl: quote.previewKey
+          ? await this.s3Service.generateSignedUrl(quote.previewKey)
+          : null,
+        pdfUrl: quote.pdfKey
+          ? await this.s3Service.generateSignedUrl(quote.pdfKey)
+          : null,
+      })),
+    );
+  
+    return plainToInstance(QuoteEntity, quotesWithUrls, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+  
 }

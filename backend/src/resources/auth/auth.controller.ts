@@ -4,6 +4,8 @@ import {
   Post,
   Body,
   UnauthorizedException,
+  Query,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -12,6 +14,8 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { Public } from './decorators/public.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { UserService } from '../user/user.service';
+import { RequestResetPasswordDto } from './dto/request-reset-password';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -36,6 +40,24 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  @Public()
+  @Post('request-reset-password')
+  async requestResetPassword(@Body() body: RequestResetPasswordDto) {
+    await this.authService.requestPasswordReset(body.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  async resetPassword(@Body() body: ResetPasswordDto) {
+    await this.authService.resetPassword(body.token, body.newPassword);
+  }
+
+  @Public()
+  @Get('reset-password/validate')
+  async validateResetTokenPublic(@Query('token') token: string) {
+    await this.authService.validateResetToken(token);
+  }
+
   @Get('me')
   async getAuthInfo(@CurrentUser() user: JwtPayload) {
     const userInDb = await this.userService.findOne(user.userId);
@@ -47,5 +69,22 @@ export class AuthController {
       userId: userInDb.id,
       email: userInDb.email,
     };
+  }
+
+  @Public()
+  @Get('is-authenticated')
+  async isAuthenticated(
+    @Req() req: { headers: Record<string, string> },
+  ): Promise<boolean> {
+    const authHeader = req.headers?.authorization;
+
+    if (!authHeader?.startsWith('Bearer ')) {
+      return false;
+    }
+
+    const token = authHeader.split(' ')[1];
+    const result = await this.authService.isTokenValid(token);
+
+    return result;
   }
 }

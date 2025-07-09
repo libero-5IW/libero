@@ -11,6 +11,7 @@
           :isEdit="isEdit"
           :onSave="saveTemplate"
           :variables="template.variables"
+          :isLoading="isLoading"
           @editor-ready="setEditor"
           @openEditModal="openEditModal"
           @openRemoveModal="removeVariable"
@@ -53,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import router from '@/routes'
 import { useRoute } from 'vue-router'
 import type { Editor } from '@tiptap/vue-3'
@@ -84,6 +85,7 @@ const invoiceTemplate = useInvoiceTemplateStore()
 const templateId = ref<string | null>(null)
 const isEdit = ref(false)
 const isPreviewFullscreen = ref(false)
+const isLoading = computed(() => invoiceTemplate.isLoading)
 
 const currentVariable = ref<InvoiceTemplateVariable>({
   variableName: '',

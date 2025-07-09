@@ -87,6 +87,29 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     }
   }
 
+  async function searchTemplates(
+    term: string,
+    startDate?: string | null,
+    endDate?: string | null
+  ) {
+    isLoading.value = true
+    try {
+      const { data } = await apiClient.get(`/quote-templates/search`, {
+        params: {
+          term,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {})
+        }
+      })
+      templates.value = data.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
+    } catch (error) {
+      templates.value = []
+      handleError(error, 'Erreur lors de la recherche des templates.')
+    } finally {
+      isLoading.value = false
+    }
+  }
+  
   return {
     templates,
     currentTemplate,
@@ -98,6 +121,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     createTemplate,
     updateTemplate,
     deleteTemplate,
-    duplicateTemplate
+    duplicateTemplate,
+    searchTemplates
   }
 })

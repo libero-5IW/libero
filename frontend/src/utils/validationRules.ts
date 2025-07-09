@@ -60,11 +60,11 @@ export const passwordRules = (options: {
 } = {}) => {
   const {
       required = true,
-      minLength = 1,
-      uppercase = false,
-      lowercase = false,
-      digit = false,
-      specialChar = false
+      minLength = 12,
+      uppercase = true,
+      lowercase = true,
+      digit = true,
+      specialChar = true
   } = options;
 
   const rules = [

@@ -1,6 +1,5 @@
-<template>
-  <CenteredContainer>
-    <div class="shadow-lg shadow-gray-300 border">
+<template >
+   <CenteredContainer>
       <LoginForm :form="form" :loading="loading" @submit="handleLogin">
         <template v-slot:header>
           <div class="flex justify-center py-4">
@@ -16,12 +15,11 @@
           </div>
           <div class="text-center">
             <p class="text-gray-600">Mot de passe oublié ?</p>
-            <router-link to="/EmailResetPassword">Réinitialiser</router-link>
+            <router-link to="/email-reset-password">Réinitialiser</router-link>
           </div>
         </template>
       </LoginForm>
-    </div>
-  </CenteredContainer>
+    </CenteredContainer>
 </template>
 
 <script setup lang="ts">

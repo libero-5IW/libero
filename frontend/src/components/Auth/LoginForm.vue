@@ -69,7 +69,14 @@ import type { LoginData } from '@/schemas/user.schema';
   const localForm = reactive({ ...props.form });
 
   const EmailValidationRules = EmailRules();
-  const passwordValidationRules = passwordRules();
+  const passwordValidationRules = passwordRules({
+    required: true,
+    minLength: 0,    
+    uppercase: false,
+    lowercase: false,
+    digit: false,
+    specialChar: false
+  });
 
   watch(() => props.form, (newForm) => {
     Object.assign(localForm, newForm);

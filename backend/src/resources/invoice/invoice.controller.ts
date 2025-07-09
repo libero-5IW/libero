@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Put,
+  Query
 } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -16,6 +17,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ValidateInvoiceOnCreatePipe } from './pipes/create-validate-invoice-variables.pipe';
 import { ValidateInvoiceOnUpdatePipe } from './pipes/update-validate-invoice.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { InvoiceStatus } from '@prisma/client';
 
 @ApiBearerAuth()
 @ApiTags('Invoices')
@@ -42,6 +44,20 @@ export class InvoiceController {
     return this.invoiceService.getNextInvoiceNumber(user.userId);
   }
 
+  @Get('search')
+  searchInvoices(
+    @Query('term') term: string,
+    @Query('status') status: InvoiceStatus,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.invoiceService.search(user.userId, term, status, parsedStart, parsedEnd);
+  }  
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.invoiceService.findOne(id, user.userId);
@@ -61,4 +77,5 @@ export class InvoiceController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.invoiceService.remove(id, user.userId);
   }
+  
 }

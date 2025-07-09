@@ -77,6 +77,30 @@ export const useInvoiceStore = defineStore('invoice', () => {
       isLoading.value = false;      
     }
   }  
+
+  async function searchInvoices(
+    search: string,
+    status?: string | null,
+    startDate?: string | null,
+    endDate?: string | null
+  ) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.get('/invoices/search', {
+        params: {
+          term: search,
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+      });
+      invoices.value = data.map((item: Invoice) => InvoiceSchema.parse(item));
+    } catch (error) {
+      handleError(error, 'Erreur lors de la recherche des factures.');
+    } finally {
+      isLoading.value = false;
+    }
+  }  
   
   return {
     invoices,
@@ -87,6 +111,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
     createInvoice,
     deleteInvoice, 
     fetchNextInvoiceNumber,
-    updateInvoice 
+    updateInvoice,
+    searchInvoices 
   };
 });

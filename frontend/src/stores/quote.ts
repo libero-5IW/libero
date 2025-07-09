@@ -80,6 +80,30 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
+  async function searchQuotes(
+    search: string,
+    status?: string | null,
+    startDate?: string | null,
+    endDate?: string | null
+  ) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.get('/quotes/search', {
+        params: {
+          term: search,
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+      });
+      quotes.value = data.map((item: Quote) => QuoteSchema.parse(item));
+    } catch (error) {
+      handleError(error, 'Erreur lors de la recherche des devis.');
+    } finally {
+      isLoading.value = false;
+    }
+  }  
+
   return {
     quotes,
     currentQuote,
@@ -90,5 +114,6 @@ export const useQuoteStore = defineStore('quote', () => {
     deleteQuote,
     fetchNextQuoteNumber,
     updateQuote,
+    searchQuotes
   };
 });

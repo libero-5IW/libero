@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty,ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsUUID,
   IsString,
@@ -8,6 +8,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { CreateContractVariableValueDto } from './create-contract-variable-value.dto';
+import { IsOptional } from 'class-validator';
 
 export class CreateContractDto {
   @ApiProperty({ example: '6f83c8cb-df23-4c2f-a7ab-fc6f2c4fd7d2' })
@@ -25,6 +26,14 @@ export class CreateContractDto {
   @ApiProperty({ example: '<p>Voici le contrat généré…</p>' })
   @IsString({ message: 'Le HTML généré doit être une chaîne de caractères.' })
   generatedHtml: string;
+
+  @ApiPropertyOptional({
+    example: 'b2e2332e-03f4-4ec0-98cf-e1d8f11d1234',
+    description: 'ID du devis lié à ce contrat',
+  })
+  @IsOptional()
+  @IsUUID('4', { message: "L'ID du devis doit être un UUID valide." })
+  quoteId?: string;
 
   @ApiProperty({ example: '2025-07-15T00:00:00.000Z' })
   @IsDateString(

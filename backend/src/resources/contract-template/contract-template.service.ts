@@ -13,12 +13,17 @@ import { mergeSystemVariables } from 'src/common/utils/merge-system-variables.ut
 import { ContractTemplateVariableDto } from './dto/contract-template-variable.dto';
 import { UserService } from '../user/user.service';
 import { VariableType } from 'src/common/enums/variable-type.enum';
+import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { S3Service } from 'src/common/s3/s3.service';
 
 @Injectable()
 export class ContractTemplateService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly userService: UserService,
+    private readonly pdfGeneratorService: PdfGeneratorService,
+    private readonly s3Service: S3Service,
   ) {}
 
   async create(
@@ -27,7 +32,7 @@ export class ContractTemplateService {
   ): Promise<ContractTemplateEntity> {
     const { name, contentHtml, variables = [] } = createContractTemplateDto;
 
-    await this.userService.getUserOrThrow(userId);
+    const user = await this.userService.getUserOrThrow(userId);
 
     const existingTemplate = await this.prisma.contractTemplate.findFirst({
       where: { userId, name },
@@ -37,11 +42,23 @@ export class ContractTemplateService {
       throw new BadRequestException('Un template avec ce nom existe déjà.');
     }
 
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(contentHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'contract-templates',
+    );
+
     const template = await this.prisma.contractTemplate.create({
       data: {
         name,
         contentHtml,
         userId,
+        pdfKey,
+        previewKey,
         variables: { create: this.mapVariableData(variables) },
       },
       include: {
@@ -66,16 +83,51 @@ export class ContractTemplateService {
       where: whereClause,
       include: { variables: true },
     });
-    const templatesWithSystemVariables = await Promise.all(
-      templates.map((t) => this.mergeWithSystemVariables(t)),
+
+    const templatesWithUrls = await Promise.all(
+      templates.map(async (template) => {
+        const previewUrl = template.previewKey
+          ? await this.s3Service.generateSignedUrl(template.previewKey)
+          : null;
+
+        const pdfUrl = template.pdfKey
+          ? await this.s3Service.generateSignedUrl(template.pdfKey)
+          : null;
+
+        return {
+          ...template,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
     );
 
-    return plainToInstance(ContractTemplateEntity, templatesWithSystemVariables);
+    const templatesWithSystemVariables = await Promise.all(
+      templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
+    );
+
+    return plainToInstance(
+      ContractTemplateEntity,
+      templatesWithSystemVariables,
+    );
   }
 
   async findOne(id: string, userId: string): Promise<ContractTemplateEntity> {
     const template = await this.getTemplateOrThrow(id, userId);
-    const templateWithSystemVariables = this.mergeWithSystemVariables(template);
+
+    const previewUrl = template.previewKey
+      ? await this.s3Service.generateSignedUrl(template.previewKey)
+      : null;
+
+    const pdfUrl = template.pdfKey
+      ? await this.s3Service.generateSignedUrl(template.pdfKey)
+      : null;
+
+    const templateWithSystemVariables = this.mergeWithSystemVariables({
+      ...template,
+      previewUrl,
+      pdfUrl,
+    });
     return plainToInstance(ContractTemplateEntity, templateWithSystemVariables);
   }
 
@@ -86,7 +138,27 @@ export class ContractTemplateService {
   ): Promise<ContractTemplateEntity> {
     const { name, contentHtml, variables } = updateContractTemplateDto;
 
-    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
+    const existingTemplate = await this.getTemplateOrThrow(id, userId, {
+      allowDefaultTemplate: false,
+    });
+    const user = await this.userService.getUserOrThrow(userId);
+
+    if (existingTemplate.pdfKey) {
+      await this.s3Service.deleteFile(existingTemplate.pdfKey);
+    }
+    if (existingTemplate.previewKey) {
+      await this.s3Service.deleteFile(existingTemplate.previewKey);
+    }
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(contentHtml);
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'contract-templates',
+    );
 
     const updatedTemplate = await this.prisma.$transaction(async (tx) => {
       await tx.contractTemplateVariable.deleteMany({
@@ -107,6 +179,8 @@ export class ContractTemplateService {
         data: {
           name,
           contentHtml,
+          pdfKey,
+          previewKey,
         },
         include: {
           variables: true,
@@ -121,8 +195,16 @@ export class ContractTemplateService {
   }
 
   async remove(id: string, userId: string): Promise<ContractTemplateEntity> {
-    await this.getTemplateOrThrow(id, userId, { allowDefaultTemplate: false });
+    const template = await this.getTemplateOrThrow(id, userId, {
+      allowDefaultTemplate: false,
+    });
 
+    if (template.pdfKey) {
+      await this.s3Service.deleteFile(template.pdfKey);
+    }
+    if (template.previewKey) {
+      await this.s3Service.deleteFile(template.previewKey);
+    }
     const deletedTemplate = await this.prisma.contractTemplate.delete({
       where: { id },
     });
@@ -139,11 +221,27 @@ export class ContractTemplateService {
       baseName: template.name,
     });
 
+    const user = await this.userService.getUserOrThrow(userId);
+
+    const { pdfBuffer, previewBuffer } =
+      await this.pdfGeneratorService.generatePdfAndPreview(
+        template.contentHtml,
+      );
+
+    const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+      pdfBuffer,
+      previewBuffer,
+      user.email,
+      'contract-templates',
+    );
+
     const duplicatedTemplate = await this.prisma.contractTemplate.create({
       data: {
         name,
         contentHtml: template.contentHtml,
         userId,
+        pdfKey,
+        previewKey,
         variables: { create: this.mapVariableData(template.variables) },
       },
       include: {
@@ -199,4 +297,60 @@ export class ContractTemplateService {
   private mergeWithSystemVariables(template: ContractTemplateEntity) {
     return mergeSystemVariables(template, 'contractTemplateVariable');
   }
+
+  async search(
+    userId: string,
+    rawSearch: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<ContractTemplateEntity[]> {
+    const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const createdAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            createdAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
+  
+    const templates = await this.prisma.contractTemplate.findMany({
+      where: {
+        ...baseWhere,
+        ...createdAtFilter,
+      },
+      include: { variables: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  
+    const templatesWithUrls = await Promise.all(
+      templates.map(async (template) => {
+        const previewUrl = template.previewKey
+          ? await this.s3Service.generateSignedUrl(template.previewKey)
+          : null;
+  
+        const pdfUrl = template.pdfKey
+          ? await this.s3Service.generateSignedUrl(template.pdfKey)
+          : null;
+  
+        return {
+          ...template,
+          previewUrl,
+          pdfUrl,
+        };
+      }),
+    );
+  
+    const templatesWithSystemVariables = await Promise.all(
+      templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
+    );
+  
+    return plainToInstance(ContractTemplateEntity, templatesWithSystemVariables);
+  }  
 }

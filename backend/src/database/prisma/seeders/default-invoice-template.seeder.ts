@@ -116,6 +116,8 @@ export async function seedDefaultInvoiceTemplate(prisma: PrismaClient) {
         name: template.name,
         contentHtml: template.contentHtml,
         userId: template.userId,
+        pdfKey: '',
+        previewKey: '',
         variables: {
           create: template.variables.map((v) => ({
             variableName: v.variableName,
