@@ -1,26 +1,25 @@
-<template>
+<template >
   <CenteredContainer>
-    <LoginForm v-if="!twoFARequired" :form="form" :loading="loading" @submit="handleLogin">
-      <template v-slot:header>
-        <div class="flex justify-center py-4">
-          <div>
-            <v-img :src="logo" width="140" alt="Logo de l'application" />
-          </div>
-        </div>
-      </template>
-
-      <template v-slot:content.additional>
-        <div class="text-center">
-          <p class="text-gray-600">Pas encore de compte ?</p>
-          <router-link to="/register">S'inscrire</router-link>
-        </div>
-        <div class="text-center">
-          <p class="text-gray-600">Mot de passe oublié ?</p>
-          <router-link to="/email-reset-password">Réinitialiser</router-link>
-        </div>
-      </template>
-    </LoginForm>
-  </CenteredContainer>
+     <LoginForm v-if="!twoFARequired" :form="form" :loading="loading" @submit="handleLogin">
+       <template v-slot:header>
+         <div class="flex justify-center py-4">
+           <div>
+             <v-img :src="logo" width="140" aria-hidden="true"></v-img>
+           </div>
+         </div>
+       </template>
+       <template v-slot:content.additional>
+         <div class="text-center">
+           <p class="text-gray-600">Pas encore de compte ?</p>
+           <router-link to="/register">S'inscrire</router-link>
+         </div>
+         <div class="text-center">
+           <p class="text-gray-600">Mot de passe oublié ?</p>
+           <router-link to="/email-reset-password">Réinitialiser</router-link>
+         </div>
+       </template>
+     </LoginForm>
+   </CenteredContainer>
   <div v-else class="px-4 py-8 max-w-[400px] mx-auto flex flex-col items-center justify-center bg-white rounded-lg">
     <div class="w-full">
       <div class="flex justify-center mb-4">
