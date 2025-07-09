@@ -13,21 +13,23 @@ export const useContractStore = defineStore('contract', () => {
   const currentContract = ref<Contract | null>(null);
   const isLoading = ref(false);
 
+  const total = ref(0);
+  const currentPage = ref(1);
+  const pageSize = ref(9);
+
   async function fetchAllContracts() {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/contracts');
-      console.log('dataa', data);
-      
       contracts.value = data.map((item: Contract) => ContractSchema.parse(item));
-      console.log('contracts', contracts.value);
-      
+      total.value = data.length;
+      currentPage.value = 1;
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération des contrats.');
     } finally {
       isLoading.value = false;
     }
-  }
+  }  
 
   async function fetchContract(id: string) {
     isLoading.value = true;
@@ -91,7 +93,9 @@ export const useContractStore = defineStore('contract', () => {
     search: string,
     status?: string | null,
     startDate?: string | null,
-    endDate?: string | null
+    endDate?: string | null,
+    page = 1,
+    size = pageSize.value
   ) {
     isLoading.value = true;
     try {
@@ -101,9 +105,13 @@ export const useContractStore = defineStore('contract', () => {
           ...(status ? { status } : {}),
           ...(startDate ? { startDate } : {}),
           ...(endDate ? { endDate } : {}),
+          page,
+          pageSize: size,
         },
       });
-      contracts.value = data.map((item: Contract) => ContractSchema.parse(item));
+      contracts.value = data.data.map((item: Contract) => ContractSchema.parse(item));
+      total.value = data.total;
+      currentPage.value = page;
     } catch (error) {
       handleError(error, 'Erreur lors de la recherche des contrats.');
     } finally {
@@ -121,6 +129,9 @@ export const useContractStore = defineStore('contract', () => {
     deleteContract,
     fetchNextContractNumber,
     updateContract,
-    searchContracts
+    searchContracts,
+    total,
+    currentPage,
+    pageSize,
   };
 });
