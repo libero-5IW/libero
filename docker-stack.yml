@@ -2,6 +2,32 @@ version: "3.8"
 
 
 services:
+  traefik:
+    image: traefik:v3.0
+    command:
+      - --providers.docker=true
+      - --providers.docker.swarmMode=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.email=rachaafaf15@email.com
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --api.dashboard=true
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - traefik_letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - libero-net
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
   postgres:
     image: postgres:16-alpine
     environment:
@@ -27,12 +53,16 @@ services:
       - postgres
     networks:
       - libero-net
-    ports:
-      - "3000:3000"
     deploy:
       replicas: 2
       restart_policy:
         condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.libero-backend.rule=Host(`api.liberogestion.fr`)"
+        - "traefik.http.routers.libero-backend.entrypoints=websecure"
+        - "traefik.http.routers.libero-backend.tls.certresolver=le"
+        - "traefik.http.services.libero-backend.loadbalancer.server.port=3000"
 
   frontend:
     image: projetlibero/libero-frontend:latest
@@ -40,15 +70,20 @@ services:
       - backend
     networks:
       - libero-net
-    ports:
-      - "80:5173"
     deploy:
       replicas: 3
       restart_policy:
         condition: on-failure
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.libero-frontend.rule=Host(`liberogestion.fr`,`www.liberogestion.fr`)"
+        - "traefik.http.routers.libero-frontend.entrypoints=websecure"
+        - "traefik.http.routers.libero-frontend.tls.certresolver=le"
+        - "traefik.http.services.libero-frontend.loadbalancer.server.port=5173"
 
 volumes:
   postgres_data:
+  traefik_letsencrypt:
 
 networks:
   libero-net:
