@@ -6,7 +6,6 @@ services:
     image: traefik:v3.0
     command:
       - --providers.swarm=true
-      - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
@@ -50,6 +49,8 @@ services:
       placement:
         constraints:
           - node.role == worker
+      labels:
+        - "traefik.enable=false"
 
   backend:
     image: projetlibero/libero-backend:latest
@@ -84,7 +85,7 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.http.routers.frontend.rule=Host(`liberogestion.fr`,`www.liberogestion.fr`)"
+        - "traefik.http.routers.frontend.rule=Host(`liberogestion.fr`) || Host(`www.liberogestion.fr`)"
         - "traefik.http.routers.frontend.entrypoints=websecure"
         - "traefik.http.routers.frontend.tls.certresolver=le"
         - "traefik.http.services.frontend.loadbalancer.server.port=5173"
