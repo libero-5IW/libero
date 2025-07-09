@@ -53,9 +53,11 @@
           <v-btn
             :loading="loading"
             :aria-busy="loading ? 'true' : 'false'"
+            aria-label="Connexion à votre compte"
             color="primary"
             block
             variant="flat"
+            type="submit"
             @click="submit"
           >
             Connexion
@@ -108,9 +110,4 @@ const submit = async () => {
   if (!isValid.valid) return
   emit('submit', { ...localForm })
 }
-
-onMounted(() => {
-  const el = document.getElementById('form-title')
-  if (el) el.focus()
-})
 </script>
