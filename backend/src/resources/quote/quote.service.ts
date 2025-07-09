@@ -274,7 +274,10 @@ export class QuoteService {
     status?: QuoteStatus,
     startDate?: Date,
     endDate?: Date,
+    page?: number,
+    pageSize?: number,
   ) {
+
     const baseWhere = buildSearchQuery(search, userId, 'devis');
   
     const adjustedEndDate = endDate
@@ -297,16 +300,24 @@ export class QuoteService {
       ...issuedAtFilter,
     };
   
-    const quotes = await this.prisma.quote.findMany({
-      where,
-      include: {
-        variableValues: true,
-        client: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [quotes, totalCount] = await this.prisma.$transaction([
+      this.prisma.quote.findMany({
+        where,
+        include: {
+          variableValues: true,
+          client: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.quote.count({ where }),
+    ]);
   
     const quotesWithUrls = await Promise.all(
       quotes.map(async (quote) => ({
@@ -320,10 +331,13 @@ export class QuoteService {
       })),
     );
   
-    return plainToInstance(QuoteEntity, quotesWithUrls, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
-    });
-  }
+    return {
+      data: plainToInstance(QuoteEntity, quotesWithUrls, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+      total: totalCount,
+    };
+  }  
   
 }
