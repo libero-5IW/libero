@@ -33,7 +33,8 @@ services:
     build:
       context: frontend/
     ports:
-      - "80:5173"
+      # - "80:5173"
+      - "5173:5173"
     depends_on:
       - backend
     volumes:
