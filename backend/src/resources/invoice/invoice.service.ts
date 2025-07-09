@@ -270,6 +270,8 @@ export class InvoiceService {
     status?: InvoiceStatus,
     startDate?: Date,
     endDate?: Date,
+    page?: number,
+    pageSize?: number,
   ) {
     const baseWhere = buildSearchQuery(search, userId, 'facture');
   
@@ -293,16 +295,24 @@ export class InvoiceService {
       ...issuedAtFilter,
     };
   
-    const invoices = await this.prisma.invoice.findMany({
-      where,
-      include: {
-        variableValues: true,
-        client: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [invoices, totalCount] = await this.prisma.$transaction([
+      this.prisma.invoice.findMany({
+        where,
+        include: {
+          variableValues: true,
+          client: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.invoice.count({ where }),
+    ]);
   
     const invoicesWithUrls = await Promise.all(
       invoices.map(async (invoice) => ({
@@ -316,10 +326,13 @@ export class InvoiceService {
       })),
     );
   
-    return plainToInstance(InvoiceEntity, invoicesWithUrls, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
-    });
+    return {
+      data: plainToInstance(InvoiceEntity, invoicesWithUrls, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+      total: totalCount,
+    };
   }  
 
 }

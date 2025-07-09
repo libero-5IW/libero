@@ -303,7 +303,9 @@ export class ContractTemplateService {
     rawSearch: string,
     startDate?: Date,
     endDate?: Date,
-  ): Promise<ContractTemplateEntity[]> {
+    page?: number,
+    pageSize?: number,
+  ) {
     const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
   
     const adjustedEndDate = endDate
@@ -320,14 +322,24 @@ export class ContractTemplateService {
           }
         : {};
   
-    const templates = await this.prisma.contractTemplate.findMany({
-      where: {
-        ...baseWhere,
-        ...createdAtFilter,
-      },
-      include: { variables: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    const where = {
+      ...baseWhere,
+      ...createdAtFilter,
+    };
+  
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [templates, totalCount] = await this.prisma.$transaction([
+      this.prisma.contractTemplate.findMany({
+        where,
+        include: { variables: true },
+        orderBy: { createdAt: 'desc' },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.contractTemplate.count({ where }),
+    ]);
   
     const templatesWithUrls = await Promise.all(
       templates.map(async (template) => {
@@ -351,6 +363,9 @@ export class ContractTemplateService {
       templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
   
-    return plainToInstance(ContractTemplateEntity, templatesWithSystemVariables);
+    return {
+      data: plainToInstance(ContractTemplateEntity, templatesWithSystemVariables),
+      total: totalCount,
+    };
   }  
 }
