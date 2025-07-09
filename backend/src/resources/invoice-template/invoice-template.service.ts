@@ -361,7 +361,7 @@ export class InvoiceTemplateService {
     );
   
     return {
-      data: plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables),
+      invoiceTemplate: plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables),
       total: totalCount,
     };
   }

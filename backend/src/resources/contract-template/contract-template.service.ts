@@ -364,7 +364,7 @@ export class ContractTemplateService {
     );
   
     return {
-      data: plainToInstance(ContractTemplateEntity, templatesWithSystemVariables),
+      contractTemplate: plainToInstance(ContractTemplateEntity, templatesWithSystemVariables),
       total: totalCount,
     };
   }  

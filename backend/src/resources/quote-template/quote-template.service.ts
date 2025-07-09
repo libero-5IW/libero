@@ -360,7 +360,7 @@ export class QuoteTemplateService {
     );
   
     return {
-      data: plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables),
+      quoteTemplate: plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables),
       total: totalCount,
     };
   }  

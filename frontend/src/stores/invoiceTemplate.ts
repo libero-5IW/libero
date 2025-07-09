@@ -113,7 +113,7 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
           pageSize: size
         }
       })
-      templates.value = data.data.map((item: InvoiceTemplate) =>
+      templates.value = data.invoiceTemplate.map((item: InvoiceTemplate) =>
         InvoiceTemplateSchema.parse(item)
       )
       total.value = data.total

@@ -107,7 +107,7 @@ export const useQuoteStore = defineStore('quote', () => {
         },
       });
   
-      quotes.value = data.data.map((item: Quote) => QuoteSchema.parse(item));
+      quotes.value = data.quote.map((item: Quote) => QuoteSchema.parse(item));
       total.value = data.total;
       currentPage.value = page;
     } catch (error) {

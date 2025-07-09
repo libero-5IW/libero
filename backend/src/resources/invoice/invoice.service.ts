@@ -327,7 +327,7 @@ export class InvoiceService {
     );
   
     return {
-      data: plainToInstance(InvoiceEntity, invoicesWithUrls, {
+      invoice: plainToInstance(InvoiceEntity, invoicesWithUrls, {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
       }),

@@ -332,7 +332,7 @@ export class QuoteService {
     );
   
     return {
-      data: plainToInstance(QuoteEntity, quotesWithUrls, {
+      quote: plainToInstance(QuoteEntity, quotesWithUrls, {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
       }),

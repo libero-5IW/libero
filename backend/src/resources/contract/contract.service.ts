@@ -326,7 +326,7 @@ export class ContractService {
     );
   
     return {
-      data: plainToInstance(ContractEntity, contractsWithUrls, {
+      contract: plainToInstance(ContractEntity, contractsWithUrls, {
         excludeExtraneousValues: true,
         enableImplicitConversion: true,
       }),

@@ -111,7 +111,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
           pageSize: size
         }
       })
-      templates.value = data.data.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
+      templates.value = data.quoteTemplate.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
       total.value = data.total
       currentPage.value = page
     } catch (error) {

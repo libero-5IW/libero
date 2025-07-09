@@ -105,7 +105,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
           pageSize: size,
         },
       });
-      invoices.value = data.data.map((item: Invoice) => InvoiceSchema.parse(item));
+      invoices.value = data.invoice.map((item: Invoice) => InvoiceSchema.parse(item));
       total.value = data.total;
       currentPage.value = page;
       } catch (error) {

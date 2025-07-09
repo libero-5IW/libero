@@ -109,7 +109,7 @@ export const useContractStore = defineStore('contract', () => {
           pageSize: size,
         },
       });
-      contracts.value = data.data.map((item: Contract) => ContractSchema.parse(item));
+      contracts.value = data.contract.map((item: Contract) => ContractSchema.parse(item));
       total.value = data.total;
       currentPage.value = page;
     } catch (error) {

@@ -123,7 +123,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
           pageSize: size,
         },
       })
-      templates.value = data.data.map((item: ContractTemplate) =>
+      templates.value = data.contractTemplate.map((item: ContractTemplate) =>
         ContractTemplateSchema.parse(item)
       )
       total.value = data.total
