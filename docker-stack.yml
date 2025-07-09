@@ -1,5 +1,6 @@
 version: "3.8"
 
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -39,9 +40,8 @@ services:
       - backend
     networks:
       - libero-net
-      
-    # ports:
-    #   - "80:5173"
+    ports:
+      - "80:5173"
     deploy:
       replicas: 3
       restart_policy:
