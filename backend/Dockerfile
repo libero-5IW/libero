@@ -46,6 +46,8 @@ COPY . .
 # RUN npx prisma migrate
 RUN npx prisma generate
 
+RUN npm run build
+
 EXPOSE 3000 5555
 # MISE EN PROD: npm run start:dev -> npm run start:prod 
 # CMD sh -c "nohup npx prisma studio --port 5555 & npm run start:dev"
