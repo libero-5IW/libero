@@ -98,6 +98,13 @@
       @confirm="confirmDeleteTemplate"
     />
   </div>
+
+  <Pagination
+    :total-items="contractTemplate.total"
+    :current-page="contractTemplate.currentPage"
+    :page-size="contractTemplate.pageSize"
+    @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -109,6 +116,7 @@ import { useRouter } from 'vue-router'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 import TemplateDocumentCardList from '@/components/DocumentDisplay/TemplateDocumentCardList.vue';
 import SearchInput from '@/components/SearchInput.vue'
+import Pagination from '@/components/Pagination.vue'
 
 const search = ref('')
 const router = useRouter()
@@ -162,6 +170,15 @@ function openDeleteConfirmation(id: string) {
   isDeleteModalOpen.value = true
 }
 
+async function handlePageChange(page: number) {
+  await contractTemplate.searchTemplates(
+    search.value,
+    startDate.value,
+    endDate.value,
+    page
+  )
+}
+
 async function confirmDeleteTemplate() {
   if (!selectedTemplateId.value) return
   await contractTemplate.deleteTemplate(selectedTemplateId.value)
@@ -179,8 +196,13 @@ async function handleSearch(term: string) {
 }
 
 watch([search, startDate, endDate], async () => {
-  await handleSearch(search.value)
-})
+  await contractTemplate.searchTemplates(
+    search.value,
+    startDate.value,
+    endDate.value,
+    1
+  );
+});
 
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus
@@ -190,6 +212,6 @@ onMounted(async () => {
     showToast(status, message)
   }
 
-  await fetchAllTemplates()
+  await contractTemplate.searchTemplates('', null, null, 1)
 })
 </script>

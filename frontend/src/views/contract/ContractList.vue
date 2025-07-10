@@ -103,8 +103,6 @@
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucun contrat créé pour le moment.</p>
     </div>
-
-
   </div>
 
   <TemplateSelectionModal 
@@ -131,6 +129,12 @@
   @templateSelected="handleInvoiceTemplateSelected"
   />
 
+  <Pagination
+    :total-items="contractStore.total"
+    :current-page="contractStore.currentPage"
+    :page-size="contractStore.pageSize"
+    @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -149,6 +153,7 @@ import { mapContractToInvoiceVariables } from '@/utils/mapContractToInvoice';
 import type { Contract } from '@/schemas/contract.schema';
 import SearchInput from '@/components/SearchInput.vue';
 import { CONTRACT_STATUS } from '@/constants/status/contract-status.constant';
+import Pagination from '@/components/Pagination.vue';
 
 const search = ref('');
 const router = useRouter();
@@ -300,6 +305,16 @@ async function fetchContracts() {
   }
 }
 
+async function handlePageChange(page: number) {
+  await contractStore.searchContracts(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    page
+  );
+}
+
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
   const message = history.state?.toastMessage as string;
@@ -308,13 +323,18 @@ onMounted(async () => {
     showToast(status, message);
   }
 
-  await fetchAllContracts();
-  console.log('pssseee');
+  await contractStore.searchContracts('', null, null, null, 1);
   
 });
 
 watch([search, selectedStatus, startDate, endDate], async () => {
-  await fetchContracts();
+  await contractStore.searchContracts(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    1
+  );
 });
 
 </script>

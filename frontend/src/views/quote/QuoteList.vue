@@ -137,6 +137,13 @@
     :fetchTemplates="fetchContractTemplates"
     @templateSelected="handleContractTemplateSelected"
   />
+
+  <Pagination
+  :total-items="quoteStore.total"
+  :current-page="quoteStore.currentPage"
+  :page-size="quoteStore.pageSize"
+  @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -158,6 +165,7 @@ import { mapQuoteToContractVariables } from '@/utils/mapQuoteToContract'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
 import SearchInput from '@/components/SearchInput.vue'
 import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
+import Pagination from '@/components/Pagination.vue';
 
 const search = ref('')
 const quoteTemplateStore = useQuoteTemplateStore();
@@ -280,6 +288,16 @@ function openDeleteConfirmation(id: string) {
   isDeleteModalOpen.value = true;
 }
 
+async function handlePageChange(page: number) {
+  await quoteStore.searchQuotes(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    page
+  );
+}
+
 async function fetchInvoiceTemplates() {
   await invoiceTemplateStore.fetchAllTemplates()
   return invoiceTemplateStore.templates
@@ -384,11 +402,18 @@ onMounted(async () => {
     showToast(status, message);
   }
 
-  await fetchAllQuotes();
+  await quoteStore.searchQuotes('', null, null, null, 1);
 });
 
 watch([search, selectedStatus, startDate, endDate], async () => {
-  await fetchQuotes();
+  await quoteStore.searchQuotes(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    1
+  );
 });
+
 
 </script>
