@@ -117,6 +117,37 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
+  async function exportQuotes(
+    term = '',
+    status?: string,
+    startDate?: string,
+    endDate?: string
+  ) {
+    try {
+      const { data } = await apiClient.get('/quotes/export', {
+        params: {
+          term,
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+        responseType: 'json',
+      });
+  
+      const { filename, content } = data;
+  
+      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’export CSV.');
+    }
+  }  
+  
   return {
     quotes,
     currentQuote,
@@ -130,6 +161,7 @@ export const useQuoteStore = defineStore('quote', () => {
     deleteQuote,
     fetchNextQuoteNumber,
     updateQuote,
-    searchQuotes
+    searchQuotes,
+    exportQuotes
   };
 });
