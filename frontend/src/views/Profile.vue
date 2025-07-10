@@ -1,9 +1,11 @@
 <template>
-  <v-container>
+  <v-container role="main" aria-labelledby="profile-form-title" tabindex="-1" ref="mainContent">
+    <h1 id="profile-form-title" class="sr-only">Modifier mes informations personnelles et professionnelles</h1>
+
     <v-row justify="center">
       <v-col cols="12" md="8" lg="6">
-        <v-card class="rounded-xl">
-          <v-card-title class="text-2xl font-bold mb-4 text-indigo-900">
+        <v-card class="rounded-xl" aria-label="Formulaire de modification du profil">
+          <v-card-title class="text-2xl font-bold mb-4 text-indigo-900" aria-level="2" role="heading">
             Modifier mes informations
           </v-card-title>
 
@@ -41,6 +43,8 @@
                       label="Prénom"
                       :rules="[rules.required]"
                       required
+                      autocomplete="given-name"
+                      aria-required="true"
                     />
                   </v-col>
                   <v-col cols="12" md="6">
@@ -52,24 +56,52 @@
                     />
                   </v-col>
                 </v-row>
+          <v-form @submit.prevent="saveProfile" v-model="isFormValid" aria-label="Formulaire utilisateur">
 
-                <v-text-field
-                  v-model="profile.email"
-                  label="Adresse email"
-                  type="email"
-                  :rules="[rules.required, rules.email]"
-                  required
-                />
+            <v-card-text>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="profile.firstName"
+                    label="Prénom"
+                    :rules="[rules.required]"
+                    required
+                    autocomplete="given-name"
+                    aria-required="true"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="profile.lastName"
+                    label="Nom"
+                    :rules="[rules.required]"
+                    required
+                    autocomplete="family-name"
+                    aria-required="true"
+                  />
+                </v-col>
+              </v-row>
 
-                <v-divider class="my-4" />
-                <div class="text-lg font-semibold mb-4">Informations de la société</div>
+              <v-text-field
+                v-model="profile.email"
+                label="Adresse email"
+                type="email"
+                :rules="[rules.required, rules.email]"
+                required
+                autocomplete="email"
+                aria-required="true"
+              />
 
-                <v-text-field
-                  v-model="profile.companyName"
-                  label="Nom de la société"
-                  :rules="[rules.required]"
-                  required
-                />
+              <v-divider class="my-4"  role="separator" aria-hidden="true"  />
+              <h2 class="text-lg font-semibold mb-4" aria-level="3" role="heading">Informations de la société</h2>
+
+              <v-text-field
+                v-model="profile.companyName"
+                label="Nom de la société"
+                :rules="[rules.required]"
+                required
+                aria-required="true"
+              />
 
                 <v-select
                   v-model="profile.legalStatus"
@@ -79,70 +111,85 @@
                   label="Statut juridique"
                   :rules="[rules.required]"
                   required
+                  aria-required="true"
                 />
 
-                <v-text-field
-                  v-model="profile.siret"
-                  label="Numéro SIRET"
-                  :rules="[rules.required, rules.siret]"
-                  required
-                />
+              <v-text-field
+                v-model="profile.siret"
+                label="Numéro SIRET"
+                :rules="[rules.required, rules.siret]"
+                required
+                aria-required="true"
+              />
 
-                <v-text-field
-                  v-model="profile.tvaNumber"
-                  label="Numéro TVA"
-                />
+              <v-text-field
+                v-model="profile.tvaNumber"
+                label="Numéro TVA"
+                autocomplete="off"
+              />
 
-                <v-divider class="my-4" />
-                <div class="text-lg font-semibold mb-4">Adresse</div>
+              <v-divider class="my-4" role="separator" aria-hidden="true" />
+              <h2  class="text-lg font-semibold mb-4" aria-level="3" role="heading">Adresse</h2>
 
-                <v-text-field
-                  v-model="profile.addressLine"
-                  label="Adresse"
-                  :rules="[rules.required]"
-                  required
-                />
+              <v-text-field
+                v-model="profile.addressLine"
+                label="Adresse"
+                :rules="[rules.required]"
+                required
+                autocomplete="street-address"
+                aria-required="true"
+              />
 
-                <v-row>
-                  <v-col cols="12" md="6">
-                    <v-text-field
-                      v-model="profile.city"
-                      label="Ville"
-                      :rules="[rules.required]"
-                      required
-                    />
-                  </v-col>
-                  <v-col cols="12" md="3">
-                    <v-text-field
-                      v-model="profile.postalCode"
-                      label="Code postal"
-                      :rules="[rules.required]"
-                      required
-                    />
-                  </v-col>
-                  <v-col cols="12" md="3">
-                    <v-text-field
-                      v-model="profile.country"
-                      label="Pays"
-                      :rules="[rules.required]"
-                      required
-                    />
-                  </v-col>
-                </v-row>
-              </v-card-text>
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model="profile.city"
+                    label="Ville"
+                    :rules="[rules.required]"
+                    required
+                    autocomplete="address-level2"
+                    aria-required="true"
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="profile.postalCode"
+                    label="Code postal"
+                    :rules="[rules.required]"
+                    required
+                    autocomplete="postal-code"
+                    aria-required="true"
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-text-field
+                    v-model="profile.country"
+                    label="Pays"
+                    :rules="[rules.required]"
+                    required
+                    autocomplete="country"
+                    aria-required="true"
+                  />
+                </v-col>
+              </v-row>
+            </v-card-text>
 
-              <v-card-actions class="pt-4">
-                <v-spacer />
-                <v-btn color="primary" type="submit" :loading="isLoading" :disabled="!isFormValid">
-                  Enregistrer
-                </v-btn>
-                <v-btn color="secondary" @click="cancelEdit" :disabled="isLoading">
-                  Annuler
-                </v-btn>
-              </v-card-actions>
-            </v-form>
-          </template>
-
+            <v-card-actions class="pt-4">
+              <v-spacer />
+              <v-btn
+                color="primary"
+                type="submit"
+                :loading="isLoading"
+                :disabled="!isFormValid"
+                aria-label="Enregistrer les modifications du profil"
+              >
+                Enregistrer
+              </v-btn>
+              <v-btn color="secondary" @click="cancelEdit" :disabled="isLoading">
+                Annuler
+              </v-btn>
+            </v-card-actions>
+          </v-form>
         </v-card>
       </v-col>
     </v-row>

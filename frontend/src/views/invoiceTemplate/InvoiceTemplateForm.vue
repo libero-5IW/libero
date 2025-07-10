@@ -1,9 +1,15 @@
 <template>
   <v-card flat class="mb-4">
-    <EditableHeader v-model="template.name" back-route-name="InvoiceTemplateList" />
+    <EditableHeader
+      v-model="template.name"
+      back-route-name="InvoiceTemplateList"
+      aria-label="Édition du nom du template de facture"
+    />
   </v-card>
 
-  <v-container fluid>
+  <v-container fluid role="main" aria-labelledby="invoice-template-title" tabindex="-1" ref="mainContent">
+    <h1 id="invoice-template-title" class="sr-only">Édition d’un template de facture</h1>
+
     <v-row>
       <v-col cols="12" md="8">
         <InvoiceTemplateFormMain
@@ -26,9 +32,12 @@
             :contentHtml="template.contentHtml"
             :variables="getLabelVariables(template.variables)"
             fileName="facture"
+            aria-label="Prévisualisation du template PDF de facture"
+            role="region"
           />
           <div class="d-flex justify-center pa-2">
-            <v-btn icon @click="togglePreviewFullscreen">
+            <v-btn icon @click="togglePreviewFullscreen"
+              :aria-label="isPreviewFullscreen ? 'Quitter le mode plein écran' : 'Activer le mode plein écran'">
               <v-icon>{{ isPreviewFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}</v-icon>
             </v-btn>
           </div>
