@@ -76,6 +76,30 @@ export class QuoteController {
     );
   }
 
+  @Get('export')
+  async exportQuotes(
+    @Query() query: SearchQuoteDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const {
+      term = '',
+      status,
+      startDate,
+      endDate,
+    } = query;
+
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+
+    return this.quoteService.exportToCSV(
+      user.userId,
+      term,
+      status,
+      parsedStart,
+      parsedEnd
+    );
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.quoteService.findOne(id, user.userId);

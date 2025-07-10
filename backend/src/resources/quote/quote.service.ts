@@ -19,6 +19,7 @@ import { QuoteTemplateVariableEntity } from '../quote-template/entities/quote-te
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
+import * as stringify from 'csv-stringify/sync';
 
 @Injectable()
 export class QuoteService {
@@ -201,6 +202,38 @@ export class QuoteService {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
+  }
+
+  async exportToCSV(
+    userId: string,
+    search: string,
+    status?: QuoteStatus,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{ filename: string; content: string }> {
+    const result = await this.search(userId, search, status, startDate, endDate);
+  
+    const rows = result.quote.map((quote) => ({
+      numero: quote.number,
+      statut: quote.status,
+      client: quote.variableValues?.find(v => v.variableName === 'client_name')?.value ?? 'Client inconnu',
+      dateEmission: quote.createdAt ?? '',
+    }));
+  
+    const content = stringify.stringify(rows, {
+      header: true,
+      columns: {
+        numero: 'Numéro',
+        statut: 'Statut',
+        client: 'Client',
+        dateEmission: 'Date d\'émission',
+      },
+    });
+  
+    return {
+      filename: `devis_export_${new Date().toISOString().slice(0, 10)}.csv`,
+      content,
+    };
   }
 
   async remove(id: string, userId: string) {
