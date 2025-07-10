@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Res
 } from '@nestjs/common';
 import { InvoiceTemplateService } from './invoice-template.service';
 import { CreateInvoiceTemplateDto } from './dto/create-invoice-template.dto';
@@ -17,6 +18,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { SearchInvoiceTemplateDto } from './dto/search-invoice-template.dto';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @Controller('invoice-templates')
@@ -67,6 +69,29 @@ export class InvoiceTemplateController {
       parsedPage,
       parsedPageSize,
     );
+  }
+
+  @Get('export')
+  exportTemplates(
+    @Query() query: SearchInvoiceTemplateDto,
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const { term = '', startDate, endDate } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.invoiceTemplateService.exportToCSV(
+      user.userId,
+      term,
+      parsedStart,
+      parsedEnd,
+    ).then(({ content, filename }) => {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.end(content);
+    });
   }
 
   @Get()

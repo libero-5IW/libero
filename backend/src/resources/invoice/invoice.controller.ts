@@ -6,7 +6,8 @@ import {
   Param,
   Delete,
   Put,
-  Query
+  Query,
+  Res
 } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -19,6 +20,7 @@ import { ValidateInvoiceOnUpdatePipe } from './pipes/update-validate-invoice.pip
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { InvoiceStatus } from '@prisma/client';
 import { SearchInvoiceDto } from './dto/search-invoice.dto';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @ApiTags('Invoices')
@@ -76,6 +78,35 @@ export class InvoiceController {
     );
   }
 
+  @Get('export')
+  exportInvoices(
+    @Query() query: SearchInvoiceDto,
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const {
+      term = '',
+      status,
+      startDate,
+      endDate,
+    } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.invoiceService.exportToCSV(
+      user.userId,
+      term,
+      status,
+      parsedStart,
+      parsedEnd
+    ).then(({ content, filename }) => {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.end(content);
+    });
+  }  
+  
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.invoiceService.findOne(id, user.userId);

@@ -124,19 +124,24 @@ export const useQuoteStore = defineStore('quote', () => {
     endDate?: string
   ) {
     try {
-      const { data } = await apiClient.get('/quotes/export', {
+      const response = await apiClient.get('/quotes/export', {
         params: {
           term,
           ...(status ? { status } : {}),
           ...(startDate ? { startDate } : {}),
           ...(endDate ? { endDate } : {}),
         },
-        responseType: 'json',
+        responseType: 'blob',
       });
   
-      const { filename, content } = data;
+      const disposition = response.headers['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? `export_${Date.now()}.csv`;
   
-      const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([response.data], {
+        type: 'text/csv;charset=utf-8;',
+      });
+  
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.setAttribute('download', filename);

@@ -6,6 +6,10 @@
         <v-icon start>mdi-plus</v-icon>
         Nouveau client
       </v-btn>
+      <v-btn color="primary" @click="exportClientsAsCSV">
+        <v-icon start>mdi-download</v-icon>
+        Exporter CSV
+      </v-btn>
     </div>
 
     <SearchInput
@@ -122,6 +126,15 @@ async function handleSearch(term: string) {
     await clientStore.fetchAllClients()
   } else {
     await clientStore.searchClients(term)
+  }
+}
+
+async function exportClientsAsCSV() {
+  try {
+    await clientStore.exportClients(search.value);
+    showToast('success', 'Export CSV généré avec succès.');
+  } catch (error) {
+    showToast('error', 'Erreur lors de l’export CSV.');
   }
 }
 

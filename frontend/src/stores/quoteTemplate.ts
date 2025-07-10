@@ -121,6 +121,37 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       isLoading.value = false
     }
   }  
+
+  async function exportQuoteTemplates(
+    term = '',
+    startDate?: string,
+    endDate?: string
+  ) {
+    try {
+      const response = await apiClient.get('/quote-templates/export', {
+        params: {
+          term,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+        responseType: 'blob',
+      });
+  
+      const disposition = response.headers?.['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? `quote_templates_export_${Date.now()}.csv`;
+  
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’export CSV des templates de devis.');
+    }
+  }  
   
   return {
     templates,
@@ -138,5 +169,6 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     total,
     currentPage,
     pageSize,
+    exportQuoteTemplates
   }
 })

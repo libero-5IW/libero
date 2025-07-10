@@ -7,6 +7,10 @@
         <v-icon start>mdi-plus</v-icon>
         Nouveau template
       </v-btn>
+      <v-btn color="primary" @click="exportTemplatesAsCSV">
+        <v-icon start>mdi-download</v-icon>
+        Exporter CSV
+      </v-btn>
     </div>
     
     <div class="flex items-center gap-4 mb-6">
@@ -192,6 +196,19 @@ async function handleSearch(term: string) {
     await contractTemplate.fetchAllTemplates(false)
   } else {
     await contractTemplate.searchTemplates(term, startDate.value, endDate.value)
+  }
+}
+
+async function exportTemplatesAsCSV() {
+  try {
+    await contractTemplate.exportContractTemplates(
+      search.value,
+      startDate.value ?? undefined,
+      endDate.value ?? undefined
+    );
+    showToast('success', 'Export CSV généré avec succès.');
+  } catch (e) {
+    showToast('error', 'Erreur lors de l’export CSV.');
   }
 }
 

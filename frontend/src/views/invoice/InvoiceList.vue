@@ -6,6 +6,10 @@
         <v-icon start>mdi-plus</v-icon>
         Nouveau facture
       </v-btn>
+      <v-btn color="primary" @click="exportInvoicesAsCSV">
+        <v-icon start>mdi-download</v-icon>
+        Exporter CSV
+      </v-btn>
     </div>
 
     <div class="flex items-center gap-4 mb-6">
@@ -277,6 +281,20 @@ onMounted(async () => {
 
   await invoiceStore.searchInvoices('', null, null, null, 1);
 });
+
+async function exportInvoicesAsCSV() {
+  try {
+    await invoiceStore.exportInvoices(
+      search.value,
+      selectedStatus.value ?? undefined,
+      startDate.value ?? undefined,
+      endDate.value ?? undefined
+    );
+    showToast('success', 'Export CSV généré avec succès.');
+  } catch (e) {
+    showToast('error', 'Erreur lors de l’export CSV.');
+  }
+}
 
 watch([search, selectedStatus, startDate, endDate], async () => {
   await invoiceStore.searchInvoices(

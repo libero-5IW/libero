@@ -6,7 +6,8 @@ import {
   Param,
   Delete,
   Put,
-  Query
+  Query,
+  Res,
 } from '@nestjs/common';
 import { QuoteService } from './quote.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
@@ -19,6 +20,8 @@ import { ValidateQuoteOnCreatePipe } from './pipes/create-validate-quote.pipe';
 import { ValidateQuoteOnUpdatePipe } from './pipes/update-validate-quote.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { QuoteStatus } from '@prisma/client';
+import { Response } from 'express';
+import { format } from 'date-fns';
 
 @ApiBearerAuth()
 @ApiTags('Quotes')
@@ -77,28 +80,28 @@ export class QuoteController {
   }
 
   @Get('export')
-  async exportQuotes(
+  exportQuotes(
     @Query() query: SearchQuoteDto,
     @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
   ) {
-    const {
-      term = '',
-      status,
-      startDate,
-      endDate,
-    } = query;
-
+    const { term = '', status, startDate, endDate } = query;
+  
     const parsedStart = startDate ? new Date(startDate) : undefined;
     const parsedEnd = endDate ? new Date(endDate) : undefined;
-
+  
     return this.quoteService.exportToCSV(
       user.userId,
       term,
       status,
       parsedStart,
-      parsedEnd
-    );
-  }
+      parsedEnd,
+    ).then(({ content, filename }) => {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.end(content);
+    });
+  }  
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {

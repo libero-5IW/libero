@@ -16,6 +16,9 @@ import { VariableType } from 'src/common/enums/variable-type.enum';
 import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import * as stringify from 'csv-stringify/sync';
 
 @Injectable()
 export class ContractTemplateService {
@@ -368,4 +371,38 @@ export class ContractTemplateService {
       total: totalCount,
     };
   }  
+
+  async exportToCSV(
+    userId: string,
+    search: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{ filename: string; content: string }> {
+    const result = await this.search(userId, search, startDate, endDate);
+  
+    const rows = result.contractTemplate.map((template) => ({
+      nom: template.name,
+      dateCreation: format(template.createdAt, 'dd/MM/yyyy', { locale: fr }),
+      variables: template.variables.length,
+      nomsVariables: template.variables
+        .map((v) => `${v.variableName}${v.required ? ' (requis)' : ''}`)
+        .join(', '),
+    }));
+  
+    const content = stringify.stringify(rows, {
+      header: true,
+      columns: {
+        nom: 'Nom du modèle',
+        dateCreation: 'Date de création',
+        variables: 'Nombre de variables',
+        nomsVariables: 'Noms des variables',
+      },
+    });
+  
+    return {
+      filename: `templates_contrat_export_${new Date().toISOString().slice(0, 10)}.csv`,
+      content,
+    };
+  }
+  
 }

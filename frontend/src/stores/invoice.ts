@@ -114,6 +114,39 @@ export const useInvoiceStore = defineStore('invoice', () => {
       isLoading.value = false;
     }
   }  
+
+  async function exportInvoices(
+    term = '',
+    status?: string,
+    startDate?: string,
+    endDate?: string
+  ) {
+    try {
+      const response = await apiClient.get('/invoices/export', {
+        params: {
+          term,
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+        responseType: 'blob',
+      });
+  
+      const disposition = response.headers?.['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? `factures_export_${Date.now()}.csv`;
+  
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’export CSV.');
+    }
+  }  
   
   return {
     invoices,
@@ -129,5 +162,6 @@ export const useInvoiceStore = defineStore('invoice', () => {
     total,
     currentPage,
     pageSize, 
+    exportInvoices
   };
 });
