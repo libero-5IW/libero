@@ -1,22 +1,31 @@
 <template>
   <TemplateSelectionModal
-      v-model="showTemplateModal" 
-      :fetchTemplates="fetchQuoteTemplates"
-      :isForced="true"
-      type="devis"
-      @templateSelected="handleTemplateSelected"
-    />
+    v-model="showTemplateModal" 
+    :fetchTemplates="fetchQuoteTemplates"
+    :isForced="true"
+    type="devis"
+    @templateSelected="handleTemplateSelected"
+  />
 
-  <div v-if="selectedTemplateId">
+  <div
+    v-if="selectedTemplateId"
+    class="focus:outline-none"
+    role="main"
+    aria-labelledby="quote-form-title"
+    tabindex="-1"
+    ref="mainContent"
+  >
     <v-container fluid>
       <v-row dense>
         <v-col cols="12" md="8">
+          <h1 id="quote-form-title" class="sr-only">Création d’un devis</h1>
 
           <v-text-field
             :model-value="currentTemplate?.name ?? 'Template inconnu'"
             label="Template utilisé"
             readonly
             class="mb-6"
+            aria-label="Template utilisé"
           />
 
           <v-text-field
@@ -26,6 +35,7 @@
             readonly
             class="mb-4"
             :style="{ pointerEvents: 'none', opacity: 0.6 }"
+            aria-label="Numéro du devis"
           />
 
           <v-card flat class="mb-4 pa-4">
@@ -33,6 +43,7 @@
               title="Informations du Freelance"
               :variables="freelancerVariables"
               :variablesValue="variablesValue"
+              section-label="Section informations du freelance"
             />
 
             <TemplateVariableSection
@@ -41,12 +52,14 @@
               :variablesValue="variablesValue"
               :clients="clients"
               v-model:selectedClientId="selectedClientId"
+              section-label="Section informations du client"
             />
 
             <TemplateVariableSection
               title="Autres Informations"
               :variables="otherVariables"
               :variablesValue="variablesValue"
+              section-label="Section autres informations"
             />
 
             <v-btn
@@ -54,6 +67,8 @@
               color="primary"
               @click="onCreateQuote"
               :disabled="!canCreate || isLoading"
+              aria-label="Créer le devis"
+              role="button"
             >
               <template v-if="!isLoading">
                 <v-icon start>mdi-content-save</v-icon>
@@ -64,6 +79,7 @@
                 indeterminate
                 size="20"
                 color="secondary"
+                aria-label="Chargement de la création du devis"
               />
             </v-btn>
           </v-card>
@@ -74,28 +90,33 @@
             :contentHtml="previewHtml"
             :variables="previewVariables"
             fileName="devis"
+            aria-label="Prévisualisation du devis PDF"
+            role="region"
           />
         </v-col>
       </v-row>
-    </v-container>
 
-    <v-btn
-      v-if="isEditMode"
-      color="primary"
-      @click="saveQuote"
-      :disabled="isLoading"
-    >
-      <template v-if="!isLoading">
-        <v-icon start>mdi-content-save</v-icon>
-        Enregistrer
-      </template>
-      <v-progress-circular
-        v-else
-        indeterminate
-        size="20"
-        color="white"
-      />
-    </v-btn>
+      <v-btn
+        v-if="isEditMode"
+        color="primary"
+        @click="saveQuote"
+        :disabled="isLoading"
+        aria-label="Enregistrer le devis"
+        role="button"
+      >
+        <template v-if="!isLoading">
+          <v-icon start>mdi-content-save</v-icon>
+          Enregistrer
+        </template>
+        <v-progress-circular
+          v-else
+          indeterminate
+          size="20"
+          color="white"
+          aria-label="Enregistrement en cours du devis"
+        />
+      </v-btn>
+    </v-container>
   </div>
 </template>
 

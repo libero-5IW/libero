@@ -1,13 +1,15 @@
 <template>
-  <v-container>
+  <v-container role="main" aria-labelledby="profile-form-title" tabindex="-1" ref="mainContent">
+    <h1 id="profile-form-title" class="sr-only">Modifier mes informations personnelles et professionnelles</h1>
+
     <v-row justify="center">
       <v-col cols="12" md="8" lg="6">
-        <v-card class="pa-4">
-          <v-card-title class="text-h5 mb-4">
+        <v-card class="pa-4" aria-label="Formulaire de modification du profil">
+          <v-card-title class="text-h5 mb-4" aria-level="2" role="heading">
             Modifier mes informations
           </v-card-title>
 
-          <v-form @submit.prevent="saveProfile" v-model="isFormValid">
+          <v-form @submit.prevent="saveProfile" v-model="isFormValid" aria-label="Formulaire utilisateur">
 
             <v-card-text>
               <v-row>
@@ -17,6 +19,8 @@
                     label="Prénom"
                     :rules="[rules.required]"
                     required
+                    autocomplete="given-name"
+                    aria-required="true"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
@@ -25,6 +29,8 @@
                     label="Nom"
                     :rules="[rules.required]"
                     required
+                    autocomplete="family-name"
+                    aria-required="true"
                   />
                 </v-col>
               </v-row>
@@ -35,16 +41,19 @@
                 type="email"
                 :rules="[rules.required, rules.email]"
                 required
+                autocomplete="email"
+                aria-required="true"
               />
 
-              <v-divider class="my-4" />
-              <div class="text-h6 mb-4">Informations de la société</div>
+              <v-divider class="my-4" role="separator" aria-hidden="true" />
+              <h2 class="text-h6 mb-4" aria-level="3" role="heading">Informations de la société</h2>
 
               <v-text-field
                 v-model="profile.companyName"
                 label="Nom de la société"
                 :rules="[rules.required]"
                 required
+                aria-required="true"
               />
 
               <v-text-field
@@ -52,6 +61,7 @@
                 label="Statut juridique"
                 :rules="[rules.required]"
                 required
+                aria-required="true"
               />
 
               <v-text-field
@@ -59,21 +69,25 @@
                 label="Numéro SIRET"
                 :rules="[rules.required, rules.siret]"
                 required
+                aria-required="true"
               />
 
               <v-text-field
                 v-model="profile.tvaNumber"
                 label="Numéro TVA"
+                autocomplete="off"
               />
 
-              <v-divider class="my-4" />
-              <div class="text-h6 mb-4">Adresse</div>
+              <v-divider class="my-4" role="separator" aria-hidden="true" />
+              <h2 class="text-h6 mb-4" aria-level="3" role="heading">Adresse</h2>
 
               <v-text-field
                 v-model="profile.addressLine"
                 label="Adresse"
                 :rules="[rules.required]"
                 required
+                autocomplete="street-address"
+                aria-required="true"
               />
 
               <v-row>
@@ -83,6 +97,8 @@
                     label="Ville"
                     :rules="[rules.required]"
                     required
+                    autocomplete="address-level2"
+                    aria-required="true"
                   />
                 </v-col>
                 <v-col cols="12" md="3">
@@ -91,6 +107,8 @@
                     label="Code postal"
                     :rules="[rules.required]"
                     required
+                    autocomplete="postal-code"
+                    aria-required="true"
                   />
                 </v-col>
                 <v-col cols="12" md="3">
@@ -99,6 +117,8 @@
                     label="Pays"
                     :rules="[rules.required]"
                     required
+                    autocomplete="country"
+                    aria-required="true"
                   />
                 </v-col>
               </v-row>
@@ -111,6 +131,7 @@
                 type="submit"
                 :loading="isLoading"
                 :disabled="!isFormValid"
+                aria-label="Enregistrer les modifications du profil"
               >
                 Enregistrer
               </v-btn>
