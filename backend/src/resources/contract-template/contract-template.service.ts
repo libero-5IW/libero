@@ -301,24 +301,56 @@ export class ContractTemplateService {
   async search(
     userId: string,
     rawSearch: string,
-  ): Promise<ContractTemplateEntity[]> {
-    const whereClause = buildTemplateSearchQuery(rawSearch, userId);
-
-    const templates = await this.prisma.contractTemplate.findMany({
-      where: whereClause,
-      include: { variables: true },
-    });
-
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    pageSize?: number,
+  ) {
+    const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const createdAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            createdAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
+  
+    const where = {
+      ...baseWhere,
+      ...createdAtFilter,
+    };
+  
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [templates, totalCount] = await this.prisma.$transaction([
+      this.prisma.contractTemplate.findMany({
+        where,
+        include: { variables: true },
+        orderBy: { createdAt: 'desc' },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.contractTemplate.count({ where }),
+    ]);
+  
     const templatesWithUrls = await Promise.all(
       templates.map(async (template) => {
         const previewUrl = template.previewKey
           ? await this.s3Service.generateSignedUrl(template.previewKey)
           : null;
-
+  
         const pdfUrl = template.pdfKey
           ? await this.s3Service.generateSignedUrl(template.pdfKey)
           : null;
-
+  
         return {
           ...template,
           previewUrl,
@@ -326,14 +358,14 @@ export class ContractTemplateService {
         };
       }),
     );
-
+  
     const templatesWithSystemVariables = await Promise.all(
       templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
-
-    return plainToInstance(
-      ContractTemplateEntity,
-      templatesWithSystemVariables,
-    );
-  }
+  
+    return {
+      contractTemplate: plainToInstance(ContractTemplateEntity, templatesWithSystemVariables),
+      total: totalCount,
+    };
+  }  
 }

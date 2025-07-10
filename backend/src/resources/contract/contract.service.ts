@@ -263,47 +263,75 @@ export class ContractService {
     });
   }
 
-  async search(userId: string, search: string, status?: ContractStatus) {
+  async search(
+    userId: string,
+    search: string,
+    status?: ContractStatus,
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    pageSize?: number,
+  ) {
     const baseWhere = buildSearchQuery(search, userId, 'contrat');
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
   
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
+      ...issuedAtFilter,
     };
   
-    const contracts = await this.prisma.contract.findMany({
-      where,
-      include: {
-        variableValues: true,
-        client: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    const contractsWithUrls = await Promise.all(
-      contracts.map(async (contract) => {
-        const previewUrl = contract.previewKey
-          ? await this.s3Service.generateSignedUrl(contract.previewKey)
-          : null;
-
-        const pdfUrl = contract.pdfKey
-          ? await this.s3Service.generateSignedUrl(contract.pdfKey)
-          : null;
-
-        return {
-          ...contract,
-          previewUrl,
-          pdfUrl,
-        };
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [contracts, totalCount] = await this.prisma.$transaction([
+      this.prisma.contract.findMany({
+        where,
+        include: {
+          variableValues: true,
+          client: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
       }),
+      this.prisma.contract.count({ where }),
+    ]);
+  
+    const contractsWithUrls = await Promise.all(
+      contracts.map(async (contract) => ({
+        ...contract,
+        previewUrl: contract.previewKey
+          ? await this.s3Service.generateSignedUrl(contract.previewKey)
+          : null,
+        pdfUrl: contract.pdfKey
+          ? await this.s3Service.generateSignedUrl(contract.pdfKey)
+          : null,
+      })),
     );
-
-    return plainToInstance(ContractEntity, contractsWithUrls, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
-    });
-  }
+  
+    return {
+      contract: plainToInstance(ContractEntity, contractsWithUrls, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+      total: totalCount,
+    };
+  }  
   
 }

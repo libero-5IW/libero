@@ -268,47 +268,76 @@ export class QuoteService {
     return this.s3Service.generateSignedUrl(quote.previewKey);
   }
 
-  async search(userId: string, search: string, status?: QuoteStatus) {
+  async search(
+    userId: string,
+    search: string,
+    status?: QuoteStatus,
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    pageSize?: number,
+  ) {
+
     const baseWhere = buildSearchQuery(search, userId, 'devis');
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
   
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
+      ...issuedAtFilter,
     };
-
-    const quotes = await this.prisma.quote.findMany({
-      where,
-      include: {
-        variableValues: true,
-        client: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    const quotesWithUrls = await Promise.all(
-      quotes.map(async (quote) => {
-        const previewUrl = quote.previewKey
-          ? await this.s3Service.generateSignedUrl(quote.previewKey)
-          : null;
-
-        const pdfUrl = quote.pdfKey
-          ? await this.s3Service.generateSignedUrl(quote.pdfKey)
-          : null;
-
-        return {
-          ...quote,
-          previewUrl,
-          pdfUrl,
-        };
+  
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [quotes, totalCount] = await this.prisma.$transaction([
+      this.prisma.quote.findMany({
+        where,
+        include: {
+          variableValues: true,
+          client: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
       }),
+      this.prisma.quote.count({ where }),
+    ]);
+  
+    const quotesWithUrls = await Promise.all(
+      quotes.map(async (quote) => ({
+        ...quote,
+        previewUrl: quote.previewKey
+          ? await this.s3Service.generateSignedUrl(quote.previewKey)
+          : null,
+        pdfUrl: quote.pdfKey
+          ? await this.s3Service.generateSignedUrl(quote.pdfKey)
+          : null,
+      })),
     );
-
-    return plainToInstance(QuoteEntity, quotesWithUrls, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
-    });
-  }
+  
+    return {
+      quote: plainToInstance(QuoteEntity, quotesWithUrls, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+      total: totalCount,
+    };
+  }  
   
 }

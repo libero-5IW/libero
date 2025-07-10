@@ -12,6 +12,9 @@
       <SearchInput
         v-model="search"
         placeholder="Rechercher un contrat"
+        class="w-64"
+        density="compact"
+        hide-details
         @search="fetchContracts"
       />
 
@@ -21,10 +24,56 @@
         item-title="label"
         item-value="value"
         label="Filtrer par statut"
-        class="w-64"
+        class="w-48"
+        density="compact"
+        hide-details
         clearable
         @update:modelValue="fetchContracts"
       />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
     </div>
 
     <v-progress-linear
@@ -54,8 +103,6 @@
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucun contrat créé pour le moment.</p>
     </div>
-
-
   </div>
 
   <TemplateSelectionModal 
@@ -82,6 +129,12 @@
   @templateSelected="handleInvoiceTemplateSelected"
   />
 
+  <Pagination
+    :total-items="contractStore.total"
+    :current-page="contractStore.currentPage"
+    :page-size="contractStore.pageSize"
+    @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -100,6 +153,7 @@ import { mapContractToInvoiceVariables } from '@/utils/mapContractToInvoice';
 import type { Contract } from '@/schemas/contract.schema';
 import SearchInput from '@/components/SearchInput.vue';
 import { CONTRACT_STATUS } from '@/constants/status/contract-status.constant';
+import Pagination from '@/components/Pagination.vue';
 
 const search = ref('');
 const router = useRouter();
@@ -118,6 +172,8 @@ const selectedContractId = ref<string | null>(null)
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const showInvoiceTemplateModal = ref(false);
 const contractToConvert = ref<Contract | null>(null);
+const startDate = ref<string | null>(null);
+const endDate = ref<string | null>(null);
 
 const statusOptions = [
   { label: 'Tous', value: null },
@@ -239,12 +295,24 @@ function handleInvoiceTemplateSelected(templateId: string) {
 async function fetchContracts() {
   const term = search.value.trim();
   const status = selectedStatus.value || undefined;
+  const start = startDate.value || null;
+  const end = endDate.value || null;
 
-  if (!term && !status) {
+  if (!term && !status && !start && !end) {
     await contractStore.fetchAllContracts();
   } else {
-    await contractStore.searchContracts(term, status);
+    await contractStore.searchContracts(term, status, start, end);
   }
+}
+
+async function handlePageChange(page: number) {
+  await contractStore.searchContracts(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    page
+  );
 }
 
 onMounted(async () => {
@@ -255,13 +323,18 @@ onMounted(async () => {
     showToast(status, message);
   }
 
-  await fetchAllContracts();
-  console.log('pssseee');
+  await contractStore.searchContracts('', null, null, null, 1);
   
 });
 
-watch([search, selectedStatus], async () => {
-  await fetchContracts();
+watch([search, selectedStatus, startDate, endDate], async () => {
+  await contractStore.searchContracts(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    1
+  );
 });
 
 </script>

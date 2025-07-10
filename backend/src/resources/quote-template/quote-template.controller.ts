@@ -16,6 +16,7 @@ import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { SearchQuoteTemplateDto } from './dto/search-quote-template.dto';
 
 @ApiBearerAuth()
 @Controller('quote-templates')
@@ -36,6 +37,35 @@ export class QuoteTemplateController {
     return this.quoteTemplateService.create(
       user.userId,
       createQuoteTemplateDto,
+    );
+  }
+
+  @Get('search')
+  search(
+    @Query() query: SearchQuoteTemplateDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const {
+      term = '',
+      startDate,
+      endDate,
+      page,
+      pageSize,
+    } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    const parsedPage = page ? parseInt(String(page), 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(String(pageSize), 10) : undefined;
+  
+    return this.quoteTemplateService.search(
+      user.userId,
+      term,
+      parsedStart,
+      parsedEnd,
+      parsedPage,
+      parsedPageSize,
     );
   }
 
@@ -82,12 +112,5 @@ export class QuoteTemplateController {
   duplicate(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.quoteTemplateService.duplicate(id, user.userId);
   }
-
-  @Get('search/:term')
-  search(
-    @Param('term') term: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    return this.quoteTemplateService.search(user.userId, term);
-  }  
+  
 }

@@ -11,6 +11,10 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
   const defaultTemplate = ref<QuoteTemplate | null>(null)
   const isLoading = ref(false)
 
+  const total = ref(0)
+  const currentPage = ref(1)
+  const pageSize = ref(9)
+
   async function fetchAllTemplates(includeDefault = true) {
     isLoading.value = true
     try {
@@ -18,13 +22,15 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
         params: { includeDefault },
       })
       templates.value = data.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
+      total.value = data.length
+      currentPage.value = 1
     } catch (error) {
-      templates.value = [];
+      templates.value = []
       handleError(error, 'Erreur lors de la récupération des templates.')
     } finally {
       isLoading.value = false
     }
-  }
+  }  
 
   async function fetchTemplate(id: string) {
     isLoading.value = true
@@ -87,11 +93,27 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     }
   }
 
-  async function searchTemplates(term: string) {
+  async function searchTemplates(
+    term: string,
+    startDate?: string | null,
+    endDate?: string | null,
+    page = 1,
+    size = pageSize.value
+  ) {
     isLoading.value = true
     try {
-      const { data } = await apiClient.get(`/quote-templates/search/${encodeURIComponent(term)}`)
-      templates.value = data.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
+      const { data } = await apiClient.get(`/quote-templates/search`, {
+        params: {
+          term,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+          page,
+          pageSize: size
+        }
+      })
+      templates.value = data.quoteTemplate.map((item: QuoteTemplate) => QuoteTemplateSchema.parse(item))
+      total.value = data.total
+      currentPage.value = page
     } catch (error) {
       templates.value = []
       handleError(error, 'Erreur lors de la recherche des templates.')
@@ -99,7 +121,7 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
       isLoading.value = false
     }
   }  
-
+  
   return {
     templates,
     currentTemplate,
@@ -112,6 +134,9 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     updateTemplate,
     deleteTemplate,
     duplicateTemplate,
-    searchTemplates
+    searchTemplates,
+    total,
+    currentPage,
+    pageSize,
   }
 })

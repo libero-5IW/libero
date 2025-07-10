@@ -13,6 +13,9 @@
         v-model="search"
         placeholder="Rechercher un devis"
         @search="fetchQuotes"
+        class="w-64"
+        density="compact"
+        hide-details
       />
 
       <v-select
@@ -21,10 +24,56 @@
         item-title="label"
         item-value="value"
         label="Filtrer par statut"
-        class="w-64"
+        density="compact"
+        hide-details
+        class="w-48"
         clearable
         @update:modelValue="fetchQuotes"
       />
+
+      <v-text-field
+          v-model="startDate"
+          label="Date de début"
+          type="date"
+          density="compact"
+          hide-details
+          class="w-48"
+        >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+
+      <v-text-field
+          v-model="endDate"
+          label="Date de fin"
+          type="date"
+          density="compact"
+          hide-details
+          class="w-48"
+        >
+          <template #append-inner>
+            <v-tooltip text="Date d'envoi" location="top">
+              <template #activator="{ props }">
+                <v-icon
+                  v-bind="props"
+                  icon="mdi-information-outline"
+                  class="ml-1"
+                  size="18"
+                />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-text-field>
     </div>
 
     <v-progress-linear
@@ -88,6 +137,13 @@
     :fetchTemplates="fetchContractTemplates"
     @templateSelected="handleContractTemplateSelected"
   />
+
+  <Pagination
+  :total-items="quoteStore.total"
+  :current-page="quoteStore.currentPage"
+  :page-size="quoteStore.pageSize"
+  @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -109,6 +165,7 @@ import { mapQuoteToContractVariables } from '@/utils/mapQuoteToContract'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
 import SearchInput from '@/components/SearchInput.vue'
 import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
+import Pagination from '@/components/Pagination.vue';
 
 const search = ref('')
 const quoteTemplateStore = useQuoteTemplateStore();
@@ -116,6 +173,8 @@ const invoiceTemplateStore = useInvoiceTemplateStore();
 const quoteStore = useQuoteStore();
 const contractTemplateStore = useContractTemplateStore()
 const selectedStatus = ref<string | null>(null);
+const startDate = ref<string | null>(null)
+const endDate = ref<string | null>(null)
 
 const { showToast } = useToastHandler();
 const router = useRouter();
@@ -229,6 +288,16 @@ function openDeleteConfirmation(id: string) {
   isDeleteModalOpen.value = true;
 }
 
+async function handlePageChange(page: number) {
+  await quoteStore.searchQuotes(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    page
+  );
+}
+
 async function fetchInvoiceTemplates() {
   await invoiceTemplateStore.fetchAllTemplates()
   return invoiceTemplateStore.templates
@@ -315,11 +384,13 @@ async function confirmDeleteQuote() {
 async function fetchQuotes() {
   const term = search.value?.trim() || '';
   const status = selectedStatus.value || undefined;
+  const start = startDate.value || null;
+  const end = endDate.value || null;
 
-  if (!term && !status) {
+  if (!term && !status && !start && !end) {
     await quoteStore.fetchAllQuotes();
   } else {
-    await quoteStore.searchQuotes(term, status);
+    await quoteStore.searchQuotes(term, status, start, end);
   }
 }
 
@@ -331,12 +402,18 @@ onMounted(async () => {
     showToast(status, message);
   }
 
-  await fetchAllQuotes();
+  await quoteStore.searchQuotes('', null, null, null, 1);
 });
 
-watch([search, selectedStatus], async () => {
-  const term = search.value?.trim() || '';
-  await quoteStore.searchQuotes(term, selectedStatus.value);
+watch([search, selectedStatus, startDate, endDate], async () => {
+  await quoteStore.searchQuotes(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    1
+  );
 });
+
 
 </script>

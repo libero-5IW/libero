@@ -11,6 +11,7 @@ import {
 import { QuoteService } from './quote.service';
 import { CreateQuoteDto } from './dto/create-quote.dto';
 import { UpdateQuoteDto } from './dto/update-quote.dto';
+import { SearchQuoteDto } from './dto/search-quote.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -44,14 +45,35 @@ export class QuoteController {
     return await this.quoteService.getNextQuoteNumber(user.userId);
   }  
 
-
   @Get('search')
   searchQuotes(
-    @Query('term') term: string,
-    @Query('status') status: QuoteStatus,
+    @Query() query: SearchQuoteDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.quoteService.search(user.userId, term, status);
+    const {
+      term = '',
+      status,
+      startDate,
+      endDate,
+      page,
+      pageSize,
+    } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    const parsedPage = page ? parseInt(String(page), 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(String(pageSize), 10) : undefined;
+
+    return this.quoteService.search(
+      user.userId,
+      term,
+      status,
+      parsedStart,
+      parsedEnd,
+      parsedPage,
+      parsedPageSize,
+    );
   }
 
   @Get(':id')

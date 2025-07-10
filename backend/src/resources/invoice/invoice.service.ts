@@ -261,46 +261,75 @@ export class InvoiceService {
     });
   }
 
-  async search(userId: string, search: string, status?: InvoiceStatus) {
+  async search(
+    userId: string,
+    search: string,
+    status?: InvoiceStatus,
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    pageSize?: number,
+  ) {
     const baseWhere = buildSearchQuery(search, userId, 'facture');
-
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+  
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
+  
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
+      ...issuedAtFilter,
     };
-
-    const invoices = await this.prisma.invoice.findMany({
-      where,
-      include: {
-        variableValues: true,
-        client: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    const invoicesWithUrls = await Promise.all(
-      invoices.map(async (invoice) => {
-        const previewUrl = invoice.previewKey
-          ? await this.s3Service.generateSignedUrl(invoice.previewKey)
-          : null;
-
-        const pdfUrl = invoice.pdfKey
-          ? await this.s3Service.generateSignedUrl(invoice.pdfKey)
-          : null;
-
-        return {
-          ...invoice,
-          previewUrl,
-          pdfUrl,
-        };
+  
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [invoices, totalCount] = await this.prisma.$transaction([
+      this.prisma.invoice.findMany({
+        where,
+        include: {
+          variableValues: true,
+          client: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
       }),
+      this.prisma.invoice.count({ where }),
+    ]);
+  
+    const invoicesWithUrls = await Promise.all(
+      invoices.map(async (invoice) => ({
+        ...invoice,
+        previewUrl: invoice.previewKey
+          ? await this.s3Service.generateSignedUrl(invoice.previewKey)
+          : null,
+        pdfUrl: invoice.pdfKey
+          ? await this.s3Service.generateSignedUrl(invoice.pdfKey)
+          : null,
+      })),
     );
+  
+    return {
+      invoice: plainToInstance(InvoiceEntity, invoicesWithUrls, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+      total: totalCount,
+    };
+  }  
 
-    return plainToInstance(InvoiceEntity, invoicesWithUrls, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
-    });
-  }
 }

@@ -18,6 +18,7 @@ import { ValidateContractOnCreatePipe } from './pipes/create-validate-contract-v
 import { ValidateContractOnUpdatePipe } from './pipes/update-validate-contract.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ContractStatus } from '@prisma/client';
+import { SearchContractDto } from './dto/search-contract.dto';
 
 @ApiBearerAuth()
 @ApiTags('Contracts')
@@ -46,12 +47,34 @@ export class ContractController {
 
   @Get('search')
   searchContracts(
-    @Query('term') term: string,
-    @Query('status') status: ContractStatus, 
+    @Query() query: SearchContractDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.contractService.search(user.userId, term, status); 
-  }
+    const {
+      term = '',
+      status,
+      startDate,
+      endDate,
+      page,
+      pageSize,
+    } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    const parsedPage = page ? parseInt(String(page), 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(String(pageSize), 10) : undefined;
+  
+    return this.contractService.search(
+      user.userId,
+      term,
+      status,
+      parsedStart,
+      parsedEnd,
+      parsedPage,
+      parsedPageSize,
+    );
+  }   
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
