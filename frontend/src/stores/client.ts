@@ -78,7 +78,7 @@ export const useClientStore = defineStore('client', () => {
   async function exportClients(search?: string) {
     try {
       const response = await apiClient.get('/clients/export', {
-        params: search ? { search } : {},
+        params: search ? { term: search } : {},
         responseType: 'blob',
       });
   

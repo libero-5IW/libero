@@ -138,9 +138,24 @@ export class ClientService {
     return plainToInstance(ClientEntity, clients);
   }  
 
-  async exportToCSV(userId: string): Promise<{ filename: string; content: string }> {
+  async exportToCSV(userId: string, term?: string): Promise<{ filename: string; content: string }> {
+    const raw = term?.trim().toLowerCase();
+  
     const clients = await this.prisma.client.findMany({
-      where: { userId },
+      where: {
+        userId,
+        ...(raw
+          ? {
+              OR: [
+                { firstName: { contains: raw, mode: 'insensitive' } },
+                { lastName: { contains: raw, mode: 'insensitive' } },
+                { email: { contains: raw, mode: 'insensitive' } },
+                { phoneNumber: { contains: raw, mode: 'insensitive' } },
+                { city: { contains: raw, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
       orderBy: { createdAt: 'desc' },
     });
   
@@ -180,6 +195,6 @@ export class ClientService {
       filename: `clients_export_${slug}_${format(new Date(), 'yyyy-MM-dd')}.csv`,
       content,
     };
-  }
-  
+  }  
+
 }

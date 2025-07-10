@@ -6,7 +6,8 @@ import {
   Param,
   Delete,
   Patch,
-  Res
+  Res, 
+  Query
 } from '@nestjs/common';
 import { ClientService } from './client.service';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -33,9 +34,10 @@ export class ClientController {
   @Get('export')
   exportClients(
     @CurrentUser() user: JwtPayload,
+    @Query('term') term: string,
     @Res() res: Response,
   ) {
-    return this.clientService.exportToCSV(user.userId).then(({ content, filename }) => {
+    return this.clientService.exportToCSV(user.userId, term).then(({ content, filename }) => {
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.end(content);
