@@ -76,7 +76,7 @@ jobs:
               -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
               -e AWS_BUCKET_NAME=${{ secrets.AWS_BUCKET_NAME }} \
               ${{ env.IMAGE_BACKEND }} \
-              sh -c "echo 'Waiting for Postgres...' && sleep 15 && npx prisma migrate deploy"
+              sh -c "echo 'Waiting for Postgres...' && sleep 15 && npx prisma migrate reset && npx prisma migrate deploy"
 
             echo "Deploying updated stack to Swarm"
             export JWT_SECRET=${{ secrets.JWT_SECRET }}
