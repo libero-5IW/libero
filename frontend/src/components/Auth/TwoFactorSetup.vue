@@ -1,6 +1,6 @@
 <template>
-  <v-card class="pa-4 elevation-0 twofa-card">
-    <div v-if="loading" class="d-flex justify-center my-8">
+  <div class="rounded-xl p-6">
+    <div v-if="loading" class="flex justify-center my-8">
       <v-progress-circular indeterminate color="primary" size="40" />
     </div>
     <div v-else>
@@ -10,7 +10,6 @@
         </v-alert>
         <div v-if="!showPasswordField">
           <v-btn color="error" variant="flat" class="mt-2" @click="showPasswordField = true">
-            <v-icon start>mdi-lock-off</v-icon>
             Désactiver 2FA
           </v-btn>
         </div>
@@ -23,8 +22,8 @@
             prepend-inner-icon="mdi-lock"
             autocomplete="current-password"
           />
-          <div class="d-flex gap-2 mt-2">
-            <v-btn color="error" variant="flat" @click="disable2FA">
+          <div class="flex gap-2 mt-2">
+            <v-btn color="primary" variant="flat" @click="disable2FA">
               <v-icon start>mdi-check</v-icon>
               Valider
             </v-btn>
@@ -34,7 +33,6 @@
           </div>
         </div>
         <v-alert v-if="error" type="error" class="mt-4" border="start" color="error" variant="tonal">
-          <v-icon start>mdi-alert-circle</v-icon>
           {{ error }}
         </v-alert>
       </div>
@@ -43,7 +41,7 @@
           <v-icon start>mdi-shield-key</v-icon>
           Activer 2FA
         </v-btn>
-        <v-card v-if="qrCode" class="pa-4 mt-4 twofa-qr-card" outlined>
+        <div v-if="qrCode" class="bg-white rounded-lg border border-slate-200 p-6 mt-4">
           <div class="text-center mb-2">
             <p class="mb-2">Scannez ce QR code avec Google Authenticator ou Authy :</p>
             <img :src="qrCode" alt="QR Code 2FA" class="mx-auto max-w-[180px]" />
@@ -60,20 +58,22 @@
             <v-icon start>mdi-check</v-icon>
             Vérifier & Activer
           </v-btn>
-        </v-card>
+        </div>
         <v-alert v-if="error" type="error" class="mt-4" border="start" color="error" variant="tonal">
-          <v-icon start>mdi-alert-circle</v-icon>
           {{ error }}
         </v-alert>
       </div>
     </div>
-  </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import apiClient from '@/config/axios';
+import { useUserStore } from '@/stores/user';
+import { useTwoFactorStore } from '@/stores/twoFactor';
 
+const userStore = useUserStore();
+const twoFactorStore = useTwoFactorStore();
 const qrCode = ref('');
 const token = ref('');
 const enabled = ref(false);
@@ -85,10 +85,9 @@ const showPasswordField = ref(false);
 const fetch2FAStatus = async () => {
   loading.value = true;
   try {
-    const res = await apiClient.get('/auth/me');
-    enabled.value = !!res.data.isTwoFactorEnabled;
+    enabled.value = await userStore.fetch2FAStatus();
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Erreur lors de la récupération du statut 2FA';
+    error.value = err;
   } finally {
     loading.value = false;
   }
@@ -99,40 +98,39 @@ onMounted(fetch2FAStatus);
 const generate2FA = async () => {
   error.value = '';
   try {
-    const res = await apiClient.post('/2fa/generate');
-    qrCode.value = res.data.qrCode;
+    qrCode.value = await twoFactorStore.generate2FA();
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Erreur lors de la génération du QR code';
+    error.value = err;
   }
 };
 
 const enable2FA = async () => {
   error.value = '';
   try {
-    const res = await apiClient.post('/2fa/enable', { token: token.value });
-    if (res.data.valid) {
-      enabled.value = true;
+    const valid = await twoFactorStore.enable2FA(token.value);
+    if (valid) {
+      await fetch2FAStatus();
       qrCode.value = '';
       token.value = '';
     } else {
       error.value = 'Code 2FA invalide';
     }
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Erreur lors de l’activation du 2FA';
+    error.value = err;
   }
 };
 
 const disable2FA = async () => {
   error.value = '';
   try {
-    await apiClient.post('/2fa/disable', { password: password.value });
-    enabled.value = false;
+    await twoFactorStore.disable2FA(password.value);
+    await fetch2FAStatus();
     qrCode.value = '';
     token.value = '';
     password.value = '';
     showPasswordField.value = false;
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Erreur lors de la désactivation du 2FA';
+    error.value = err;
   }
 };
 
@@ -142,15 +140,3 @@ const cancelDisable = () => {
   error.value = '';
 };
 </script>
-
-<style scoped>
-.twofa-card {
-  background: #f8fafc;
-  border-radius: 12px;
-}
-.twofa-qr-card {
-  background: #fff;
-  border-radius: 10px;
-  border: 1px solid #e3e7ed;
-}
-</style>

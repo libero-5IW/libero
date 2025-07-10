@@ -8,7 +8,7 @@ import { PrismaService } from '../../database/prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserEntity } from './entities/user.entity';
 import { plainToInstance } from 'class-transformer';
-import bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
@@ -61,7 +61,7 @@ export class UserService {
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException();
+    if (!user) throw new NotFoundException('Utilisateur introuvable.');
 
     const isMatch = await bcrypt.compare(
       changePasswordDto.currentPassword,
@@ -94,7 +94,7 @@ export class UserService {
   }
 
   async setTwoFactorSecret(userId: string, secret: string) {
-    if (!userId) throw new Error('userId is required');
+    if (!userId) throw new Error("L'identifiant utilisateur est requis");
     return this.prisma.user.update({
       where: { id: userId },
       data: { twoFactorSecret: secret },
@@ -113,5 +113,14 @@ export class UserService {
       where: { id: userId },
       data: { isTwoFactorEnabled: false, twoFactorSecret: null },
     });
+  }
+
+  async disableTwoFactorWithPassword(userId: string, password: string) {
+    const user = await this.getUserOrThrow(userId);
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('Mot de passe incorrect');
+    }
+    return this.disableTwoFactor(userId);
   }
 }

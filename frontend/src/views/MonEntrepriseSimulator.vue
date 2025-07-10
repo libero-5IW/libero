@@ -2,19 +2,25 @@
   <div>
     <v-progress-circular v-if="loading" indeterminate color="primary" class="my-4" />
     <template v-else>
-      <div v-if="legalStatus === 'SASU'" id="widget-container">
-        <!-- SASU widget will be injected here -->
-        <div data-module="simulateur-assimilesalarie" data-couleur="#284def"></div>
-      </div>
-      <div v-else-if="legalStatus === 'Auto-entrepreneur'" id="widget-container">
-        <div data-module="simulateur-autoentrepreneur" data-couleur="#284def"></div>
-      </div>
-      <div v-else-if="legalStatus === 'EURL'" id="widget-container">
-        <div data-module="simulateur-eurl" data-couleur="#284def"></div>
+      <div v-if="getModuleName(legalStatus)" id="widget-container">
+        <!-- Widget injecté ici -->
       </div>
       <template v-else>
-        <v-alert type="info">Aucun simulateur disponible pour votre statut juridique.</v-alert>
+        <v-alert type="info">
+          Aucun simulateur disponible pour le statut juridique :
+          <strong>
+            {{
+              legalStatusList.find(item => item.code === legalStatus)?.label || legalStatus
+            }}
+          </strong>
+        </v-alert>
       </template>
+      <div v-if="simulatorError" class="mt-2">
+        <v-alert type="error">
+          Le simulateur existe pour ce statut, mais il n'a pas pu être chargé. 
+          Il se peut que le service distant soit indisponible ou qu'une extension de navigateur bloque le chargement.
+        </v-alert>
+      </div>
       <div v-if="error" class="mt-2">
         <v-alert type="error">{{ error }}</v-alert>
       </div>
@@ -24,17 +30,22 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick } from 'vue';
-import apiClient from '@/config/axios';
+import { useUserStore } from '@/stores/user';
+import { legalStatus as legalStatusList } from '@/constants/legal-status';
 
+const userStore = useUserStore();
 const legalStatus = ref('');
 const loading = ref(true);
 const error = ref('');
+const simulatorError = ref(false);
 
 function getModuleName(status: string) {
   switch (status) {
     case 'SASU': return 'simulateur-assimilesalarie';
-    case 'Auto-entrepreneur': return 'simulateur-autoentrepreneur';
+    case 'AE': return 'simulateur-autoentrepreneur';
     case 'EURL': return 'simulateur-eurl';
+    case 'EI': return 'simulateur-EI';
+    case 'EIRL': return 'simulateur-EIRL';
     default: return null;
   }
 }
@@ -46,18 +57,29 @@ function removeWidgetScript() {
 
 function injectWidgetScript(status: string) {
   removeWidgetScript();
+  simulatorError.value = false;
   const moduleName = getModuleName(status);
   if (!moduleName) return;
+
   const script = document.createElement('script');
   script.id = 'simulateur-widget-script';
   script.src = 'https://mon-entreprise.urssaf.fr/simulateur-iframe-integration.js';
   script.setAttribute('data-module', moduleName);
   script.setAttribute('data-couleur', '#284def');
-  // Insert after nextTick to ensure the placeholder div is in the DOM
+
+  script.onerror = () => {
+    simulatorError.value = true;
+  };
+
   nextTick(() => {
     const container = document.getElementById('widget-container');
     if (container) {
       container.appendChild(script);
+      setTimeout(() => {
+        if (container.children.length <= 1) {
+          simulatorError.value = true;
+        }
+      }, 4000);
     } else {
       document.body.appendChild(script);
     }
@@ -68,8 +90,8 @@ onMounted(async () => {
   loading.value = true;
   error.value = '';
   try {
-    const { data } = await apiClient.get('/auth/me');
-    legalStatus.value = data.legalStatus || '';
+    await userStore.fetchCurrentUser();
+    legalStatus.value = userStore.user?.legalStatus || '';
   } catch (e: any) {
     error.value = e?.response?.data?.message || 'Erreur lors de la récupération du statut juridique.';
   } finally {

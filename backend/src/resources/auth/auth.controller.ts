@@ -32,10 +32,9 @@ export class AuthController {
       loginDto.email,
       loginDto.password,
     );
-    if (!user) throw new UnauthorizedException();
+    if (!user) throw new UnauthorizedException('Identifiants invalides');
 
     if (user.isTwoFactorEnabled) {
-      // Don't return JWT yet
       return { twoFactorRequired: true, userId: user.id };
     }
 
@@ -46,16 +45,15 @@ export class AuthController {
   @Post('2fa/verify')
   async verify2fa(@Body() body: { userId: string; token: string }) {
     const user = await this.userService.findOne(body.userId);
-    if (!user || !user.twoFactorSecret) throw new UnauthorizedException();
+    if (!user || !user.twoFactorSecret) throw new UnauthorizedException('Utilisateur ou secret 2FA introuvable');
 
     const isValid = this.twoFAService.verifyToken(
       user.twoFactorSecret,
       body.token,
     );
 
-    if (!isValid) throw new UnauthorizedException('Invalid 2FA code');
+    if (!isValid) throw new UnauthorizedException('Code 2FA invalide');
 
-    // Now issue JWT
     return this.authService.login(user);
   }
 

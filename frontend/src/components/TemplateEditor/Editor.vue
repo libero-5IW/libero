@@ -339,7 +339,7 @@
                 return true
               }
             } catch (e) {
-              console.error('Error handling drop:', e)
+              console.error('Erreur lors du traitement du dépôt :', e)
             }
           }
           return false
@@ -370,7 +370,6 @@
   watch(
     () => editor.value?.getHTML(),
     () => {
-      // triggers recomputation of variablesInEditor
     }
   );
 </script>

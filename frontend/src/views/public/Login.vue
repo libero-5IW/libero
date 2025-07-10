@@ -1,6 +1,6 @@
 <template>
   <CenteredContainer>
-    <div class="shadow-lg shadow-gray-300 border">
+    <div class="shadow-lg shadow-gray-300 border bg-white rounded-lg">
       <LoginForm v-if="!twoFARequired" :form="form" :loading="loading" @submit="handleLogin">
         <template v-slot:header>
           <div class="flex justify-center py-4">
@@ -20,26 +20,30 @@
           </div>
         </template>
       </LoginForm>
-      <div v-else class="p-6 flex flex-col items-center justify-center bg-gray-100 rounded-lg shadow-lg">
-        <h2 class="text-xl font-bold mb-4 text-center">Vérification en deux étapes</h2>
-        <v-icon color="primary" size="36" class="mb-2">mdi-shield-key-outline</v-icon>
-        <div class="mb-2 text-gray-600 text-center">Veuillez entrer le code de vérification généré par votre application d'authentification.</div>
-        <v-text-field
-          v-model="twoFAToken"
-          label="Code 2FA"
-          maxlength="6"
-          class="mb-4 min-w-[300px] text-center text-lg tracking-widest"
-          prepend-inner-icon="mdi-lock"
-          type="text"
-          inputmode="numeric"
-          placeholder="123456"
-          hide-details="auto"
-        />
-        <v-btn :loading="loading" color="primary" block class="min-w-[300px]" @click="handle2FAVerify">
-          Vérifier
-        </v-btn>
-        <div class="text-center mt-4">
-          <v-btn variant="text" @click="reset2FA">Retour</v-btn>
+      <div v-else class="px-4 py-8 max-w-[400px] mx-auto flex flex-col items-center justify-center bg-white rounded-lg">
+        <div class="w-full">
+          <div class="flex justify-center mb-4">
+            <v-icon color="primary" size="40">mdi-shield-key-outline</v-icon>
+          </div>
+          <h2 class="text-2xl font-black mb-2 text-center">Vérification en deux étapes</h2>
+          <div class="mb-6 text-gray-600 text-center text-base">Veuillez entrer le code de vérification généré par votre application d'authentification.</div>
+          <v-text-field
+            v-model="twoFAToken"
+            label="Code 2FA"
+            maxlength="6"
+            class="mb-4 text-center text-lg tracking-widest"
+            prepend-inner-icon="mdi-lock"
+            type="text"
+            inputmode="numeric"
+            placeholder="123456"
+            hide-details="auto"
+          />
+          <v-btn :loading="loading" color="primary" block class="mb-2" @click="handle2FAVerify">
+            Vérifier
+          </v-btn>
+          <div class="text-center mt-2">
+            <v-btn variant="text" @click="reset2FA">Retour</v-btn>
+          </div>
         </div>
       </div>
     </div>
@@ -50,25 +54,27 @@
 import LoginForm from '@/components/Auth/LoginForm.vue';
 import CenteredContainer from "@/components/Container/CenteredContainer.vue";
 import logo from '@/assets/logo.png';
-import { computed, onMounted, reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useToastHandler } from '@/composables/useToastHandler';
 import { useAuthStore } from '@/stores/auth';
+import { useTwoFactorStore } from '@/stores/twoFactor';
+import { useUserStore } from '@/stores/user';
 import type { LoginData } from '@/schemas/user.schema';
 import type { ToastStatus } from '@/types';
-import axios from 'axios';
-import apiClient from '@/config/axios';
 import { useRouter } from 'vue-router';
 
 const authStore = useAuthStore();
+const twoFactorStore = useTwoFactorStore();
+const userStore = useUserStore();
 const { showToast } = useToastHandler();
 const router = useRouter();
 
 const form = reactive({ email: '', password: '' });
-const loading = computed(() => authStore.loading);
 
 const twoFARequired = ref(false);
 const userId = ref('');
 const twoFAToken = ref('');
+const loading = ref(false);
 
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
@@ -81,34 +87,32 @@ onMounted(async () => {
 
 const handleLogin = async (form: LoginData) => {
   try {
-    const res = await apiClient.post('/auth/login', form);
-    if (res.data.twoFactorRequired) {
+    loading.value = true;
+    const res: any = await authStore.login(form);
+    if (res?.twoFactorRequired) {
       twoFARequired.value = true;
-      userId.value = res.data.userId;
-    } else {
-      await authStore.login(form);
+      userId.value = res?.userId;
+    } else if (res?.token) {
+      localStorage.setItem('token', res.token);
+      await userStore.fetchCurrentUser();
+      router.push('/dashboard');
     }
-  } catch (err: any) {
-    showToast('error', err.response?.data?.message || 'Erreur de connexion');
+  } finally {
+    loading.value = false;
   }
 };
 
+
 const handle2FAVerify = async () => {
   try {
-    const res = await apiClient.post('/auth/2fa/verify', {
-      userId: userId.value,
-      token: twoFAToken.value,
-    });
-    const token = res.data.token;
+    loading.value = true;
+    const token = await twoFactorStore.twoFAVerify(userId.value, twoFAToken.value);
     localStorage.setItem('token', token);
-
-    const me = await apiClient.get('/auth/me');
-    authStore.user = me.data;
+    await userStore.fetchCurrentUser();
     authStore.isAuthenticated = true;
-
     router.push('/dashboard');
-  } catch (err: any) {
-    showToast('error', err.response?.data?.message || 'Code 2FA invalide');
+  } finally {
+    loading.value = false;
   }
 };
 

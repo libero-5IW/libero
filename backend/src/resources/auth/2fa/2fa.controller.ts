@@ -7,9 +7,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { TwoFactorAuthService } from './2fa.service';
-import { UserService } from '../../user/user.service'; // adjust import as needed
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard'; // adjust import as needed
-import * as bcrypt from 'bcryptjs';
+import { UserService } from '../../user/user.service'; 
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @Controller('2fa')
 export class TwoFactorAuthController {
@@ -25,7 +24,6 @@ export class TwoFactorAuthController {
     const secret = this.twoFAService.generateSecret(user.email);
     const qrCode = await this.twoFAService.generateQrCode(secret.otpauth_url);
 
-    // Save secret temporarily to user (not enabled yet)
     await this.usersService.setTwoFactorSecret(user.userId, secret.base32);
 
     return { qrCode, secret: secret.base32 };
@@ -46,16 +44,7 @@ export class TwoFactorAuthController {
   @UseGuards(JwtAuthGuard)
   @Post('disable')
   async disable(@Req() req, @Body('password') password: string) {
-    // Fetch the raw user from DB (not the DTO/entity)
-    const user = await this.usersService.getUserOrThrow(req.user.userId);
-
-    // Verify password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      throw new UnauthorizedException('Mot de passe incorrect');
-    }
-
-    await this.usersService.disableTwoFactor(req.user.userId);
+    await this.usersService.disableTwoFactorWithPassword(req.user.userId, password);
     return { success: true };
   }
 }

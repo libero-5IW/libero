@@ -22,16 +22,3 @@
 <script setup lang="ts">
 import TwoFactorSetup from '@/components/Auth/TwoFactorSetup.vue'
 </script>
-
-<style scoped>
-.v-card {
-  border-radius: 16px;
-  background: #fff;
-}
-.text-h5 {
-  color: #1a237e;
-}
-.text-subtitle-1 {
-  color: #3949ab;
-}
-</style>
