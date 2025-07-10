@@ -17,7 +17,7 @@
             v-for="client in topClients"
             :key="client.clientId"
             class="hover:bg-gray-50 cursor-pointer"
-            @click="goToClient(client.clientId)"
+            @click="onEdit(client.clientId)"
           >
             <td>{{ client.clientName }}</td>
             <td>{{ formatCurrency(client.totalAmount) }}</td>
@@ -34,33 +34,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { useInvoiceStore } from '@/stores/invoice';
-import { useClientStore } from '@/stores/client';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
+import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
+import type { Invoice } from '@/schemas/invoice.schema';
+import type { Client } from '@/schemas/client.schema';
 
-const invoiceStore = useInvoiceStore();
-const clientStore = useClientStore();
-const router = useRouter();
-
-onMounted(async () => {
-  if (invoiceStore.invoices.length === 0) await invoiceStore.fetchAllInvoices();
-  if (clientStore.clients.length === 0) await clientStore.fetchAllClients();
-});
+const props = defineProps<{
+  invoices: Invoice[];
+  clients: Client[];
+  onEdit: (clientId: string) => void;
+}>();
 
 const currentYear = new Date().getFullYear();
 
 const topClients = computed(() => {
   const clientMap: Record<string, { clientId: string; clientName: string; totalAmount: number; invoiceCount: number }> = {};
 
-  invoiceStore.invoices.forEach(inv => {
+  props.invoices.forEach(inv => {
     if (
-      inv.status === 'paid' &&
+      inv.status === INVOICE_STATUS.PAID &&
       inv.clientId &&
       new Date(inv.dueDate).getFullYear() === currentYear
     ) {
       const clientId = inv.clientId;
-      const client = clientStore.clients.find(c => c.id === clientId);
+      const client = props.clients.find(c => c.id === clientId);
       const clientName = client ? `${client.firstName} ${client.lastName}` : 'Client inconnu';
 
       const amountVar = inv.variableValues.find(v =>
@@ -94,10 +91,6 @@ function formatCurrency(amount: number) {
     style: 'currency',
     currency: 'EUR',
   }).format(amount);
-}
-
-function goToClient(clientId: string) {
-  router.push({ name: 'ClientEdit', params: { id: clientId } });
 }
 </script>
 

@@ -36,7 +36,7 @@
             v-for="quote in lastFiveQuotes"
             :key="quote.id"
             class="hover:bg-gray-50 cursor-pointer"
-            @click="editQuote(quote.id)"
+            @click="onEdit(quote.id)"
           >
             <td>#{{ quote.number }}</td>
             <td>{{ quote.clientName }}</td>
@@ -59,35 +59,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { useQuoteStore } from '@/stores/quote';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import type { Quote } from '@/schemas/quote.schema';
 
-const quoteStore = useQuoteStore();
-const router = useRouter();
-
-onMounted(async () => {
-  if (quoteStore.quotes.length === 0) {
-    await quoteStore.fetchAllQuotes();
-  }
-});
+const props = defineProps<{
+  quotes: Quote[];
+  onEdit: (id: string) => void;
+}>();
 
 const sentCount = computed(() =>
-  quoteStore.quotes.filter(quote => quote.status === 'sent').length
+  props.quotes.filter(quote => quote.status === 'sent').length
 );
 
 const acceptedCount = computed(() =>
-  quoteStore.quotes.filter(quote => quote.status === 'accepted').length
+  props.quotes.filter(quote => quote.status === 'accepted').length
 );
 
 const refusedCount = computed(() =>
-  quoteStore.quotes.filter(quote => quote.status === 'refused').length
+  props.quotes.filter(quote => quote.status === 'refused').length
 );
 
 const lastFiveQuotes = computed(() => {
-  return [...quoteStore.quotes]
+  return [...props.quotes]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)
     .map(quote => {
@@ -137,10 +132,6 @@ function statusColor(status: string) {
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
   return format(date, 'dd MMM yyyy', { locale: fr });
-}
-
-function editQuote(id: string) {
-  router.push({ name: 'QuoteEdit', params: { id } });
 }
 </script>
 

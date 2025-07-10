@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -33,48 +33,29 @@ import {
   CategoryScale,
   LinearScale
 } from 'chart.js';
-import { useInvoiceStore } from '@/stores/invoice';
+import type { Invoice } from '@/schemas/invoice.schema';
+import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale);
 
-const invoiceStore = useInvoiceStore();
+const props = defineProps<{
+  invoices: Invoice[];
+}>();
+
 const currentYear = new Date().getFullYear();
 const selectedYear = ref(currentYear);
 
 const availableYears = computed(() => {
-  const years = invoiceStore.invoices.map(inv => new Date(inv.dueDate).getFullYear());
+  const years = props.invoices.map(inv => new Date(inv.dueDate).getFullYear());
   return Array.from(new Set(years)).sort((a, b) => b - a);
-});
-
-onMounted(async () => {
-  if (invoiceStore.invoices.length === 0) {
-    await invoiceStore.fetchAllInvoices();
-  }
 });
 
 const chartData = computed(() => {
   const labels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
   const dataByMonth = Array(12).fill(0);
 
-  if (invoiceStore.invoices.length === 0) {
-    return {
-      labels,
-      datasets: [
-        {
-          label: "Chiffre d'affaires (€)",
-          data: dataByMonth,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.15)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 3
-        }
-      ]
-    };
-  }
-
-  invoiceStore.invoices.forEach(inv => {
-    if (inv.status === 'paid') {
+  props.invoices.forEach(inv => {
+    if (inv.status === INVOICE_STATUS.PAID) {
       const date = new Date(inv.dueDate);
       if (date.getFullYear() === selectedYear.value) {
         const month = date.getMonth();
@@ -114,7 +95,7 @@ const chartOptions = {
     legend: { display: false },
     tooltip: {
       callbacks: {
-        label: (context: { parsed: { y: number; }; }) => `${context.parsed.y.toFixed(2)} €`
+        label: (context: { parsed: { y: number } }) => `${context.parsed.y.toFixed(2)} €`
       }
     }
   },

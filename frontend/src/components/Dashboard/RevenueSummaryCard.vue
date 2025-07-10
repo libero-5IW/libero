@@ -18,7 +18,7 @@
       <div class="d-flex flex-column align-center">
         <span class="text-h4 font-bold text-blue-600">{{ revenueFormatted }}</span>
         <span class="text-sm text-gray-600">
-          {{ selectedPeriod === 'month' ? 'Chiffre d\'affaires (mois)' : 'Chiffre d\'affaires (année)' }}
+          {{ selectedPeriod === 'month' ? "Chiffre d'affaires (mois)" : "Chiffre d'affaires (année)" }}
         </span>
       </div>
     </div>
@@ -52,34 +52,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useInvoiceStore } from '@/stores/invoice';
-import { useClientStore } from '@/stores/client';
-import { useContractStore } from '@/stores/contract';
-import { useQuoteStore } from '@/stores/quote';
+import { ref, computed } from 'vue';
+import type { Invoice } from '@/schemas/invoice.schema';
+import type { Client } from '@/schemas/client.schema';
+import type { Contract } from '@/schemas/contract.schema';
+import type { Quote } from '@/schemas/quote.schema';
+import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
 
-const invoiceStore = useInvoiceStore();
-const clientStore = useClientStore();
-const contractStore = useContractStore();
-const quoteStore = useQuoteStore();
+const props = defineProps<{
+  invoices: Invoice[];
+  clients: Client[];
+  contracts: Contract[];
+  quotes: Quote[];
+}>();
 
 const selectedPeriod = ref<'month' | 'year'>('month');
-
-onMounted(async () => {
-  if (invoiceStore.invoices.length === 0) await invoiceStore.fetchAllInvoices();
-  if (clientStore.clients.length === 0) await clientStore.fetchAllClients();
-  if (contractStore.contracts.length === 0) await contractStore.fetchAllContracts();
-  if (quoteStore.quotes.length === 0) await quoteStore.fetchAllQuotes();
-});
 
 const revenue = computed(() => {
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  return invoiceStore.invoices
+  return props.invoices
     .filter(inv => {
-      if (inv.status !== 'paid') return false;
+      if (inv.status !== INVOICE_STATUS.PAID) return false;
       const date = new Date(inv.dueDate);
       return selectedPeriod.value === 'month'
         ? date.getFullYear() === currentYear && date.getMonth() === currentMonth
@@ -98,14 +94,14 @@ const revenueFormatted = computed(() =>
   new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(revenue.value)
 );
 
-const clientCount = computed(() => clientStore.clients.length);
+const clientCount = computed(() => props.clients.length);
 
 const signedContracts = computed(() =>
-  contractStore.contracts.filter(contract => contract.status === 'signed').length
+  props.contracts.filter(contract => contract.status === 'signed').length
 );
 
-const quoteCount = computed(() => quoteStore.quotes.length);
+const quoteCount = computed(() => props.quotes.length);
 
-const invoiceCount = computed(() => invoiceStore.invoices.length);
+const invoiceCount = computed(() => props.invoices.length);
 </script>
 

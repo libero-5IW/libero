@@ -35,7 +35,7 @@
             v-for="invoice in lastFiveInvoices"
             :key="invoice.id"
             class="hover:bg-gray-50 cursor-pointer"
-            @click="editInvoice(invoice.id)"
+            @click="onEdit(invoice.id)"
           >
             <td>#{{ invoice.number }}</td>
             <td>{{ invoice.clientName }}</td>
@@ -58,35 +58,31 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { useInvoiceStore } from '@/stores/invoice';
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
+import type { Invoice } from '@/schemas/invoice.schema';
 
-const invoiceStore = useInvoiceStore();
-const router = useRouter();
-
-onMounted(async () => {
-  if (invoiceStore.invoices.length === 0) {
-    await invoiceStore.fetchAllInvoices();
-  }
-});
+const props = defineProps<{
+  invoices: Invoice[];
+  onEdit: (id: string) => void;
+}>();
 
 const sentCount = computed(() =>
-  invoiceStore.invoices.filter(inv => inv.status === 'sent').length
+  props.invoices.filter(inv => inv.status === INVOICE_STATUS.SENT).length
 );
 
 const overdueCount = computed(() =>
-  invoiceStore.invoices.filter(inv => inv.status === 'overdue').length
+  props.invoices.filter(inv => inv.status === INVOICE_STATUS.OVERDUE).length
 );
 
 const paidCount = computed(() =>
-  invoiceStore.invoices.filter(inv => inv.status === 'paid').length
+  props.invoices.filter(inv => inv.status === INVOICE_STATUS.PAID).length
 );
 
 const lastFiveInvoices = computed(() => {
-  return [...invoiceStore.invoices]
+  return [...props.invoices]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)
     .map(inv => {
@@ -105,15 +101,15 @@ const lastFiveInvoices = computed(() => {
 
 function statusLabel(status: string) {
   switch (status) {
-    case 'draft':
+    case INVOICE_STATUS.DRAFT:
       return 'Brouillon';
-    case 'sent':
+    case INVOICE_STATUS.SENT:
       return 'Envoyée';
-    case 'paid':
+    case INVOICE_STATUS.PAID:
       return 'Payée';
-    case 'overdue':
+    case INVOICE_STATUS.OVERDUE:
       return 'En retard';
-    case 'cancelled':
+    case INVOICE_STATUS.CANCELLED:
       return 'Annulée';
     default:
       return status;
@@ -122,15 +118,15 @@ function statusLabel(status: string) {
 
 function statusColor(status: string) {
   switch (status) {
-    case 'draft':
+    case INVOICE_STATUS.DRAFT:
       return 'grey';
-    case 'sent':
+    case INVOICE_STATUS.SENT:
       return 'blue';
-    case 'paid':
+    case INVOICE_STATUS.PAID:
       return 'green';
-    case 'overdue':
+    case INVOICE_STATUS.OVERDUE:
       return 'red';
-    case 'cancelled':
+    case INVOICE_STATUS.CANCELLED:
       return 'grey-darken-1';
     default:
       return 'grey';
@@ -140,10 +136,6 @@ function statusColor(status: string) {
 function formatDate(dateStr: string) {
   const date = new Date(dateStr);
   return format(date, 'dd MMM yyyy', { locale: fr });
-}
-
-function editInvoice(id: string) {
-  router.push({ name: 'InvoiceEdit', params: { id } });
 }
 </script>
 
