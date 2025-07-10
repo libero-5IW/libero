@@ -67,7 +67,7 @@ jobs:
               -e POSTGRES_HOST=postgres \
               -e POSTGRES_PORT=5432 \
               -e POSTGRES_DB=libero \
-              -e FRONTEND_URL=https://liberogestion.fr \
+              -e FRONTEND_URL=http://frontend \
               -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
               -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
               -e DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/libero \
