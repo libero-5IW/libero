@@ -1,9 +1,8 @@
 <template>
-  
-  <div class="ml-4 mt-8">
+  <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="contract-template-page-title" tabindex="-1" ref="mainContent">
     <div class="flex items-center justify-between mb-6">
-      <span class="text-xl font-semibold">Templates de contrats</span>
-      <v-btn color="primary" @click="createTemplate">
+      <span id="contract-template-page-title" class="text-xl font-semibold">Templates de contrats</span>
+      <v-btn color="primary" @click="createTemplate" aria-label="Créer un nouveau template de contrat">
         <v-icon start>mdi-plus</v-icon>
         Nouveau template
       </v-btn>
@@ -16,6 +15,7 @@
         class="w-64"
         density="compact"
         hide-details
+        aria-label="Rechercher un template de contrat"
       />
 
       <v-text-field
@@ -25,6 +25,7 @@
         class="w-48"
         density="compact"
         hide-details
+        aria-label="Filtrer par date de début de création"
       >
         <template #append-inner>
           <v-tooltip text="Date de création" location="top">
@@ -47,6 +48,7 @@
         class="w-48"
         density="compact"
         hide-details
+        aria-label="Filtrer par date de fin de création"
       >
         <template #append-inner>
           <v-tooltip text="Date de création" location="top">
@@ -64,10 +66,10 @@
     </div>
 
     <v-progress-linear
-    v-if="isLoading"
-    indeterminate
-    color="primary"
-    class="mb-4"
+      v-if="isLoading"
+      indeterminate
+      color="primary"
+      class="mb-4"
     />
 
     <div v-if="documentCards.length > 0">
@@ -83,6 +85,8 @@
     <div
       v-else
       class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+      role="status"
+      aria-live="polite"
     >
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucun template de contrat créé pour le moment.</p>
