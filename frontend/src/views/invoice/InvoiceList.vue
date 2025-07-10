@@ -121,6 +121,13 @@
     confirmColor="error"
     @confirm="confirmDeleteInvoice"
   />
+
+  <Pagination
+    :total-items="invoiceStore.total"
+    :current-page="invoiceStore.currentPage"
+    :page-size="invoiceStore.pageSize"
+    @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -137,6 +144,7 @@ import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
 import SearchInput from '@/components/SearchInput.vue';
 import { INVOICE_STATUS } from '@/constants/status/invoice-status.constant';
+import Pagination from '@/components/Pagination.vue';
 
 const search = ref('');
 const invoiceTemplateStore = useInvoiceTemplateStore();
@@ -249,6 +257,16 @@ async function fetchInvoices() {
   }
 }
 
+async function handlePageChange(page: number) {
+  await invoiceStore.searchInvoices(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    page
+  );
+}
+
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus;
   const message = history.state?.toastMessage as string;
@@ -257,11 +275,17 @@ onMounted(async () => {
     showToast(status, message);
   }
 
-  await fetchAllInvoices();
+  await invoiceStore.searchInvoices('', null, null, null, 1);
 });
 
 watch([search, selectedStatus, startDate, endDate], async () => {
-  await fetchInvoices();
+  await invoiceStore.searchInvoices(
+    search.value,
+    selectedStatus.value,
+    startDate.value,
+    endDate.value,
+    1
+  );
 });
 
 </script>

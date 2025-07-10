@@ -300,7 +300,9 @@ export class InvoiceTemplateService {
     rawSearch: string,
     startDate?: Date,
     endDate?: Date,
-  ): Promise<InvoiceTemplateEntity[]> {
+    page?: number,
+    pageSize?: number,
+  ) {
     const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
   
     const adjustedEndDate = endDate
@@ -317,14 +319,24 @@ export class InvoiceTemplateService {
           }
         : {};
   
-    const templates = await this.prisma.invoiceTemplate.findMany({
-      where: {
-        ...baseWhere,
-        ...createdAtFilter,
-      },
-      include: { variables: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    const where = {
+      ...baseWhere,
+      ...createdAtFilter,
+    };
+  
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [templates, totalCount] = await this.prisma.$transaction([
+      this.prisma.invoiceTemplate.findMany({
+        where,
+        include: { variables: true },
+        orderBy: { createdAt: 'desc' },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.invoiceTemplate.count({ where }),
+    ]);
   
     const templatesWithUrls = await Promise.all(
       templates.map(async (template) => {
@@ -348,6 +360,10 @@ export class InvoiceTemplateService {
       templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
   
-    return plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables);
-  }  
+    return {
+      invoiceTemplate: plainToInstance(InvoiceTemplateEntity, templatesWithSystemVariables),
+      total: totalCount,
+    };
+  }
+    
 }

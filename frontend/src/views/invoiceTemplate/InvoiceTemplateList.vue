@@ -97,6 +97,13 @@
       @confirm="confirmDeleteTemplate"
     />
   </div>
+
+  <Pagination
+    :total-items="invoiceTemplate.total"
+    :current-page="invoiceTemplate.currentPage"
+    :page-size="invoiceTemplate.pageSize"
+    @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -108,6 +115,7 @@ import { useRouter } from 'vue-router'
 import TemplateDocumentCardList from '@/components/DocumentDisplay/TemplateDocumentCardList.vue';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 import SearchInput from '@/components/SearchInput.vue'
+import Pagination from '@/components/Pagination.vue'
 
 const search = ref('')
 const router = useRouter()
@@ -177,8 +185,22 @@ async function handleSearch(term: string) {
   }
 }
 
+async function handlePageChange(page: number) {
+  await invoiceTemplate.searchTemplates(
+    search.value,
+    startDate.value,
+    endDate.value,
+    page
+  )
+}
+
 watch([search, startDate, endDate], async () => {
-  await handleSearch(search.value)
+  await invoiceTemplate.searchTemplates(
+    search.value,
+    startDate.value,
+    endDate.value,
+    1
+  )
 })
 
 onMounted(async () => {
@@ -189,6 +211,6 @@ onMounted(async () => {
     showToast(status, message)
   }
 
-  await fetchAllTemplates()
+  await invoiceTemplate.searchTemplates('', null, null, 1)
 })
 </script>

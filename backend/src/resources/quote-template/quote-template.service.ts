@@ -302,27 +302,40 @@ export class QuoteTemplateService {
     rawSearch: string,
     startDate?: Date,
     endDate?: Date,
-  ): Promise<QuoteTemplateEntity[]> {
+    page?: number,
+    pageSize?: number,
+  ) {
     const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
+  
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
   
     const whereClause = {
       ...baseWhere,
-      ...(startDate || endDate
+      ...(startDate || adjustedEndDate
         ? {
             createdAt: {
               ...(startDate ? { gte: startDate } : {}),
-              ...(endDate ? {
-                lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
-              } : {})
-            }
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
           }
-        : {})
+        : {}),
     };
   
-    const templates = await this.prisma.quoteTemplate.findMany({
-      where: whereClause,
-      include: { variables: true },
-    });
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [templates, totalCount] = await this.prisma.$transaction([
+      this.prisma.quoteTemplate.findMany({
+        where: whereClause,
+        include: { variables: true },
+        orderBy: { createdAt: 'desc' },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.quoteTemplate.count({ where: whereClause }),
+    ]);
   
     const templatesWithUrls = await Promise.all(
       templates.map(async (template) => {
@@ -346,7 +359,10 @@ export class QuoteTemplateService {
       templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
   
-    return plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables);
-  }
+    return {
+      quoteTemplate: plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables),
+      total: totalCount,
+    };
+  }  
   
 }

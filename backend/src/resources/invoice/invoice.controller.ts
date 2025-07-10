@@ -18,6 +18,7 @@ import { ValidateInvoiceOnCreatePipe } from './pipes/create-validate-invoice-var
 import { ValidateInvoiceOnUpdatePipe } from './pipes/update-validate-invoice.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { InvoiceStatus } from '@prisma/client';
+import { SearchInvoiceDto } from './dto/search-invoice.dto';
 
 @ApiBearerAuth()
 @ApiTags('Invoices')
@@ -46,17 +47,34 @@ export class InvoiceController {
 
   @Get('search')
   searchInvoices(
-    @Query('term') term: string,
-    @Query('status') status: InvoiceStatus,
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
+    @Query() query: SearchInvoiceDto,
     @CurrentUser() user: JwtPayload,
   ) {
+    const {
+      term = '',
+      status,
+      startDate,
+      endDate,
+      page,
+      pageSize,
+    } = query;
+  
     const parsedStart = startDate ? new Date(startDate) : undefined;
     const parsedEnd = endDate ? new Date(endDate) : undefined;
   
-    return this.invoiceService.search(user.userId, term, status, parsedStart, parsedEnd);
-  }  
+    const parsedPage = page ? parseInt(String(page), 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(String(pageSize), 10) : undefined;
+  
+    return this.invoiceService.search(
+      user.userId,
+      term,
+      status,
+      parsedStart,
+      parsedEnd,
+      parsedPage,
+      parsedPageSize,
+    );
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
