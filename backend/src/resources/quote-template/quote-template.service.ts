@@ -18,7 +18,7 @@ import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import * as stringify from 'csv-stringify/sync';
+import { generateCSVExport } from 'src/common/utils/csv-export.util'; 
 
 @Injectable()
 export class QuoteTemplateService {
@@ -385,20 +385,21 @@ export class QuoteTemplateService {
         .join(', '),
     }));
   
-    const content = stringify.stringify(rows, {
-      header: true,
-      columns: {
-        nom: 'Nom du modèle',
-        dateCreation: 'Date de création',
-        variables: 'Nombre de variables',
-        nomsVariables: 'Noms des variables',
-      },
+    const staticColumns = {
+      nom: 'Nom du modèle',
+      dateCreation: 'Date de création',
+      variables: 'Nombre de variables',
+      nomsVariables: 'Noms des variables',
+    };
+  
+    const { filename, content } = generateCSVExport({
+      rows,
+      columns: staticColumns,
+      filenamePrefix: 'templates_devis_export',
+      firstRowLabel: rows[0]?.nom ?? 'inconnu',
     });
   
-    return {
-      filename: `templates_devis_export_${new Date().toISOString().slice(0, 10)}.csv`,
-      content,
-    };
-  }
+    return { filename, content };
+  }  
   
 }

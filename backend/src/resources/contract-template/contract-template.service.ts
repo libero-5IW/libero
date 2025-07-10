@@ -18,7 +18,7 @@ import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import * as stringify from 'csv-stringify/sync';
+import { generateCSVExport } from 'src/common/utils/csv-export.util'; // à ajouter si manquant
 
 @Injectable()
 export class ContractTemplateService {
@@ -379,7 +379,7 @@ export class ContractTemplateService {
     endDate?: Date
   ): Promise<{ filename: string; content: string }> {
     const result = await this.search(userId, search, startDate, endDate);
-  
+
     const rows = result.contractTemplate.map((template) => ({
       nom: template.name,
       dateCreation: format(template.createdAt, 'dd/MM/yyyy', { locale: fr }),
@@ -388,21 +388,22 @@ export class ContractTemplateService {
         .map((v) => `${v.variableName}${v.required ? ' (requis)' : ''}`)
         .join(', '),
     }));
-  
-    const content = stringify.stringify(rows, {
-      header: true,
-      columns: {
-        nom: 'Nom du modèle',
-        dateCreation: 'Date de création',
-        variables: 'Nombre de variables',
-        nomsVariables: 'Noms des variables',
-      },
-    });
-  
-    return {
-      filename: `templates_contrat_export_${new Date().toISOString().slice(0, 10)}.csv`,
-      content,
+
+    const staticColumns = {
+      nom: 'Nom du modèle',
+      dateCreation: 'Date de création',
+      variables: 'Nombre de variables',
+      nomsVariables: 'Noms des variables',
     };
+
+    const { filename, content } = generateCSVExport({
+      rows,
+      columns: staticColumns,
+      filenamePrefix: 'templates_contrat_export',
+      firstRowLabel: rows[0]?.nom ?? 'inconnu',
+    });
+
+    return { filename, content };
   }
-  
+
 }

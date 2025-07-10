@@ -20,8 +20,7 @@ import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import * as stringify from 'csv-stringify/sync';
-import slugify from 'slugify';
+import { generateCSVExport } from 'src/common/utils/csv-export.util'; 
 
 @Injectable()
 export class InvoiceService {
@@ -397,25 +396,17 @@ export class InvoiceService {
       {} as Record<string, string>
     );
   
-    const content = stringify.stringify(rows, {
-      header: true,
+    const { filename, content } = generateCSVExport({
+      rows,
       columns: {
         ...staticColumns,
         ...variableColumns,
       },
+      filenamePrefix: 'factures_export',
+      firstRowLabel: rows[0]?.client ?? 'inconnu',
     });
   
-    const clientName =
-      rows.length > 0 ? slugify(rows[0].client, { lower: true }) : 'inconnu';
-  
-    const filename = `factures_export_${clientName}_${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
-  
-    return {
-      filename,
-      content,
-    };
+    return { filename, content };
   }
 
 }

@@ -11,8 +11,7 @@ import { ClientEntity } from './entities/client.entity';
 import { UserService } from '../user/user.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import * as stringify from 'csv-stringify/sync';
-import slugify from 'slugify';
+import { generateCSVExport } from '../../common/utils/csv-export.util'
 
 @Injectable()
 export class ClientService {
@@ -171,30 +170,24 @@ export class ClientService {
       dateCreation: format(client.createdAt, 'dd/MM/yyyy', { locale: fr }),
     }));
   
-    const content = stringify.stringify(rows, {
-      header: true,
-      columns: {
-        prenom: 'Prénom',
-        nom: 'Nom',
-        email: 'Email',
-        telephone: 'Téléphone',
-        adresse: 'Adresse',
-        codePostal: 'Code postal',
-        ville: 'Ville',
-        pays: 'Pays',
-        dateCreation: 'Date de création',
-      },
-    });
-  
-    const firstClient = clients[0];
-    const slug = firstClient
-      ? slugify(`${firstClient.firstName}_${firstClient.lastName}`, { lower: true })
-      : 'inconnu';
-  
-    return {
-      filename: `clients_export_${slug}_${format(new Date(), 'yyyy-MM-dd')}.csv`,
-      content,
+    const columns = {
+      prenom: 'Prénom',
+      nom: 'Nom',
+      email: 'Email',
+      telephone: 'Téléphone',
+      adresse: 'Adresse',
+      codePostal: 'Code postal',
+      ville: 'Ville',
+      pays: 'Pays',
+      dateCreation: 'Date de création',
     };
+  
+    return generateCSVExport({
+      rows,
+      columns,
+      filenamePrefix: 'clients_export',
+      firstRowLabel: clients[0] ? `${clients[0].firstName}_${clients[0].lastName}` : 'inconnu',
+    });
   }  
 
 }

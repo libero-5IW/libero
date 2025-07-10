@@ -20,8 +20,7 @@ import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import * as stringify from 'csv-stringify/sync';
-import slugify from 'slugify';
+import { generateCSVExport } from 'src/common/utils/csv-export.util'; 
 
 @Injectable()
 export class ContractService {
@@ -338,7 +337,6 @@ export class ContractService {
     };
   }  
 
-
   async exportToCSV(
     userId: string,
     search: string,
@@ -364,28 +362,25 @@ export class ContractService {
       };
   
       const variableColumns = contract.variableValues.reduce((acc, v) => {
-        acc[`var_${v.variableName}`] = `${v.value} ${v.required ? '(requis)' : ''}`;
+        acc[`var_${v.variableName}`] = `${v.value}${v.required ? ' (requis)' : ''}`;
         return acc;
       }, {} as Record<string, string>);
   
-      return {
-        ...base,
-        ...variableColumns,
-      };
+      return { ...base, ...variableColumns };
     });
   
     const staticColumns = {
       numero: 'Numéro',
       statut: 'Statut',
       client: 'Client',
-      dateEmission: 'Date d\'émission',
+      dateEmission: "Date d'émission",
       dateCreation: 'Date de création',
     };
   
     const dynamicVariableKeys = new Set<string>();
     result.contract.forEach((contract) =>
       contract.variableValues.forEach((v) =>
-        dynamicVariableKeys.add(`var_${v.variableName}`),
+        dynamicVariableKeys.add(`var_${v.variableName}`)
       )
     );
   
@@ -397,26 +392,17 @@ export class ContractService {
       {} as Record<string, string>
     );
   
-    const content = stringify.stringify(rows, {
-      header: true,
+    const { filename, content } = generateCSVExport({
+      rows,
       columns: {
         ...staticColumns,
         ...variableColumns,
       },
+      filenamePrefix: 'contrats_export',
+      firstRowLabel: rows[0]?.client ?? 'inconnu',
     });
   
-    const clientName =
-      rows.length > 0 ? slugify(rows[0].client, { lower: true }) : 'inconnu';
-  
-    const filename = `contrats_export_${clientName}_${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
-  
-    return {
-      filename,
-      content,
-    };
+    return { filename, content };
   }
   
-
 }
