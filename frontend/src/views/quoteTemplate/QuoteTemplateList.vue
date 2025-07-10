@@ -2,14 +2,16 @@
   <div class="ml-4 mt-8">
     <div class="flex items-center justify-between mb-6">
       <span class="text-xl font-semibold">Templates de devis</span>
-      <v-btn color="primary" @click="createTemplate">
-        <v-icon start>mdi-plus</v-icon>
-        Nouveau template
-      </v-btn>
-      <v-btn color="primary" @click="exportTemplatesAsCSV">
-        <v-icon start>mdi-download</v-icon>
-        Exporter CSV
-      </v-btn>
+      <div class="flex gap-2">
+        <v-btn color="primary" @click="createTemplate">
+          <v-icon start>mdi-plus</v-icon>
+          Nouveau template
+        </v-btn>
+        <v-btn color="primary" @click="exportTemplatesAsCSV">
+          <v-icon start>mdi-download</v-icon>
+          Exporter CSV
+        </v-btn>
+      </div>
     </div>
 
     <div class="flex items-center gap-4 mb-6">

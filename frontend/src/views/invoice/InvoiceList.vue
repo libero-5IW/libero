@@ -2,14 +2,16 @@
   <div class="ml-4 mt-8">
     <div class="flex items-center justify-between mb-10">
       <h1 class="text-xl font-bold">Liste des factures</h1>
-      <v-btn color="primary" @click="showTemplateModal = true">
-        <v-icon start>mdi-plus</v-icon>
-        Nouveau facture
-      </v-btn>
-      <v-btn color="primary" @click="exportInvoicesAsCSV">
-        <v-icon start>mdi-download</v-icon>
-        Exporter CSV
-      </v-btn>
+      <div class="flex gap-2">
+        <v-btn color="primary" @click="showTemplateModal = true">
+          <v-icon start>mdi-plus</v-icon>
+          Nouveau facture
+        </v-btn>
+        <v-btn color="primary" @click="exportInvoicesAsCSV">
+          <v-icon start>mdi-download</v-icon>
+          Exporter CSV
+        </v-btn>
+      </div>
     </div>
 
     <div class="flex items-center gap-4 mb-6">
