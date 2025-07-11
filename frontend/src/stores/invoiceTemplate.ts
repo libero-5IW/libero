@@ -11,6 +11,10 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   const defaultTemplate = ref<InvoiceTemplate | null>(null)
   const isLoading = ref(false)
 
+  const total = ref(0)
+  const currentPage = ref(1)
+  const pageSize = ref(9)
+
   async function fetchAllTemplates(includeDefault = true) {
     isLoading.value = true
     try {
@@ -18,14 +22,16 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
         params: { includeDefault },
       })
       templates.value = data.map((item: InvoiceTemplate) => InvoiceTemplateSchema.parse(item))
+      total.value = data.length
+      currentPage.value = 1
     } catch (error) {
       console.error('error', error)
-      templates.value = [];
+      templates.value = []
       handleError(error, 'Erreur lors de la récupération des templates.')
     } finally {
       isLoading.value = false
     }
-  }
+  }  
 
   async function fetchTemplate(id: string) {
     isLoading.value = true
@@ -92,7 +98,9 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   async function searchTemplates(
     term: string,
     startDate?: string | null,
-    endDate?: string | null
+    endDate?: string | null,
+    page = 1,
+    size = pageSize.value
   ) {
     isLoading.value = true
     try {
@@ -100,12 +108,16 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
         params: {
           term,
           ...(startDate ? { startDate } : {}),
-          ...(endDate ? { endDate } : {})
+          ...(endDate ? { endDate } : {}),
+          page,
+          pageSize: size
         }
       })
-      templates.value = data.map((item: InvoiceTemplate) =>
+      templates.value = data.invoiceTemplate.map((item: InvoiceTemplate) =>
         InvoiceTemplateSchema.parse(item)
       )
+      total.value = data.total
+      currentPage.value = page
     } catch (error) {
       templates.value = []
       handleError(error, 'Erreur lors de la recherche des templates.')
@@ -126,6 +138,9 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
     updateTemplate,
     deleteTemplate,
     duplicateTemplate,
-    searchTemplates
+    searchTemplates,
+    total,
+    currentPage,
+    pageSize,
   }
 })

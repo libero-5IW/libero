@@ -97,6 +97,13 @@
       @confirm="confirmDeleteTemplate"
     />
   </div>
+
+  <Pagination
+    :total-items="quoteTemplate.total"
+    :current-page="quoteTemplate.currentPage"
+    :page-size="quoteTemplate.pageSize"
+    @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
@@ -108,6 +115,7 @@
   import TemplateDocumentCardList from '@/components/DocumentDisplay/TemplateDocumentCardList.vue';
   import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
   import SearchInput from '@/components/SearchInput.vue'
+  import Pagination from '@/components/Pagination.vue';
 
   const router = useRouter()
   const quoteTemplate = useQuoteTemplateStore()
@@ -177,8 +185,22 @@
     }
   }
 
+  async function handlePageChange(page: number) {
+  await quoteTemplate.searchTemplates(
+    search.value,
+    startDate.value,
+    endDate.value,
+    page
+  )
+  }
+
   watch([search, startDate, endDate], async () => {
-    await handleSearch(search.value)
+  await quoteTemplate.searchTemplates(
+    search.value,
+    startDate.value,
+    endDate.value,
+    1
+  )
   })
 
   onMounted( async () => {
@@ -189,7 +211,7 @@
       showToast(status, message);
     }
 
-    await fetchAllTemplates()
+    await quoteTemplate.searchTemplates('', null, null, 1)
   });
 
 </script>

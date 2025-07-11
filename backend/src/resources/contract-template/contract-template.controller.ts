@@ -16,6 +16,7 @@ import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { SearchContractTemplateDto } from './dto/search-contract-template.dto';
 
 @ApiBearerAuth()
 @Controller('contract-templates')
@@ -41,16 +42,32 @@ export class ContractTemplateController {
 
   @Get('search')
   search(
-    @Query('term') term: string,
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
+    @Query() query: SearchContractTemplateDto,
     @CurrentUser() user: JwtPayload,
   ) {
+    const {
+      term = '',
+      startDate,
+      endDate,
+      page,
+      pageSize,
+    } = query;
+  
     const parsedStart = startDate ? new Date(startDate) : undefined;
     const parsedEnd = endDate ? new Date(endDate) : undefined;
   
-    return this.contractTemplateService.search(user.userId, term, parsedStart, parsedEnd);
-  }
+    const parsedPage = page ? parseInt(String(page), 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(String(pageSize), 10) : undefined;
+  
+    return this.contractTemplateService.search(
+      user.userId,
+      term,
+      parsedStart,
+      parsedEnd,
+      parsedPage,
+      parsedPageSize,
+    );
+  }  
 
   @Get()
   findAll(

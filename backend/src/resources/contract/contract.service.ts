@@ -269,6 +269,8 @@ export class ContractService {
     status?: ContractStatus,
     startDate?: Date,
     endDate?: Date,
+    page?: number,
+    pageSize?: number,
   ) {
     const baseWhere = buildSearchQuery(search, userId, 'contrat');
   
@@ -292,16 +294,24 @@ export class ContractService {
       ...issuedAtFilter,
     };
   
-    const contracts = await this.prisma.contract.findMany({
-      where,
-      include: {
-        variableValues: true,
-        client: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+  
+    const [contracts, totalCount] = await this.prisma.$transaction([
+      this.prisma.contract.findMany({
+        where,
+        include: {
+          variableValues: true,
+          client: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.contract.count({ where }),
+    ]);
   
     const contractsWithUrls = await Promise.all(
       contracts.map(async (contract) => ({
@@ -315,10 +325,13 @@ export class ContractService {
       })),
     );
   
-    return plainToInstance(ContractEntity, contractsWithUrls, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
-    });
+    return {
+      contract: plainToInstance(ContractEntity, contractsWithUrls, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+      total: totalCount,
+    };
   }  
   
 }
