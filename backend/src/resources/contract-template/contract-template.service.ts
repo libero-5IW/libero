@@ -18,7 +18,7 @@ import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { generateCSVExport } from 'src/common/utils/csv-export.util'; // à ajouter si manquant
+import { generateCSVExport } from 'src/common/utils/csv-export.util'; 
 
 @Injectable()
 export class ContractTemplateService {
