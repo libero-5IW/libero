@@ -46,7 +46,7 @@ export class QuoteController {
   @Get('next-number')
   async getNextQuoteNumber(@CurrentUser() user: JwtPayload) {
     return await this.quoteService.getNextQuoteNumber(user.userId);
-  }
+  }  
 
   @Get('search')
   searchQuotes(

@@ -43,8 +43,7 @@ export const useQuoteStore = defineStore('quote', () => {
     try {
       isLoading.value = true;
       const { data } = await apiClient.post('/quotes', payload);
-      const test = QuoteSchema.parse(data);
-      return test;
+      return QuoteSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors de la création du devis.');
     } finally {

@@ -90,10 +90,7 @@ export class InvoiceService {
       include: { variableValues: true },
     });
 
-    return plainToInstance(InvoiceEntity, invoice, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
-    });
+    return plainToInstance(InvoiceEntity, invoice);
   }
 
   async findAll(userId: string) {

@@ -1,5 +1,11 @@
 <template>
-  <div class="ml-4 mt-8">
+  <div
+    class="ml-4 mt-8 focus:outline-none"
+    role="main"
+    aria-labelledby="client-page-title"
+    tabindex="-1"
+    ref="mainContent"
+  >
     <div class="flex items-center justify-between mb-6">
       <span class="text-xl font-semibold">Liste des clients</span>
       <div class="flex gap-2">
@@ -18,6 +24,7 @@
       v-model="search"
       placeholder="Rechercher un client"
       @search="handleSearch"
+      aria-label="Rechercher un client"
     />
 
     <DataTable
@@ -35,6 +42,7 @@
                 color="secondary"
                 class="cursor-pointer text-gray-600 hover:text-primary transition-colors duration-200"
                 @click="editClient(item.id)"
+                aria-label="Modifier le client"
               >
                 mdi-pencil
               </v-icon>
@@ -48,6 +56,7 @@
                 color="primary"
                 class="cursor-pointer"
                 @click="confirmDelete(item.id)"
+                aria-label="Supprimer le client"
               >
                 mdi-delete
               </v-icon>

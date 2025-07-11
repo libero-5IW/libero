@@ -2,7 +2,7 @@
   <v-app-bar
     :style="{ background: theme.current.value.colors.appbar }"
     color="appbar"
-    class="horizontal-nav "
+    class="border-l border-black/10"
     elevation="0"
     height="64"
   >
@@ -32,7 +32,7 @@
         <v-btn 
           icon 
           v-bind="props"
-          :class="{ 'mr-4': $vuetify.display.lgAndUp, 'mr-2': !$vuetify.display.lgAndUp }"
+          :class="lgAndUp ? 'mr-4' : 'mr-2'"
         >
           <v-avatar size="32" color="surface">
             <v-icon color="primary">mdi-account</v-icon>
@@ -100,26 +100,3 @@ const handleUserMenuClick = (action: string) => {
   }
 }
 </script>
-
-<style scoped>
-.horizontal-nav {
-  border-left: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-.search-field {
-  border-radius: 8px;
-}
-
-.search-field-lg {
-  max-width: 300px;
-}
-
-.search-field-md {
-  max-width: 200px;
-}
-
-:deep(.v-field) {
-  border-radius: 8px !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-}
-</style>

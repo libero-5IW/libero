@@ -1,14 +1,17 @@
 <template>
   <v-responsive>
     <v-container class="pa-0">
-    <slot name="header"></slot>
+      <slot name="header"></slot>
+
       <v-card class="px-2" :subtitle="subtitle" py-4 mx-auto max-width="700" elevation="0">
         <template v-slot:title>
-          <span class="font-weight-black">Inscription</span>
+          <h1 id="form-title" class="font-weight-black focus:outline-none" tabindex="-1">
+            Inscription
+          </h1>
         </template>
 
         <v-card-text>
-          <v-form ref="formRef" lazy-validation>
+          <v-form ref="formRef" lazy-validation role="form" aria-labelledby="form-title">
             <v-row>
               <v-col cols="12" md="6">
                 <v-text-field
@@ -66,33 +69,33 @@
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
-                v-model="form.country"
-                :rules="countryRules()"
-                :items="countryList"
-                item-title="name"
-                item-value="name"
-                label="Pays"
-                required
+                  v-model="form.country"
+                  :rules="countryRules()"
+                  :items="countryList"
+                  item-title="name"
+                  item-value="name"
+                  label="Pays"
+                  required
                 />
               </v-col>
               <v-col cols="12" md="6">
                 <v-select
-                v-model="form.legalStatus"
-                :rules="legalStatusSelectRules()"
-                :items="legalStatus"
-                item-title="label"
-                item-value="label"
-                label="Statut juridique"
-                required
+                  v-model="form.legalStatus"
+                  :rules="legalStatusSelectRules()"
+                  :items="legalStatus"
+                  item-title="label"
+                  item-value="label"
+                  label="Statut juridique"
+                  required
                 />
               </v-col>
               <v-col cols="12" md="12">
                 <v-text-field
-                v-if="form.legalStatus === 'Autre'"
-                v-model="form.customLegalStatus"
-                label="Précisez votre statut juridique"
-                required
-                :rules="legalStatusRules()"
+                  v-if="form.legalStatus === 'Autre'"
+                  v-model="form.customLegalStatus"
+                  label="Précisez votre statut juridique"
+                  required
+                  :rules="legalStatusRules()"
                 />
               </v-col>
               <v-col cols="12" md="6">
@@ -132,11 +135,11 @@
               </v-col>
               <v-col cols="12" md="12">
                 <v-text-field
-                label="Confirmer le mot de passe"
-                type="password"
-                v-model="form.confirmPassword"
-                :rules="passwordMatchValidationRules"
-                required
+                  label="Confirmer le mot de passe"
+                  type="password"
+                  v-model="form.confirmPassword"
+                  :rules="passwordMatchValidationRules"
+                  required
                 />
               </v-col>
               <v-col
@@ -144,20 +147,22 @@
                 :key="index"
                 cols="6"
                 class="d-flex justify-center"
+              >
+              <v-list dense role="list" aria-label="Règles de sécurité du mot de passe">
+                <v-list-item
+                  v-for="rule in rules"
+                  :key="rule.text"
+                  class="d-flex align-center ma-0 pa-0 text-[0.85rem] text-[#4a4a4a] leading-[1.1]"
+                  style="font-size: 0.85rem; color: #4a4a4a; line-height: 1.1;"
+                  role="listitem"
+                  :aria-label="rule.text"
                 >
-                <v-list dense>
-                    <v-list-item
-                    v-for="rule in rules"
-                    :key="rule.text"
-                    class="d-flex align-center ma-0 pa-0"
-                    style="font-size: 0.85rem; color: #4a4a4a; line-height: 1.1;"
-                    >
-                    <v-icon :color="rule.valid ? 'success' : 'error'" class="mr-2">
-                        {{ rule.valid ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                    </v-icon>
-                    <span>{{ rule.text }}</span>
-                    </v-list-item>
-                </v-list>
+                  <v-icon :color="rule.valid ? 'success' : 'error'" class="mr-2">
+                    {{ rule.valid ? 'mdi-check-circle' : 'mdi-close-circle' }}
+                  </v-icon>
+                  <span>{{ rule.text }}</span>
+                </v-list-item>
+              </v-list>
               </v-col>
             </v-row>
           </v-form>
@@ -168,8 +173,9 @@
             Valider
           </v-btn>
         </v-card-actions>
+
         <div class="px-4 py-4">
-            <slot name="content.additional"></slot>
+          <slot name="content.additional"></slot>
         </div>
       </v-card>
     </v-container>
@@ -177,121 +183,127 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, computed, watch } from 'vue'
-    import { RegisterDataSchema, type RegisterData } from '@/schemas/user.schema'
-    import { countryList } from '@/utils/countries'
-    import {passwordMatchRule} from "@/utils/validationRules.ts"
-    import { legalStatus } from '@/constants/legal-status'
-    import { 
-        passwordRulesZod, 
-        addressLineRules, 
-        cityRules, 
-        companyNameRules, 
-        countryRules, 
-        emailRules, 
-        firstNameRules, 
-        lastNameRules, 
-        legalStatusRules, 
-        postalCodeRules, 
-        siretRules, 
-        legalStatusSelectRules,
-        tvaNumberRules } from '@/utils/registrationValidationRules'
+import { ref, computed, watch, onMounted } from 'vue'
+import { RegisterDataSchema, type RegisterData } from '@/schemas/user.schema'
+import { countryList } from '@/utils/countries'
+import { passwordMatchRule } from '@/utils/validationRules.ts'
+import { legalStatus } from '@/constants/legal-status'
+import {
+  passwordRulesZod,
+  addressLineRules,
+  cityRules,
+  companyNameRules,
+  countryRules,
+  emailRules,
+  firstNameRules,
+  lastNameRules,
+  legalStatusRules,
+  postalCodeRules,
+  siretRules,
+  legalStatusSelectRules,
+  tvaNumberRules
+} from '@/utils/registrationValidationRules'
 
-    
-    type RegisterFormWithConfirm = RegisterData & { confirmPassword: string, customLegalStatus: string };
+type RegisterFormWithConfirm = RegisterData & { confirmPassword: string, customLegalStatus: string }
 
-    const props = defineProps<{
-      data: RegisterData;
-      loading?: boolean;
-    }>();
+const props = defineProps<{
+  data: RegisterData;
+  loading?: boolean;
+}>()
 
-    const emit = defineEmits<{
-      (e: 'submit', payload: RegisterData): void;
-      (e: 'error', message: string): void;
-    }>();
+const emit = defineEmits<{
+  (e: 'submit', payload: RegisterData): void;
+  (e: 'error', message: string): void;
+}>()
 
-    const form = ref<RegisterFormWithConfirm>({
-      ...props.data,
-      confirmPassword: '',
-      customLegalStatus: ''
-    });
-    const formRef = ref<any>(null);
-    const formErrors = ref<Record<string, string>>({});
+const form = ref<RegisterFormWithConfirm>({
+  ...props.data,
+  confirmPassword: '',
+  customLegalStatus: ''
+})
 
-    const passwordRulesList = computed(() => [
-    { text: 'Au moins 12 caractères', valid: form.value.password.length >= 12 },
-    { text: 'Contient une lettre majuscule', valid: /[A-Z]/.test(form.value.password) },
-    { text: 'Contient une lettre minuscule', valid: /[a-z]/.test(form.value.password) },
-    { text: 'Contient un chiffre', valid: /[0-9]/.test(form.value.password) },
-    { text: 'Contient un caractère spécial', valid: /[^A-Za-z0-9]/.test(form.value.password) },
-    ]);
+const formRef = ref<any>(null)
+const formErrors = ref<Record<string, string>>({})
 
-    let subtitle = 'Entrez vos informations pour vous inscrire.';
-    const passwordMatchValidationRules = computed(() => passwordMatchRule(form.value.password));
+const passwordRulesList = computed(() => [
+  { text: 'Au moins 12 caractères', valid: form.value.password.length >= 12 },
+  { text: 'Contient une lettre majuscule', valid: /[A-Z]/.test(form.value.password) },
+  { text: 'Contient une lettre minuscule', valid: /[a-z]/.test(form.value.password) },
+  { text: 'Contient un chiffre', valid: /[0-9]/.test(form.value.password) },
+  { text: 'Contient un caractère spécial', valid: /[^A-Za-z0-9]/.test(form.value.password) },
+])
 
-    watch(() => props.data, (newVal) => {
-      Object.assign(form.value, newVal);
-    });
+let subtitle = 'Entrez vos informations pour vous inscrire.'
+const passwordMatchValidationRules = computed(() => passwordMatchRule(form.value.password))
 
-    const validateForm = () => {
-      const result = RegisterDataSchema.safeParse(form.value);
-      formErrors.value = {};
+watch(() => props.data, (newVal) => {
+  Object.assign(form.value, newVal)
+})
 
-      if (!result.success) {
-        result.error.errors.forEach((err) => {
-          const field = err.path[0] as string;
-          formErrors.value[field] = err.message;
-        });
-        return false;
-      }
+const validateForm = () => {
+  const result = RegisterDataSchema.safeParse(form.value)
+  formErrors.value = {}
 
-      if (form.value.legalStatus === 'Autre' && !form.value.customLegalStatus.trim()) {
-        formErrors.value.customLegalStatus = 'Veuillez préciser votre statut juridique.';
-        return false;
-      }
+  if (!result.success) {
+    result.error.errors.forEach((err) => {
+      const field = err.path[0] as string
+      formErrors.value[field] = err.message
+    })
+    return false
+  }
 
-      return true;
-    }
+  if (form.value.legalStatus === 'Autre' && !form.value.customLegalStatus.trim()) {
+    formErrors.value.customLegalStatus = 'Veuillez préciser votre statut juridique.'
+    return false
+  }
 
-    const submit = async () => {
-      const isFormValid = await formRef.value?.validate();
-      if (!isFormValid) return;
-      if (!validateForm()) return;
-      const { confirmPassword, customLegalStatus, email, ...rest } = form.value;
+  return true
+}
 
-      const payload: RegisterData = {
-        ...rest,
-        email: email.trim().toLowerCase(),
-        legalStatus:
-          form.value.legalStatus === 'Autre'
-            ? form.value.customLegalStatus.trim()
-            : form.value.legalStatus,
-      };
+const submit = async () => {
+  const isFormValid = await formRef.value?.validate()
+  if (!isFormValid) return
+  if (!validateForm()) return
 
-      emit('submit', payload);
-    }
+  const { confirmPassword, customLegalStatus, email, ...rest } = form.value
 
-    const clearErrorOnValidInput = <T extends keyof RegisterFormWithConfirm>(
-      field: T,
-      rules: ((v: any) => boolean | string)[]
-    ) => {
-      watch(() => form.value[field], (newVal) => {
-        if (!formErrors.value[field]) return;
+  const payload: RegisterData = {
+    ...rest,
+    email: email.trim().toLowerCase(),
+    legalStatus:
+      form.value.legalStatus === 'Autre'
+        ? form.value.customLegalStatus.trim()
+        : form.value.legalStatus,
+  }
 
-        const isValid = rules.every(rule => rule(newVal) === true);
-        if (isValid) delete formErrors.value[field];
-      });
-    }
+  emit('submit', payload)
+}
 
-    clearErrorOnValidInput('siret', siretRules());
-    clearErrorOnValidInput('email', emailRules());
-    clearErrorOnValidInput('firstName', firstNameRules());
-    clearErrorOnValidInput('lastName', lastNameRules());
-    clearErrorOnValidInput('addressLine', addressLineRules());
-    clearErrorOnValidInput('postalCode', postalCodeRules());
-    clearErrorOnValidInput('city', cityRules());
-    clearErrorOnValidInput('legalStatus', legalStatusSelectRules());
-    clearErrorOnValidInput('password', passwordRulesZod());
-    clearErrorOnValidInput('customLegalStatus', legalStatusRules());
+const clearErrorOnValidInput = <T extends keyof RegisterFormWithConfirm>(
+  field: T,
+  rules: ((v: any) => boolean | string)[]
+) => {
+  watch(() => form.value[field], (newVal) => {
+    if (!formErrors.value[field]) return
+
+    const isValid = rules.every(rule => rule(newVal) === true)
+    if (isValid) delete formErrors.value[field]
+  })
+}
+
+clearErrorOnValidInput('siret', siretRules())
+clearErrorOnValidInput('email', emailRules())
+clearErrorOnValidInput('firstName', firstNameRules())
+clearErrorOnValidInput('lastName', lastNameRules())
+clearErrorOnValidInput('addressLine', addressLineRules())
+clearErrorOnValidInput('postalCode', postalCodeRules())
+clearErrorOnValidInput('city', cityRules())
+clearErrorOnValidInput('legalStatus', legalStatusSelectRules())
+clearErrorOnValidInput('password', passwordRulesZod())
+clearErrorOnValidInput('customLegalStatus', legalStatusRules())
+
+onMounted(() => {
+  const el = document.getElementById('form-title')
+  if (el) el.focus()
+})
 </script>
-

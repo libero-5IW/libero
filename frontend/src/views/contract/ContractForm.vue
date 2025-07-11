@@ -7,15 +7,25 @@
     @templateSelected="handleTemplateSelected"
   />
 
-  <div v-if="selectedTemplateId">
+  <div
+    v-if="selectedTemplateId"
+    class="focus:outline-none"
+    role="main"
+    aria-labelledby="contract-form-title"
+    tabindex="-1"
+    ref="mainContent"
+  >
     <v-container fluid>
       <v-row dense>
         <v-col cols="12" md="8">
+          <h1 id="contract-form-title" class="sr-only">Création d’un contrat</h1>
+
           <v-text-field
             :model-value="currentTemplate?.name ?? 'Template inconnu'"
             label="Template utilisé"
             readonly
             class="mb-6"
+            aria-label="Template utilisé"
           />
 
           <v-text-field
@@ -24,6 +34,7 @@
             :label="contractNumberVariable.label || 'Numéro du contrat'"
             readonly
             class="mb-4"
+            aria-label="Numéro du contrat"
             :style="{ pointerEvents: 'none', opacity: 0.6 }"
           />
 
@@ -32,6 +43,7 @@
               title="Informations du Freelance"
               :variables="freelancerVariables"
               :variablesValue="variablesValue"
+              section-label="Section informations du freelance"
             />
 
             <TemplateVariableSection
@@ -40,12 +52,14 @@
               :variablesValue="variablesValue"
               :clients="clients"
               v-model:selectedClientId="selectedClientId"
+              section-label="Section informations du client"
             />
 
             <TemplateVariableSection
               title="Autres Informations"
               :variables="otherVariables"
               :variablesValue="variablesValue"
+              section-label="Section autres informations"
             />
 
             <v-btn
@@ -53,6 +67,8 @@
               color="primary"
               @click="onCreateContract"
               :disabled="!canCreate || isLoading"
+              aria-label="Créer le contrat"
+              role="button"
             >
               <template v-if="!isLoading">
                 <v-icon start>mdi-content-save</v-icon>
@@ -63,8 +79,9 @@
                 indeterminate
                 size="20"
                 color="secondary"
+                aria-label="Chargement de la création du contrat"
               />
-            </v-btn>            
+            </v-btn>
           </v-card>
         </v-col>
 
@@ -73,15 +90,19 @@
             :contentHtml="previewHtml"
             :variables="previewVariables"
             fileName="contrat"
+            aria-label="Prévisualisation du contrat PDF"
+            role="region"
           />
         </v-col>
       </v-row>
-      
+
       <v-btn
         v-if="isEditMode"
         color="primary"
         @click="saveContract"
         :disabled="isLoading"
+        aria-label="Enregistrer le contrat"
+        role="button"
       >
         <template v-if="!isLoading">
           <v-icon start>mdi-content-save</v-icon>
@@ -92,6 +113,7 @@
           indeterminate
           size="20"
           color="white"
+          aria-label="Enregistrement en cours du contrat"
         />
       </v-btn>
     </v-container>

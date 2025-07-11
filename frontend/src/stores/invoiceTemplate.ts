@@ -51,7 +51,6 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       const { data } = await apiClient.get('/invoice-templates/default-template')
       defaultTemplate.value = InvoiceTemplateSchema.parse(data)
     } catch (error) {
-      console.error('error', error)
       handleError(error, 'Erreur lors de la récupération du template par défaut.')
     }
   }
@@ -62,7 +61,6 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
       const { data } = await apiClient.post('/invoice-templates', cleanedPayload)
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
-      console.error('error', error)
       handleError(error, 'Erreur lors de la création du template.')
     }
   }

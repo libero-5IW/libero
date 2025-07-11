@@ -9,6 +9,8 @@ import { plainToInstance } from 'class-transformer';
 import { RegisterDto } from './dto/register.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { UserService } from '../user/user.service';
+import { TwoFactorAuthService } from './2fa/2fa.service';
 import { MailerService } from 'src/common/mailer/mailer.service';
 import { randomBytes } from 'crypto';
 import { addHours } from 'date-fns';
@@ -19,6 +21,8 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly userService: UserService,
+    private readonly twoFAService: TwoFactorAuthService,
     private readonly mailerService: MailerService,
   ) {}
 
@@ -125,6 +129,8 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     let user = await this.findByEmail(email);
+    console.log('password', password);
+
     if (!user)
       throw new UnauthorizedException('Email ou mot de passe incorrect.');
 
@@ -249,5 +255,12 @@ export class AuthService {
   findByEmail(mail: string) {
     const email = mail.trim().toLowerCase();
     return this.prisma.user.findUnique({ where: { email } });
+  }
+
+  async validateTwoFa(email: string, token: string): Promise<boolean> {
+    const user = await this.findByEmail(email);
+    if (!user || !user.twoFactorSecret) return false;
+
+    return this.twoFAService.verifyToken(user.twoFactorSecret, token);
   }
 }
