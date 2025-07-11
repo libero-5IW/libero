@@ -1,6 +1,5 @@
 <template>
   <CenteredContainer>
-    <div class="shadow-lg shadow-gray-300 border bg-white rounded-lg">
       <LoginForm v-if="!twoFARequired" :form="form" :loading="loading" @submit="handleLogin">
         <template v-slot:header>
           <div class="flex justify-center py-4">
@@ -46,7 +45,6 @@
           </div>
         </div>
       </div>
-    </div>
   </CenteredContainer>
 </template>
 
