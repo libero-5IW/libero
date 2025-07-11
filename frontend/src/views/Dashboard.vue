@@ -1,44 +1,56 @@
 <template>
-  <v-container fluid class="flex h-[calc(100vh-64px)] w-[calc(100vw-256px)] max-w-full">
-    <div class="grid h-full w-full gap-3 grid-cols-12 auto-rows-fr auto-flow-dense">
-      <v-card class="card">
-        <RevenueSummaryCard
-          :invoices="invoiceStore.invoices"
-          :clients="clientStore.clients"
-          :contracts="contractStore.contracts"
-          :quotes="quoteStore.quotes"
-        />
-        <ClientsStatsCard
-          :invoices="invoiceStore.invoices"
-          :clients="clientStore.clients"
-          :onEdit="editClient"
-        />
-      </v-card>
-      <v-card class="card">
+  <div
+   class="h-[calc(100vh-64px)] w-[calc(100vw-256px)] max-[1200px]:w-[calc(100vw-200px)] max-[768px]:w-full flex flex-col"
+  >
+    <div
+        class="flex-grow grid grid-cols-2 gap-3 w-full px-8 auto-rows-auto max-[1200px]:grid-cols-1 max-[768px]:grid-cols-1"
+    >
+      <div
+        class="flex flex-col h-full p-3 gap-y-4 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      >
+        <div class="flex-[] flex flex-col overflow-hidden">
+          <RevenueSummaryCard
+            :invoices="invoiceStore.invoices"
+            :clients="clientStore.clients"
+            :contracts="contractStore.contracts"
+            :quotes="quoteStore.quotes"
+          />
+        </div>
+
+        <div class="flex-[1] flex mt-6 flex-col overflow-hidden">
+          <ClientsStatsCard
+            :invoices="invoiceStore.invoices"
+            :clients="clientStore.clients"
+            :onEdit="editClient"
+          />
+        </div>
+      </div>
+
+      <div
+        class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      >
         <RevenueChart :invoices="invoiceStore.invoices" />
-      </v-card>
-      <router-link :to="{ name: 'InvoiceList' }" class="no-underline">
-        <v-card class="card clickable-card">
+      </div>
+
+      <router-link :to="{ name: 'InvoiceList' }" class="no-underline text-inherit">
+        <div
+          class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+        >
           <InvoiceStatsCard :invoices="invoiceStore.invoices" :onEdit="editInvoice" />
-        </v-card>
+        </div>
       </router-link>
 
-      <router-link :to="{ name: 'QuoteList' }" class="no-underline">
-        <v-card class="card clickable-card">
-        <QuoteStatsCard :quotes="quoteStore.quotes" :onEdit="editQuote" />
-        </v-card>
+      <router-link :to="{ name: 'QuoteList' }" class="no-underline text-inherit">
+        <div
+          class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+        >
+          <QuoteStatsCard :quotes="quoteStore.quotes" :onEdit="editQuote" />
+        </div>
       </router-link>
-
-      <v-card class="card clickable-card">
-        <TopClientsByRevenueCard
-          :invoices="invoiceStore.invoices"
-          :clients="clientStore.clients"
-          :onEdit="editClient"
-        />
-      </v-card>
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth';
@@ -91,61 +103,3 @@ function editQuote(id: string) {
 }
 
 </script>
-
-<style scoped>
-.dashboard-container {
-  height: calc(100vh - 64px);
-  width: calc(100vw - 256px);
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  width: 100%;
-  height: auto;
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  width: 100%;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
-}
-
-.no-underline {
-  text-decoration: none;
-  color: inherit;
-}
-
-.clickable-card {
-  cursor: pointer;
-}
-
-@media (max-width: 1200px) {
-  .dashboard-container {
-    width: calc(100vw - 200px);
-  }
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-container {
-    width: 100vw;
-  }
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-}
-</style>

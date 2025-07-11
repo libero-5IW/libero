@@ -1,5 +1,5 @@
 <template>
-  <v-card class="pa-4">
+  <v-card class="pa-4 d-flex flex-column fill-height">
     <v-card-title class="text-h6">Chiffre d'affaires mensuel</v-card-title>
     <v-divider class="my-2" />
 
@@ -14,11 +14,12 @@
       </v-col>
     </v-row>
 
-    <div style="height: 300px;">
+    <div class="flex-grow">
       <Line :chart-data="chartData" :chart-options="chartOptions" />
     </div>
   </v-card>
 </template>
+
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
@@ -111,10 +112,3 @@ const chartOptions = {
   }
 };
 </script>
-
-<style scoped>
-.chart-container {
-  height: 300px;
-  padding-bottom: 20px;
-}
-</style>

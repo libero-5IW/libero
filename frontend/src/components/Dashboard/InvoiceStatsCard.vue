@@ -31,13 +31,18 @@
           </tr>
         </thead>
         <tbody>
-          <tr
+          <tr v-if="!lastFiveInvoices.length">
+              <td colspan="4" class="py-6 text-center text-sm text-gray-500">
+              Aucune facture récente.
+            </td>
+          </tr>
+          <tr v-else
             v-for="invoice in lastFiveInvoices"
             :key="invoice.id"
-            class="hover:bg-gray-50 cursor-pointer"
+            class="hover:bg-gray-50"
             @click="onEdit(invoice.id)"
           >
-            <td>#{{ invoice.number }}</td>
+            <td class="py-6">#{{ invoice.number }}</td>
             <td>{{ invoice.clientName }}</td>
             <td>
               <v-chip
@@ -143,9 +148,5 @@ function formatDate(dateStr: string) {
 .v-table {
   max-height: 200px;
   overflow-y: auto;
-}
-
-.cursor-pointer {
-  cursor: pointer;
 }
 </style>

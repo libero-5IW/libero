@@ -32,13 +32,19 @@
           </tr>
         </thead>
         <tbody>
+          <tr v-if="!lastFiveQuotes.length">
+              <td colspan="4" class="py-6 text-center text-sm text-gray-500">
+              Aucun devis récent.
+            </td>
+          </tr>
           <tr
+            v-else
             v-for="quote in lastFiveQuotes"
             :key="quote.id"
-            class="hover:bg-gray-50 cursor-pointer"
+            class="hover:bg-gray-50"
             @click="onEdit(quote.id)"
           >
-            <td>#{{ quote.number }}</td>
+            <td class="py-6">#{{ quote.number }}</td>
             <td>{{ quote.clientName }}</td>
             <td>
               <v-chip
@@ -139,9 +145,5 @@ function formatDate(dateStr: string) {
 .v-table {
   max-height: 200px;
   overflow-y: auto;
-}
-
-.cursor-pointer {
-  cursor: pointer;
 }
 </style>

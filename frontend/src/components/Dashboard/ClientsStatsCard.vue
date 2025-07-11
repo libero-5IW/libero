@@ -1,36 +1,35 @@
 <template>
-  <v-card class="pa-4 d-flex flex-column justify-center align-center">
-    <v-card-title class="text-h6">Top clients par chiffre d'affaires</v-card-title>
-    <v-divider class="my-2" />
+  <div class="flex flex-col h-full p-6 bg-white rounded-md shadow">
+    <h2 class="text-lg font-semibold mb-4 text-center">Top clients par chiffre d'affaires</h2>
 
-    <div v-if="topClients.length > 0" class="w-100">
-      <v-table dense class="text-xs">
+    <div v-if="topClients.length > 0" class="overflow-y-auto max-h-[200px]">
+      <table class="table-auto w-full text-sm text-left">
         <thead>
-          <tr>
-            <th class="text-left">Client</th>
-            <th class="text-left">Total facturé</th>
-            <th class="text-left">Nombre de factures</th>
+          <tr class="text-gray-600 font-medium">
+            <th class="pb-2">Client</th>
+            <th class="pb-2">Total facturé</th>
+            <th class="pb-2">Nombre de factures</th>
           </tr>
         </thead>
         <tbody>
           <tr
             v-for="client in topClients"
             :key="client.clientId"
-            class="hover:bg-gray-50 cursor-pointer"
+            class="hover:bg-gray-100 cursor-pointer"
             @click="onEdit(client.clientId)"
           >
-            <td>{{ client.clientName }}</td>
-            <td>{{ formatCurrency(client.totalAmount) }}</td>
-            <td>{{ client.invoiceCount }}</td>
+            <td class="py-1">{{ client.clientName }}</td>
+            <td class="py-1">{{ formatCurrency(client.totalAmount) }}</td>
+            <td class="py-1">{{ client.invoiceCount }}</td>
           </tr>
         </tbody>
-      </v-table>
+      </table>
     </div>
 
-    <div v-else class="text-gray-500 text-sm mt-4">
+    <div v-else class="text-gray-500 text-sm text-center mt-4">
       Pas encore de données disponibles pour cette année.
     </div>
-  </v-card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -93,14 +92,3 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 </script>
-
-<style scoped>
-.v-table {
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-</style>
