@@ -10,18 +10,24 @@ export const useQuoteStore = defineStore('quote', () => {
   const currentQuote = ref<Quote | null>(null);
   const isLoading = ref(false);
 
+  const total = ref(0);
+  const currentPage = ref(1);
+  const pageSize = ref(9); 
+
   async function fetchAllQuotes() {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/quotes');
-      quotes.value = data.map((item: Quote) => QuoteSchema.parse(item)); 
+      quotes.value = data.map((item: Quote) => QuoteSchema.parse(item));
+      total.value = data.length; 
+      currentPage.value = 1;
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération des devis.');
     } finally {
       isLoading.value = false;
     }
   }
-
+  
   async function fetchQuote(id: string) {
     isLoading.value = true;
     try {
@@ -38,8 +44,7 @@ export const useQuoteStore = defineStore('quote', () => {
     try {
       isLoading.value = true;
       const { data } = await apiClient.post('/quotes', payload);
-      const test = QuoteSchema.parse(data);
-      return test;
+      return QuoteSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors de la création du devis.');
     } finally {
@@ -81,20 +86,70 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
-  async function searchQuotes(search: string, status?: string | null) {
+  async function searchQuotes(
+    search: string,
+    status?: string | null,
+    startDate?: string | null,
+    endDate?: string | null,
+    page = 1,
+    size = pageSize.value
+  ) {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/quotes/search', {
         params: {
           term: search,
-          ...(status ? { status } : {})
-        }
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+          page,
+          pageSize: size,
+        },
       });
-      quotes.value = data.map((item: Quote) => QuoteSchema.parse(item));
+  
+      quotes.value = data.quote.map((item: Quote) => QuoteSchema.parse(item));
+      total.value = data.total;
+      currentPage.value = page;
     } catch (error) {
       handleError(error, 'Erreur lors de la recherche des devis.');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  async function exportQuotes(
+    term = '',
+    status?: string,
+    startDate?: string,
+    endDate?: string
+  ) {
+    try {
+      const response = await apiClient.get('/quotes/export', {
+        params: {
+          term,
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+        responseType: 'blob',
+      });
+  
+      const disposition = response.headers['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? `export_${Date.now()}.csv`;
+  
+      const blob = new Blob([response.data], {
+        type: 'text/csv;charset=utf-8;',
+      });
+  
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’export CSV.');
     }
   } 
 
@@ -121,18 +176,22 @@ export const useQuoteStore = defineStore('quote', () => {
       isLoading.value = false;
     }
   }
-
+  
   return {
     quotes,
     currentQuote,
     isLoading,
     fetchAllQuotes,
+    total,         
+    currentPage,    
+    pageSize,
     fetchQuote,
     createQuote,
     deleteQuote,
     fetchNextQuoteNumber,
     updateQuote,
     searchQuotes,
+    exportQuotes,
     sentQuoteToClient,
     changeStatus
   };

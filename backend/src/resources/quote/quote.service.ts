@@ -21,6 +21,9 @@ import { S3Service } from 'src/common/s3/s3.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
 import { MailerService } from 'src/common/mailer/mailer.service';
 import { ClientEntity } from '../client/entities/client.entity';
+import { format } from 'date-fns';
+import { generateCSVExport } from '../../common/utils/csv-export.util';
+import { fr } from 'date-fns/locale';
 
 @Injectable()
 export class QuoteService {
@@ -151,7 +154,7 @@ export class QuoteService {
       );
     }
 
-    await this.quoteTemplateService.findOne(otherData.templateId, userId);
+    await this.quoteTemplateService.findOne(existingQuote.templateId, userId);
 
     const user = await this.userService.getUserOrThrow(userId);
 
@@ -271,47 +274,153 @@ export class QuoteService {
     return this.s3Service.generateSignedUrl(quote.previewKey);
   }
 
-  async search(userId: string, search: string, status?: QuoteStatus) {
+  async search(
+    userId: string,
+    search: string,
+    status?: QuoteStatus,
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    pageSize?: number,
+  ) {
     const baseWhere = buildSearchQuery(search, userId, 'devis');
+
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
 
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
+      ...issuedAtFilter,
     };
 
-    const quotes = await this.prisma.quote.findMany({
-      where,
-      include: {
-        variableValues: true,
-        client: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+
+    const [quotes, totalCount] = await this.prisma.$transaction([
+      this.prisma.quote.findMany({
+        where,
+        include: {
+          variableValues: true,
+          client: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.quote.count({ where }),
+    ]);
 
     const quotesWithUrls = await Promise.all(
-      quotes.map(async (quote) => {
-        const previewUrl = quote.previewKey
+      quotes.map(async (quote) => ({
+        ...quote,
+        previewUrl: quote.previewKey
           ? await this.s3Service.generateSignedUrl(quote.previewKey)
-          : null;
-
-        const pdfUrl = quote.pdfKey
+          : null,
+        pdfUrl: quote.pdfKey
           ? await this.s3Service.generateSignedUrl(quote.pdfKey)
-          : null;
-
-        return {
-          ...quote,
-          previewUrl,
-          pdfUrl,
-        };
-      }),
+          : null,
+      })),
     );
 
-    return plainToInstance(QuoteEntity, quotesWithUrls, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
+    return {
+      quote: plainToInstance(QuoteEntity, quotesWithUrls, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+      total: totalCount,
+    };
+  }
+
+  async exportToCSV(
+    userId: string,
+    search: string,
+    status?: QuoteStatus,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{ filename: string; content: string }> {
+    const result = await this.search(
+      userId,
+      search,
+      status,
+      startDate,
+      endDate,
+    );
+
+    const rows = result.quote.map((quote) => {
+      const clientName =
+        quote.variableValues?.find((v) => v.variableName === 'client_name')
+          ?.value ?? 'Client inconnu';
+
+      const base = {
+        numero: quote.number,
+        statut: quote.status,
+        client: clientName,
+        dateEmission: quote.issuedAt
+          ? format(quote.issuedAt, 'dd/MM/yyyy', { locale: fr })
+          : '',
+        dateCreation: format(quote.createdAt, 'dd/MM/yyyy', { locale: fr }),
+      };
+
+      const variableColumns = quote.variableValues.reduce(
+        (acc, v) => {
+          acc[`var_${v.variableName}`] =
+            `${v.value}${v.required ? ' (requis)' : ''}`;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
+      return { ...base, ...variableColumns };
     });
+
+    const staticColumns = {
+      numero: 'Numéro',
+      statut: 'Statut',
+      client: 'Client',
+      dateEmission: "Date d'émission",
+      dateCreation: 'Date de création',
+    };
+
+    const dynamicVariableKeys = new Set<string>();
+    result.quote.forEach((quote) =>
+      quote.variableValues.forEach((v) =>
+        dynamicVariableKeys.add(`var_${v.variableName}`),
+      ),
+    );
+
+    const variableColumns = Array.from(dynamicVariableKeys).reduce(
+      (acc, key) => {
+        acc[key] = key.replace(/^var_/, 'Variable : ');
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+    const { filename, content } = generateCSVExport({
+      rows,
+      columns: {
+        ...staticColumns,
+        ...variableColumns,
+      },
+      filenamePrefix: 'devis_export',
+      firstRowLabel: rows[0]?.client ?? 'inconnu',
+    });
+
+    return { filename, content };
   }
 
   async changeStatus(

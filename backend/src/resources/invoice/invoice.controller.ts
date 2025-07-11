@@ -7,6 +7,7 @@ import {
   Delete,
   Put,
   Query,
+  Res,
   Patch,
 } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
@@ -19,6 +20,8 @@ import { ValidateInvoiceOnCreatePipe } from './pipes/create-validate-invoice-var
 import { ValidateInvoiceOnUpdatePipe } from './pipes/update-validate-invoice.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { InvoiceStatus } from '@prisma/client';
+import { SearchInvoiceDto } from './dto/search-invoice.dto';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @ApiTags('Invoices')
@@ -47,11 +50,51 @@ export class InvoiceController {
 
   @Get('search')
   searchInvoices(
-    @Query('term') term: string,
-    @Query('status') status: InvoiceStatus,
+    @Query() query: SearchInvoiceDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.invoiceService.search(user.userId, term, status);
+    const { term = '', status, startDate, endDate, page, pageSize } = query;
+
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+
+    const parsedPage = page ? parseInt(String(page), 10) : undefined;
+    const parsedPageSize = pageSize
+      ? parseInt(String(pageSize), 10)
+      : undefined;
+
+    return this.invoiceService.search(
+      user.userId,
+      term,
+      status,
+      parsedStart,
+      parsedEnd,
+      parsedPage,
+      parsedPageSize,
+    );
+  }
+
+  @Get('export')
+  async exportInvoices(
+    @Query() query: SearchInvoiceDto,
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const { term = '', status, startDate, endDate } = query;
+
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+
+    return this.invoiceService
+      .exportToCSV(user.userId, term, status, parsedStart, parsedEnd)
+      .then(({ content, filename }) => {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${filename}"`,
+        );
+        res.end('\uFEFF' + content);
+      });
   }
 
   @Get(':id')

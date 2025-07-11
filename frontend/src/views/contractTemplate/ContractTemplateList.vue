@@ -1,25 +1,81 @@
 <template>
-  
-  <div class="ml-4 mt-8">
+  <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="contract-template-page-title" tabindex="-1" ref="mainContent">
     <div class="flex items-center justify-between mb-6">
       <span class="text-xl font-semibold">Templates de contrats</span>
+      <div class="flex gap-2">
       <v-btn color="primary" @click="createTemplate">
         <v-icon start>mdi-plus</v-icon>
         Nouveau template
       </v-btn>
+      <v-btn color="primary" @click="exportTemplatesAsCSV">
+        <v-icon start>mdi-download</v-icon>
+        Exporter CSV
+      </v-btn>
+      </div>
     </div>
     
-    <SearchInput
-    v-model="search"
-    placeholder="Rechercher un template"
-    @search="handleSearch"
-    />
+    <div class="flex items-center gap-4 mb-6">
+      <SearchInput
+        v-model="search"
+        placeholder="Rechercher un template"
+        class="w-64"
+        density="compact"
+        hide-details
+        aria-label="Rechercher un template de contrat"
+      />
+
+      <v-text-field
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+        aria-label="Filtrer par date de début de création"
+      >
+        <template #append-inner>
+          <v-tooltip text="Date de création" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+
+      <v-text-field
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+        aria-label="Filtrer par date de fin de création"
+      >
+        <template #append-inner>
+          <v-tooltip text="Date de création" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                icon="mdi-information-outline"
+                class="ml-1"
+                size="18"
+              />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
+    </div>
 
     <v-progress-linear
-    v-if="isLoading"
-    indeterminate
-    color="primary"
-    class="mb-4"
+      v-if="isLoading"
+      indeterminate
+      color="primary"
+      class="mb-4"
     />
 
     <div v-if="documentCards.length > 0">
@@ -35,6 +91,8 @@
     <div
       v-else
       class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+      role="status"
+      aria-live="polite"
     >
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucun template de contrat créé pour le moment.</p>
@@ -50,17 +108,25 @@
       @confirm="confirmDeleteTemplate"
     />
   </div>
+
+  <Pagination
+    :total-items="contractTemplate.total"
+    :current-page="contractTemplate.currentPage"
+    :page-size="contractTemplate.pageSize"
+    @page-changed="handlePageChange"
+  />
 </template>
 
 <script setup lang="ts">
 import { useToastHandler } from '@/composables/useToastHandler'
 import { useContractTemplateStore } from '@/stores/contractTemplate'
 import type { TemplateDocumentCard, ToastStatus } from '@/types'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 import TemplateDocumentCardList from '@/components/DocumentDisplay/TemplateDocumentCardList.vue';
 import SearchInput from '@/components/SearchInput.vue'
+import Pagination from '@/components/Pagination.vue'
 
 const search = ref('')
 const router = useRouter()
@@ -69,6 +135,8 @@ const { showToast } = useToastHandler()
 const isDeleteModalOpen = ref(false)
 const selectedTemplateId = ref<string | null>(null)
 const isLoading = computed(() => contractTemplate.isLoading)
+const startDate = ref<string | null>(null)
+const endDate = ref<string | null>(null)
 
 const documentCards = computed<TemplateDocumentCard[]>(() =>
   templates.value.map((template): TemplateDocumentCard  => {
@@ -112,6 +180,15 @@ function openDeleteConfirmation(id: string) {
   isDeleteModalOpen.value = true
 }
 
+async function handlePageChange(page: number) {
+  await contractTemplate.searchTemplates(
+    search.value,
+    startDate.value,
+    endDate.value,
+    page
+  )
+}
+
 async function confirmDeleteTemplate() {
   if (!selectedTemplateId.value) return
   await contractTemplate.deleteTemplate(selectedTemplateId.value)
@@ -121,12 +198,34 @@ async function confirmDeleteTemplate() {
 }
 
 async function handleSearch(term: string) {
-  if (term.trim() === '') {
+  if (term.trim() === '' && !startDate.value && !endDate.value) {
     await contractTemplate.fetchAllTemplates(false)
   } else {
-    await contractTemplate.searchTemplates(term)
+    await contractTemplate.searchTemplates(term, startDate.value, endDate.value)
   }
 }
+
+async function exportTemplatesAsCSV() {
+  try {
+    await contractTemplate.exportContractTemplates(
+      search.value,
+      startDate.value ?? undefined,
+      endDate.value ?? undefined
+    );
+    showToast('success', 'Export CSV généré avec succès.');
+  } catch (e) {
+    showToast('error', 'Erreur lors de l’export CSV.');
+  }
+}
+
+watch([search, startDate, endDate], async () => {
+  await contractTemplate.searchTemplates(
+    search.value,
+    startDate.value,
+    endDate.value,
+    1
+  );
+});
 
 onMounted(async () => {
   const status = history.state?.toastStatus as ToastStatus
@@ -136,6 +235,6 @@ onMounted(async () => {
     showToast(status, message)
   }
 
-  await fetchAllTemplates()
+  await contractTemplate.searchTemplates('', null, null, 1)
 })
 </script>

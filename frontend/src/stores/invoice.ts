@@ -10,11 +10,17 @@ export const useInvoiceStore = defineStore('invoice', () => {
   const currentInvoice = ref<Invoice | null>(null);
   const isLoading = ref(false);
 
+  const total = ref(0);
+  const currentPage = ref(1);
+  const pageSize = ref(9);
+
   async function fetchAllInvoices() {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/invoices');
       invoices.value = data.map((item: Invoice) => InvoiceSchema.parse(item));
+      total.value = data.length;
+      currentPage.value = 1;
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération des factures.');
     } finally {
@@ -80,17 +86,31 @@ export const useInvoiceStore = defineStore('invoice', () => {
     }
   }  
 
-  async function searchInvoices(search: string, status?: string | null) {
+  async function searchInvoices(
+    search: string,
+    status?: string | null,
+    startDate?: string | null,
+    endDate?: string | null,
+    page = 1,
+    size = pageSize.value
+  )
+   {
     isLoading.value = true;
     try {
       const { data } = await apiClient.get('/invoices/search', {
         params: {
           term: search,
-          ...(status ? { status } : {})
-        }
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+          page,
+          pageSize: size,
+        },
       });
-      invoices.value = data.map((item: Invoice) => InvoiceSchema.parse(item));
-    } catch (error) {
+      invoices.value = data.invoice.map((item: Invoice) => InvoiceSchema.parse(item));
+      total.value = data.total;
+      currentPage.value = page;
+      } catch (error) {
       handleError(error, 'Erreur lors de la recherche des factures.');
     } finally {
       isLoading.value = false;
@@ -132,6 +152,39 @@ export const useInvoiceStore = defineStore('invoice', () => {
       isLoading.value = false;
     }
   }
+
+  async function exportInvoices(
+    term = '',
+    status?: string,
+    startDate?: string,
+    endDate?: string
+  ) {
+    try {
+      const response = await apiClient.get('/invoices/export', {
+        params: {
+          term,
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+        responseType: 'blob',
+      });
+  
+      const disposition = response.headers?.['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? `factures_export_${Date.now()}.csv`;
+  
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’export CSV.');
+    }
+  }  
   
   return {
     invoices,
@@ -144,6 +197,10 @@ export const useInvoiceStore = defineStore('invoice', () => {
     fetchNextInvoiceNumber,
     updateInvoice,
     searchInvoices,
+    total,
+    currentPage,
+    pageSize, 
+    exportInvoices,
     sentInvoiceToClient,
     changeStatus,
     sentPaidInvoiceToClient

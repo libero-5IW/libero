@@ -20,6 +20,9 @@ import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
 import { DocuSignService } from './docusign/docusign.service';
 import { ClientEntity } from '../client/entities/client.entity';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { generateCSVExport } from 'src/common/utils/csv-export.util';
 
 @Injectable()
 export class ContractService {
@@ -266,47 +269,153 @@ export class ContractService {
     });
   }
 
-  async search(userId: string, search: string, status?: ContractStatus) {
+  async search(
+    userId: string,
+    search: string,
+    status?: ContractStatus,
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    pageSize?: number,
+  ) {
     const baseWhere = buildSearchQuery(search, userId, 'contrat');
+
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+
+    const issuedAtFilter =
+      startDate || adjustedEndDate
+        ? {
+            issuedAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {};
 
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
+      ...issuedAtFilter,
     };
 
-    const contracts = await this.prisma.contract.findMany({
-      where,
-      include: {
-        variableValues: true,
-        client: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+
+    const [contracts, totalCount] = await this.prisma.$transaction([
+      this.prisma.contract.findMany({
+        where,
+        include: {
+          variableValues: true,
+          client: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.contract.count({ where }),
+    ]);
 
     const contractsWithUrls = await Promise.all(
-      contracts.map(async (contract) => {
-        const previewUrl = contract.previewKey
+      contracts.map(async (contract) => ({
+        ...contract,
+        previewUrl: contract.previewKey
           ? await this.s3Service.generateSignedUrl(contract.previewKey)
-          : null;
-
-        const pdfUrl = contract.pdfKey
+          : null,
+        pdfUrl: contract.pdfKey
           ? await this.s3Service.generateSignedUrl(contract.pdfKey)
-          : null;
-
-        return {
-          ...contract,
-          previewUrl,
-          pdfUrl,
-        };
-      }),
+          : null,
+      })),
     );
 
-    return plainToInstance(ContractEntity, contractsWithUrls, {
-      excludeExtraneousValues: true,
-      enableImplicitConversion: true,
+    return {
+      contract: plainToInstance(ContractEntity, contractsWithUrls, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      }),
+      total: totalCount,
+    };
+  }
+
+  async exportToCSV(
+    userId: string,
+    search: string,
+    status?: ContractStatus,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{ filename: string; content: string }> {
+    const result = await this.search(
+      userId,
+      search,
+      status,
+      startDate,
+      endDate,
+    );
+
+    const rows = result.contract.map((contract) => {
+      const clientName =
+        contract.variableValues?.find((v) => v.variableName === 'client_name')
+          ?.value ?? 'Client inconnu';
+
+      const base = {
+        numero: contract.number,
+        statut: contract.status,
+        client: clientName,
+        dateEmission: contract.issuedAt
+          ? format(contract.issuedAt, 'dd/MM/yyyy', { locale: fr })
+          : '',
+        dateCreation: format(contract.createdAt, 'dd/MM/yyyy', { locale: fr }),
+      };
+
+      const variableColumns = contract.variableValues.reduce(
+        (acc, v) => {
+          acc[`var_${v.variableName}`] =
+            `${v.value}${v.required ? ' (requis)' : ''}`;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
+      return { ...base, ...variableColumns };
     });
+
+    const staticColumns = {
+      numero: 'Numéro',
+      statut: 'Statut',
+      client: 'Client',
+      dateEmission: "Date d'émission",
+      dateCreation: 'Date de création',
+    };
+
+    const dynamicVariableKeys = new Set<string>();
+    result.contract.forEach((contract) =>
+      contract.variableValues.forEach((v) =>
+        dynamicVariableKeys.add(`var_${v.variableName}`),
+      ),
+    );
+
+    const variableColumns = Array.from(dynamicVariableKeys).reduce(
+      (acc, key) => {
+        acc[key] = key.replace(/^var_/, 'Variable : ');
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+    const { filename, content } = generateCSVExport({
+      rows,
+      columns: {
+        ...staticColumns,
+        ...variableColumns,
+      },
+      filenamePrefix: 'contrats_export',
+      firstRowLabel: rows[0]?.client ?? 'inconnu',
+    });
+
+    return { filename, content };
   }
 
   async changeStatus(

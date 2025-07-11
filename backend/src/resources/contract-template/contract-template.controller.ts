@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ContractTemplateService } from './contract-template.service';
 import { CreateContractTemplateDto } from './dto/create-contract-template.dto';
@@ -16,11 +17,15 @@ import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { SearchContractTemplateDto } from './dto/search-contract-template.dto';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @Controller('contract-templates')
 export class ContractTemplateController {
-  constructor(private readonly contractTemplateService: ContractTemplateService) {}
+  constructor(
+    private readonly contractTemplateService: ContractTemplateService,
+  ) {}
 
   @Get('default-template')
   getDefaultTemplate() {
@@ -37,6 +42,54 @@ export class ContractTemplateController {
       user.userId,
       createContractTemplateDto,
     );
+  }
+
+  @Get('search')
+  search(
+    @Query() query: SearchContractTemplateDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const { term = '', startDate, endDate, page, pageSize } = query;
+
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+
+    const parsedPage = page ? parseInt(String(page), 10) : undefined;
+    const parsedPageSize = pageSize
+      ? parseInt(String(pageSize), 10)
+      : undefined;
+
+    return this.contractTemplateService.search(
+      user.userId,
+      term,
+      parsedStart,
+      parsedEnd,
+      parsedPage,
+      parsedPageSize,
+    );
+  }
+
+  @Get('export')
+  exportTemplates(
+    @Query() query: SearchContractTemplateDto,
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const { term = '', startDate, endDate } = query;
+
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+
+    return this.contractTemplateService
+      .exportToCSV(user.userId, term, parsedStart, parsedEnd)
+      .then(({ content, filename }) => {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${filename}"`,
+        );
+        res.end('\uFEFF' + content);
+      });
   }
 
   @Get()
@@ -81,13 +134,5 @@ export class ContractTemplateController {
   @Post(':id/duplicate')
   duplicate(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.contractTemplateService.duplicate(id, user.userId);
-  }
-
-  @Get('search/:term')
-  search(
-    @Param('term') term: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    return this.contractTemplateService.search(user.userId, term);
   }
 }

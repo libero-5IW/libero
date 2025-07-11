@@ -1,13 +1,17 @@
 <template>
-  <v-container fluid class="d-flex justify-center">
+  <v-container fluid class="d-flex justify-center" role="main" aria-labelledby="client-form-title" tabindex="-1" ref="mainContent">
+    <h1 id="client-form-title" class="sr-only">
+      {{ isEdit ? 'Modifier un client' : 'Créer un client' }}
+    </h1>
+
     <v-row dense class="w-full" style="max-width: 800px;">
       <v-col cols="12">
-        <v-card flat class="pa-4 mb-4">
-          <h2 class="text-lg font-semibold mb-4">
+        <v-card flat class="pa-4 mb-4" aria-label="Formulaire client">
+          <h2 class="text-lg font-semibold mb-4" role="heading" aria-level="2">
             {{ isEdit ? 'Modifier un client' : 'Créer un client' }}
           </h2>
 
-          <v-form ref="formRef" @submit.prevent="onSubmit">
+          <v-form ref="formRef" @submit.prevent="onSubmit" aria-label="Formulaire de création ou modification de client">
             <v-text-field
               class="mb-4"
               v-model="form.firstName"
@@ -15,6 +19,8 @@
               type="text"
               :rules="firstNameRules()"
               required
+              autocomplete="given-name"
+              aria-required="true"
             />
             <v-text-field
               class="mb-4"
@@ -23,6 +29,8 @@
               type="text"
               :rules="lastNameRules()"
               required
+              autocomplete="family-name"
+              aria-required="true"
             />
             <v-text-field
               class="mb-4"
@@ -31,6 +39,8 @@
               type="email"
               :rules="emailRules()"
               required
+              autocomplete="email"
+              aria-required="true"
             />
             <v-text-field
               class="mb-4"
@@ -39,6 +49,8 @@
               type="tel"
               :rules="phoneNumberRules()"
               required
+              autocomplete="tel"
+              aria-required="true"
             />
             <v-text-field
               class="mb-4"
@@ -47,6 +59,8 @@
               type="text"
               :rules="addressLineRules()"
               required
+              autocomplete="street-address"
+              aria-required="true"
             />
             <v-text-field
               class="mb-4"
@@ -55,6 +69,8 @@
               type="text"
               :rules="postalCodeRules()"
               required
+              autocomplete="postal-code"
+              aria-required="true"
             />
             <v-text-field
               class="mb-4"
@@ -63,6 +79,8 @@
               type="text"
               :rules="cityRules()"
               required
+              autocomplete="address-level2"
+              aria-required="true"
             />
             <v-text-field
               v-model="form.country"
@@ -70,26 +88,32 @@
               type="text"
               :rules="countryRules()"
               required
+              autocomplete="country"
+              aria-required="true"
             />
 
             <div class="d-flex justify-end mt-6 gap-4">
               <div v-if="isEdit" class="d-flex align-center">
-                <v-btn color="error" variant="tonal" @click="showDeleteModal = true">
+                <v-btn
+                  color="error"
+                  variant="tonal"
+                  @click="showDeleteModal = true"
+                  aria-label="Supprimer ce client"
+                >
                   Supprimer
                 </v-btn>
               </div>
 
               <div class="d-flex align-center">
-                <v-btn text @click="cancel">Annuler</v-btn>
-                <v-btn color="primary" type="submit" class="ml-2" :disabled="!formRef?.isValid" >
+                <v-btn text @click="cancel" aria-label="Annuler la modification">Annuler</v-btn>
+                <v-btn color="primary" type="submit" class="ml-2" :aria-label="isEdit ? 'Mettre à jour le client' : 'Créer le client'" :disabled="!formRef?.isValid" >
                   {{ isEdit ? 'Mettre à jour' : 'Créer' }}
                 </v-btn>
               </div>
             </div>
-
           </v-form>
         </v-card>
-        
+
         <ConfirmationModal
           v-model="showDeleteModal"
           title="Confirmer la suppression"
@@ -99,7 +123,6 @@
           cancelText="Annuler"
           @confirm="removeClient"
         />
-
       </v-col>
     </v-row>
   </v-container>

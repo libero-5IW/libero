@@ -16,6 +16,9 @@ import { VariableType } from 'src/common/enums/variable-type.enum';
 import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { generateCSVExport } from 'src/common/utils/csv-export.util';
 
 @Injectable()
 export class QuoteTemplateService {
@@ -300,13 +303,42 @@ export class QuoteTemplateService {
   async search(
     userId: string,
     rawSearch: string,
-  ): Promise<QuoteTemplateEntity[]> {
-    const whereClause = buildTemplateSearchQuery(rawSearch, userId);
+    startDate?: Date,
+    endDate?: Date,
+    page?: number,
+    pageSize?: number,
+  ) {
+    const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
 
-    const templates = await this.prisma.quoteTemplate.findMany({
-      where: whereClause,
-      include: { variables: true },
-    });
+    const adjustedEndDate = endDate
+      ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
+      : undefined;
+
+    const whereClause = {
+      ...baseWhere,
+      ...(startDate || adjustedEndDate
+        ? {
+            createdAt: {
+              ...(startDate ? { gte: startDate } : {}),
+              ...(adjustedEndDate ? { lte: adjustedEndDate } : {}),
+            },
+          }
+        : {}),
+    };
+
+    const skip = page && pageSize ? (page - 1) * pageSize : undefined;
+    const take = pageSize;
+
+    const [templates, totalCount] = await this.prisma.$transaction([
+      this.prisma.quoteTemplate.findMany({
+        where: whereClause,
+        include: { variables: true },
+        orderBy: { createdAt: 'desc' },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      this.prisma.quoteTemplate.count({ where: whereClause }),
+    ]);
 
     const templatesWithUrls = await Promise.all(
       templates.map(async (template) => {
@@ -330,6 +362,46 @@ export class QuoteTemplateService {
       templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
 
-    return plainToInstance(QuoteTemplateEntity, templatesWithSystemVariables);
+    return {
+      quoteTemplate: plainToInstance(
+        QuoteTemplateEntity,
+        templatesWithSystemVariables,
+      ),
+      total: totalCount,
+    };
+  }
+
+  async exportToCSV(
+    userId: string,
+    search: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<{ filename: string; content: string }> {
+    const result = await this.search(userId, search, startDate, endDate);
+
+    const rows = result.quoteTemplate.map((template) => ({
+      nom: template.name,
+      dateCreation: format(template.createdAt, 'dd/MM/yyyy', { locale: fr }),
+      variables: template.variables.length,
+      nomsVariables: template.variables
+        .map((v) => `${v.variableName}${v.required ? ' (requis)' : ''}`)
+        .join(', '),
+    }));
+
+    const staticColumns = {
+      nom: 'Nom du modèle',
+      dateCreation: 'Date de création',
+      variables: 'Nombre de variables',
+      nomsVariables: 'Noms des variables',
+    };
+
+    const { filename, content } = generateCSVExport({
+      rows,
+      columns: staticColumns,
+      filenamePrefix: 'templates_devis_export',
+      firstRowLabel: rows[0]?.nom ?? 'inconnu',
+    });
+
+    return { filename, content };
   }
 }

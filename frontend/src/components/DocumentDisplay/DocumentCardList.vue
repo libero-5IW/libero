@@ -84,6 +84,11 @@
         </v-menu>
       </div>
 
+      <v-card-title class="text-xl font-semibold px-4 pt-4 text-gray-900 dark:text-white">
+        <span class="text-primary">{{ titlePrefix }} #{{ item.number }}</span>
+        <span class="text-gray-600 dark:text-gray-300 ml-1">– {{ item.clientName ?? '—' }}</span>
+      </v-card-title>
+
       <v-card-subtitle class="pb-4 text-sm text-gray-600">
         Créé le {{ formatDate(item.createdAt) }} — <strong class="uppercase text-black">{{ translateStatus(item.status) }}</strong>
       </v-card-subtitle>

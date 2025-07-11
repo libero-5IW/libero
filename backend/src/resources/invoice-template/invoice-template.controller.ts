@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Res
 } from '@nestjs/common';
 import { InvoiceTemplateService } from './invoice-template.service';
 import { CreateInvoiceTemplateDto } from './dto/create-invoice-template.dto';
@@ -16,6 +17,8 @@ import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from 'src/database/prisma/prisma.service';
+import { SearchInvoiceTemplateDto } from './dto/search-invoice-template.dto';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @Controller('invoice-templates')
@@ -37,6 +40,58 @@ export class InvoiceTemplateController {
       user.userId,
       createInvoiceTemplateDto,
     );
+  }
+
+  @Get('search')
+  search(
+    @Query() query: SearchInvoiceTemplateDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const {
+      term = '',
+      startDate,
+      endDate,
+      page,
+      pageSize,
+    } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    const parsedPage = page ? parseInt(String(page), 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(String(pageSize), 10) : undefined;
+  
+    return this.invoiceTemplateService.search(
+      user.userId,
+      term,
+      parsedStart,
+      parsedEnd,
+      parsedPage,
+      parsedPageSize,
+    );
+  }
+
+  @Get('export')
+  exportTemplates(
+    @Query() query: SearchInvoiceTemplateDto,
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const { term = '', startDate, endDate } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.invoiceTemplateService.exportToCSV(
+      user.userId,
+      term,
+      parsedStart,
+      parsedEnd,
+    ).then(({ content, filename }) => {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.end('\uFEFF' + content);
+    });
   }
 
   @Get()
@@ -81,14 +136,6 @@ export class InvoiceTemplateController {
   @Post(':id/duplicate')
   duplicate(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return this.invoiceTemplateService.duplicate(id, user.userId);
-  }
-
-  @Get('search/:term')
-  search(
-    @Param('term') term: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    return this.invoiceTemplateService.search(user.userId, term);
   }
 
 }
