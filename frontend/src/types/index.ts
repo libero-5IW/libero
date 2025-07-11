@@ -51,8 +51,9 @@ export interface DocumentCard {
   status: string;
   createdAt: string;
   previewUrl?: string | null;
-  pdfUrl?: string| null;
+  pdfUrl?: string | null;
   clientName: string;
+  clientId?: string | null;
 }
 
 export interface TemplateDocumentCard {

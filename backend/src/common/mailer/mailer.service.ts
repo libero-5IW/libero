@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { MailerService as NestMailerService } from '@nestjs-modules/mailer';
 import { join } from 'path';
+import { UserEntity } from 'src/resources/user/entities/user.entity';
 
 @Injectable()
 export class MailerService {
@@ -107,6 +108,128 @@ export class MailerService {
         year: new Date().getFullYear(),
       },
       attachments: [this.getLogoAttachment()],
+    });
+  }
+
+  async sendQuoteByEmail(
+    email: string,
+    clientName: string,
+    freelance: UserEntity,
+    quoteNumber: number,
+    pdfBuffer: Buffer,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Devis - Libero`,
+      template: 'quote-to-validate',
+      context: {
+        clientName,
+        freelanceName:
+          freelance.firstName + ' ' + freelance.lastName.toUpperCase(),
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        year: new Date().getFullYear(),
+        title: `Devis ${quoteNumber}`,
+      },
+      attachments: [
+        this.getLogoAttachment(),
+        {
+          filename: `Devis_${quoteNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+  }
+
+  async sendInvoiceToPayEmail(
+    email: string,
+    clientName: string,
+    freelance: UserEntity,
+    invoiceNumber: number,
+    pdfBuffer: Buffer,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Facture à régler - Libero`,
+      template: 'invoice-to-pay',
+      context: {
+        clientName,
+        freelanceName:
+          freelance.firstName + ' ' + freelance.lastName.toUpperCase(),
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        year: new Date().getFullYear(),
+        title: `Facture ${invoiceNumber}`,
+      },
+      attachments: [
+        this.getLogoAttachment(),
+        {
+          filename: `Facture_${invoiceNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+  }
+
+  async sendInvoicePaidEmail(
+    email: string,
+    clientName: string,
+    freelance: UserEntity,
+    invoiceNumber: number,
+    pdfBuffer: Buffer,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Facture acquittée - Libero`,
+      template: 'invoice-paid',
+      context: {
+        clientName,
+        freelanceName: `${freelance.firstName} ${freelance.lastName.toUpperCase()}`,
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        year: new Date().getFullYear(),
+        title: `Facture ${invoiceNumber}`,
+      },
+      attachments: [
+        this.getLogoAttachment(),
+        {
+          filename: `Facture_${invoiceNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+  }
+
+  async sendContractSignedEmail(
+    email: string,
+    clientName: string,
+    freelance: UserEntity,
+    contractNumber: number,
+    pdfBuffer: Buffer,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Contrat signé - Libero`,
+      template: 'contract-signed',
+      context: {
+        clientName,
+        freelanceName: `${freelance.firstName} ${freelance.lastName.toUpperCase()}`,
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        year: new Date().getFullYear(),
+        title: `Contrat ${contractNumber}`,
+      },
+      attachments: [
+        this.getLogoAttachment(),
+        {
+          filename: `Contrat_${contractNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
     });
   }
 

@@ -99,7 +99,9 @@
         titlePrefix="Contrat"
         type="contract"
         @edit="editContract"
-        @change-status="showStatusModal = true"
+        @change-status="openStatusModal"
+        @sent-to-client="openSentConfirmation"
+        @sent-signed-to-client="openSignedSentConfirmation"
         @delete="openDeleteConfirmation"
         @convert-to-invoice="handleConvertToInvoice"
         :isLoading="isLoading"
@@ -120,6 +122,33 @@
     :fetchTemplates="fetchContractTemplates"
     type="contrat"
     @templateSelected="handleTemplateSelected"
+  />
+
+  <ConfirmationModal
+  v-model="isEmailSentModalOpen"
+  title="Confirmation d'envoi d'email pour signature"
+  message="Souhaitez-vous envoyer ce contrat pour signature via DocuSign ? Le statut du contrat restera ou sera changé à Envoyé."
+  confirmText="Envoyer"
+  cancelText="Annuler"
+  confirmColor="success"
+  @confirm="confirmSignatureContract"
+  />
+
+  <ConfirmationModal
+  v-model="isEmailSignedSentModalOpen"
+  title="Confirmation d'envoi d'email"
+  message="Souhaitez-vous envoyer par email la facture signée au client ?"
+  confirmText="Envoyer"
+  cancelText="Annuler"
+  confirmColor="success"
+  @confirm="confirmSignedSentContract"
+  />
+
+  <StatusChangingModal
+  v-model="isStatusModalOpen"
+  :current-status="selectedContractStatus"
+  :available-statuses="statusModalAvailableStatuses"
+  @change="updateContractStatus"
   />
 
   <ConfirmationModal
@@ -164,6 +193,7 @@ import type { Contract } from '@/schemas/contract.schema';
 import SearchInput from '@/components/SearchInput.vue';
 import { CONTRACT_STATUS } from '@/constants/status/contract-status.constant';
 import Pagination from '@/components/Pagination.vue';
+import StatusChangingModal from '@/components/Modals/StatusChangingModal.vue';
 
 const search = ref('');
 const router = useRouter();
@@ -172,12 +202,17 @@ const contractTemplateStore = useContractTemplateStore();
 const { showToast } = useToastHandler();
 
 const showTemplateModal = ref(false);
-const showStatusModal = ref(false);  
 const contracts = computed(() => contractStore.contracts);
 const selectedStatus = ref<string | null>(null);
 const isLoading = computed(() => contractStore.isLoading)
 
-const isDeleteModalOpen = ref(false)
+const isEmailSignedSentModalOpen = ref(false);
+const isEmailSentModalOpen = ref(false);
+const isDeleteModalOpen = ref(false);
+const isStatusModalOpen = ref(false)
+const selectedContractStatus = ref<string>('draft');
+const statusModalAvailableStatuses = ref<{ value: string; label: string; description?: string }[]>([]);
+
 const selectedContractId = ref<string | null>(null)
 const invoiceTemplateStore = useInvoiceTemplateStore();
 const showInvoiceTemplateModal = ref(false);
@@ -189,7 +224,7 @@ const mainContent = ref<HTMLElement | null>(null);
 const statusOptions = [
   { label: 'Tous', value: null },
   { label: 'Brouillon', value: CONTRACT_STATUS.DRAFT },
-  { label: 'Envoyé', value: CONTRACT_STATUS.SENT },
+  { label: 'Envoyé pour signature', value: CONTRACT_STATUS.AWAITING_SIGNATURE },
   { label: 'Signé', value: CONTRACT_STATUS.SIGNED },
   { label: 'Expiré', value: CONTRACT_STATUS.EXPIRED },
   { label: 'Annulé', value: CONTRACT_STATUS.CANCELLED },
@@ -208,28 +243,69 @@ const documentCards = computed<DocumentCard[]>(() =>
       createdAt: contract.createdAt ?? '',
       previewUrl: contract.previewUrl ?? null,
       pdfUrl: contract.pdfUrl ?? null,
-      clientName: clientNameVar?.value || 'Client inconnu'
+      clientName: clientNameVar?.value || 'Client inconnu',
+      clientId: contract.clientId
     }
   })
 );
 
-const headers: Header[] = [
-  { title: 'Numéro', value: 'number', sortable: true },
-  { title: 'Statut', value: 'status', sortable: true },
-  { title: 'Date d\'émission', value: 'issuedAt', sortable: true },
-  { title: 'Actions', value: 'actions', sortable: false },
+const allStatuses = [
+  { value: CONTRACT_STATUS.AWAITING_SIGNATURE, label: 'Envoyé pour signature', description: 'Pas d\'email avec modification manuelle' },
+  { value: CONTRACT_STATUS.CANCELLED, label: 'Annulé', description: 'Contrat annulé par le prestataire' },
+  { value: CONTRACT_STATUS.DECLINED, label: 'Refusé', description: 'Contrat refusé par le client' },
+  { value: CONTRACT_STATUS.SIGNED, label: 'Signé', description: 'Contrat signé par les deux parties' },
 ];
+
+function getAvailableStatuses(currentStatus: string) {
+  switch (currentStatus) {
+    case CONTRACT_STATUS.DRAFT:
+      return [allStatuses[0]]; // sent
+    case CONTRACT_STATUS.AWAITING_SIGNATURE:
+      return [allStatuses[1], allStatuses[2], allStatuses[3]]; // cancelled, declined, signed
+    default:
+      return [];
+  }
+}
+
+async function updateContractStatus(newStatus: string) {
+  if (!selectedContractId.value) return;
+  const contract = await contractStore.changeStatus(selectedContractId.value, newStatus);
+  isStatusModalOpen.value = false;
+  if (contract) {
+    await fetchAllContracts();
+    showToast('success', `Statut mis à jour avec succès pour le devis ${contract?.number} !`);
+  }
+  selectedContractId.value = null;
+}
 
 async function fetchContractTemplates() {
   await contractTemplateStore.fetchAllTemplates();
-  console.log('bhbjhbk', contracts.value);
-  
   return contractTemplateStore.templates
     .filter(t => !!t.id)
     .map(t => ({
       id: t.id as string,
       name: t.name,
     }));
+}
+
+async function confirmSignatureContract() {
+  if (!selectedContractId.value) return;
+  const client = await contractStore.sendContractForSignature(selectedContractId.value);
+  if (client) {
+    await fetchAllContracts();
+    showToast('success', `Le contrat a bien été envoyé à ${client.firstName} ${client.lastName.toUpperCase()} pour signature !`);
+  }
+  selectedContractId.value = null;
+}
+
+async function confirmSignedSentContract() {
+  if (!selectedContractId.value) return;
+  const client = await contractStore.sendSignedContractToClient(selectedContractId.value);
+  if (client) {
+    await fetchAllContracts();
+    showToast('success', `Le contrat signé a bien été envoyé à ${client.firstName} ${client.lastName.toUpperCase()} !`);
+  }
+  selectedContractId.value = null;
 }
 
 async function fetchAllContracts() {
@@ -251,6 +327,25 @@ function handleTemplateSelected(templateId: string) {
 function openDeleteConfirmation(id: string) {
   selectedContractId.value = id
   isDeleteModalOpen.value = true
+}
+
+function openSentConfirmation(id: string) {
+  selectedContractId.value = id;
+  isEmailSentModalOpen.value = true;
+}
+
+function openSignedSentConfirmation(id: string) {
+  selectedContractId.value = id;
+  isEmailSignedSentModalOpen.value = true;
+}
+
+function openStatusModal(id: string) {
+  const quote = contractStore.contracts.find(q => q.id === id);
+  if (!quote) return;
+  selectedContractId.value = id;
+  selectedContractStatus.value = quote.status;
+  statusModalAvailableStatuses.value = getAvailableStatuses(quote.status);
+  isStatusModalOpen.value = true;
 }
 
 async function confirmDeleteContract() {

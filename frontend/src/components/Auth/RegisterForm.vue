@@ -3,7 +3,7 @@
     <v-container class="pa-0">
       <slot name="header"></slot>
 
-      <v-card class="px-2" :subtitle="subtitle" py-4 mx-auto max-width="700" elevation="0">
+      <v-card class="px-2 py-4 mx-auto" :subtitle="subtitle" max-width="700" elevation="0">
         <template v-slot:title>
           <h1 id="form-title" class="font-weight-black focus:outline-none" tabindex="-1">
             Inscription

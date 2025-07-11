@@ -18,9 +18,12 @@ import { ContractTemplateVariableEntity } from '../contract-template/entities/co
 import { S3Service } from 'src/common/s3/s3.service';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
+import { DocuSignService } from './docusign/docusign.service';
+import { ClientEntity } from '../client/entities/client.entity';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { generateCSVExport } from 'src/common/utils/csv-export.util'; 
+import { generateCSVExport } from 'src/common/utils/csv-export.util';
+import { MailerService } from 'src/common/mailer/mailer.service';
 
 @Injectable()
 export class ContractService {
@@ -31,6 +34,8 @@ export class ContractService {
     private readonly contractTemplateService: ContractTemplateService,
     private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly s3Service: S3Service,
+    private readonly docusignService: DocuSignService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async create(
@@ -276,11 +281,11 @@ export class ContractService {
     pageSize?: number,
   ) {
     const baseWhere = buildSearchQuery(search, userId, 'contrat');
-  
+
     const adjustedEndDate = endDate
       ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
       : undefined;
-  
+
     const issuedAtFilter =
       startDate || adjustedEndDate
         ? {
@@ -290,16 +295,16 @@ export class ContractService {
             },
           }
         : {};
-  
+
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
       ...issuedAtFilter,
     };
-  
+
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
     const take = pageSize;
-  
+
     const [contracts, totalCount] = await this.prisma.$transaction([
       this.prisma.contract.findMany({
         where,
@@ -315,7 +320,7 @@ export class ContractService {
       }),
       this.prisma.contract.count({ where }),
     ]);
-  
+
     const contractsWithUrls = await Promise.all(
       contracts.map(async (contract) => ({
         ...contract,
@@ -327,7 +332,7 @@ export class ContractService {
           : null,
       })),
     );
-  
+
     return {
       contract: plainToInstance(ContractEntity, contractsWithUrls, {
         excludeExtraneousValues: true,
@@ -335,22 +340,28 @@ export class ContractService {
       }),
       total: totalCount,
     };
-  }  
+  }
 
   async exportToCSV(
     userId: string,
     search: string,
     status?: ContractStatus,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{ filename: string; content: string }> {
-    const result = await this.search(userId, search, status, startDate, endDate);
-  
+    const result = await this.search(
+      userId,
+      search,
+      status,
+      startDate,
+      endDate,
+    );
+
     const rows = result.contract.map((contract) => {
       const clientName =
         contract.variableValues?.find((v) => v.variableName === 'client_name')
           ?.value ?? 'Client inconnu';
-  
+
       const base = {
         numero: contract.number,
         statut: contract.status,
@@ -360,15 +371,19 @@ export class ContractService {
           : '',
         dateCreation: format(contract.createdAt, 'dd/MM/yyyy', { locale: fr }),
       };
-  
-      const variableColumns = contract.variableValues.reduce((acc, v) => {
-        acc[`var_${v.variableName}`] = `${v.value}${v.required ? ' (requis)' : ''}`;
-        return acc;
-      }, {} as Record<string, string>);
-  
+
+      const variableColumns = contract.variableValues.reduce(
+        (acc, v) => {
+          acc[`var_${v.variableName}`] =
+            `${v.value}${v.required ? ' (requis)' : ''}`;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
       return { ...base, ...variableColumns };
     });
-  
+
     const staticColumns = {
       numero: 'Numéro',
       statut: 'Statut',
@@ -376,22 +391,22 @@ export class ContractService {
       dateEmission: "Date d'émission",
       dateCreation: 'Date de création',
     };
-  
+
     const dynamicVariableKeys = new Set<string>();
     result.contract.forEach((contract) =>
       contract.variableValues.forEach((v) =>
-        dynamicVariableKeys.add(`var_${v.variableName}`)
-      )
+        dynamicVariableKeys.add(`var_${v.variableName}`),
+      ),
     );
-  
+
     const variableColumns = Array.from(dynamicVariableKeys).reduce(
       (acc, key) => {
         acc[key] = key.replace(/^var_/, 'Variable : ');
         return acc;
       },
-      {} as Record<string, string>
+      {} as Record<string, string>,
     );
-  
+
     const { filename, content } = generateCSVExport({
       rows,
       columns: {
@@ -401,8 +416,161 @@ export class ContractService {
       filenamePrefix: 'contrats_export',
       firstRowLabel: rows[0]?.client ?? 'inconnu',
     });
-  
+
     return { filename, content };
   }
-  
+
+  async changeStatus(
+    id: string,
+    userId: string,
+    newStatus: ContractStatus,
+  ): Promise<ContractEntity> {
+    const contract = await this.getContractOrThrow(id, userId);
+    const currentStatus = contract.status;
+
+    if (newStatus === currentStatus) {
+      return plainToInstance(ContractEntity, contract, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      });
+    }
+
+    const allowedTransitions: Record<ContractStatus, ContractStatus[]> = {
+      [ContractStatus.draft]: [ContractStatus.sent],
+      [ContractStatus.sent]: [
+        ContractStatus.cancelled,
+        ContractStatus.declined,
+        ContractStatus.expired,
+        ContractStatus.signed,
+      ],
+      [ContractStatus.cancelled]: [],
+      [ContractStatus.declined]: [],
+      [ContractStatus.expired]: [],
+      [ContractStatus.signed]: [],
+    };
+
+    if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
+      throw new BadRequestException(
+        `Transition du statut "${currentStatus}" vers "${newStatus}" non autorisée.`,
+      );
+    }
+
+    const updateData: any = { status: newStatus };
+
+    if (newStatus === ContractStatus.sent) {
+      updateData.issuedAt = new Date();
+    }
+
+    const updatedContract = await this.prisma.contract.update({
+      where: { id },
+      data: updateData,
+      include: { variableValues: true },
+    });
+
+    return plainToInstance(ContractEntity, updatedContract, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+
+  async sendForSignature(id: string, userId: string) {
+    const user = await this.userService.getUserOrThrow(userId);
+    const contract = await this.getContractOrThrow(id, userId);
+
+    if (
+      contract.status !== ContractStatus.draft &&
+      contract.status !== ContractStatus.sent
+    ) {
+      throw new BadRequestException(
+        `Impossible d’envoyer la facture : statut "${contract.status}".`,
+      );
+    }
+
+    const client = await this.clientService.getClientOrThrow(
+      contract.clientId,
+      userId,
+    );
+
+    const newContract = await this.changeStatus(
+      id,
+      userId,
+      ContractStatus.sent,
+    );
+
+    const html = newContract.generatedHtml
+      .replace(
+        /{{freelancer_signature}}/g,
+        '<span style="color:white;font-size:1px;">{{freelancer_signature}}</span>',
+      )
+      .replace(
+        /{{freelancer_fullname_signed}}/g,
+        '<span style="color:white;font-size:1px;">{{freelancer_fullname_signed}}</span>',
+      )
+      .replace(
+        /{{freelancer_date_signed}}/g,
+        '<span style="color:white;font-size:1px;">{{freelancer_date_signed}}</span>',
+      )
+      .replace(
+        /{{client_signature}}/g,
+        '<span style="color:white;font-size:1px;">{{client_signature}}</span>',
+      )
+      .replace(
+        /{{client_fullname_signed}}/g,
+        '<span style="color:white;font-size:1px;">{{client_fullname_signed}}</span>',
+      )
+      .replace(
+        /{{client_date_signed}}/g,
+        '<span style="color:white;font-size:1px;">{{client_date_signed}}</span>',
+      );
+
+    const pdfBuffer = await this.pdfGeneratorService.generateFromHtml(html);
+    const freelancerName = `${user.firstName} ${user.lastName ?? ''}`;
+    const clientName = `${client.firstName} ${client.lastName ?? ''}`;
+
+    const envelopeId = await this.docusignService.sendContractForSignature(
+      pdfBuffer,
+      user.email,
+      freelancerName,
+      client.email,
+      clientName,
+    );
+
+    await this.prisma.contract.update({
+      where: { id },
+      data: {
+        docusignEnvelopeId: envelopeId,
+      },
+    });
+
+    return plainToInstance(ClientEntity, client);
+  }
+
+  async sendSignedContractToClient(id: string, userId: string) {
+    const user = await this.userService.getUserOrThrow(userId);
+    const contract = await this.getContractOrThrow(id, userId);
+
+    if (contract.status !== ContractStatus.signed) {
+      throw new BadRequestException(
+        `Impossible d’envoyer la facture acquittée: statut "${contract.status}".`,
+      );
+    }
+
+    const client = await this.clientService.getClientOrThrow(
+      contract.clientId,
+      userId,
+    );
+
+    const pdfBuffer = await this.s3Service.getFileBuffer(contract.pdfKey);
+    const clientName = `${client.firstName} ${client.lastName.toUpperCase()}`;
+
+    await this.mailerService.sendContractSignedEmail(
+      client.email,
+      clientName,
+      user,
+      contract.number,
+      pdfBuffer,
+    );
+
+    return plainToInstance(ClientEntity, client);
+  }
 }

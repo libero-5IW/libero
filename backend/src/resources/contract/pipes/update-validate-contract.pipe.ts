@@ -17,7 +17,17 @@ export class ValidateContractOnUpdatePipe<
 
       if (
         required &&
-        (rawValue === undefined || rawValue === null || rawValue === '')
+        (rawValue === undefined ||
+          rawValue === null ||
+          (rawValue === '' &&
+            ![
+              'freelancer_signature',
+              'freelancer_fullname_signed',
+              'freelancer_date_signed',
+              'client_signature',
+              'client_date_signed',
+              'client_fullname_signed',
+            ].includes(variableName)))
       ) {
         throw new BadRequestException(
           `La variable requise "${variableName}" est manquante ou vide.`,

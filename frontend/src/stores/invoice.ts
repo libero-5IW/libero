@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import apiClient from '@/config/axios';
 import { handleError } from '@/utils/handleError';
 import { InvoiceSchema, type Invoice, type CreateInvoice } from '@/schemas/invoice.schema';
+import { ClientSchema } from '@/schemas/client.schema';
 
 export const useInvoiceStore = defineStore('invoice', () => {
   const invoices = ref<Invoice[]>([]);
@@ -40,6 +41,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
   }
 
   async function createInvoice(payload: CreateInvoice) {
+    isLoading.value = true;
     try {
       const { data } = await apiClient.post('/invoices', payload);
       return InvoiceSchema.parse(data);
@@ -115,6 +117,42 @@ export const useInvoiceStore = defineStore('invoice', () => {
     }
   }  
 
+  async function changeStatus(id: string, newStatus: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/invoices/${id}/change-status`, { newStatus } );
+      return InvoiceSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors du changement vers le nouveau statut.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+    
+  async function sentInvoiceToClient(id: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/invoices/${id}/send`);
+      return ClientSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’envoi de la facture au client.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function sentPaidInvoiceToClient(id: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/invoices/${id}/send-paid`);
+      return ClientSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’envoi de la facture acquittée au client.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   async function exportInvoices(
     term = '',
     status?: string,
@@ -162,6 +200,9 @@ export const useInvoiceStore = defineStore('invoice', () => {
     total,
     currentPage,
     pageSize, 
-    exportInvoices
+    exportInvoices,
+    sentInvoiceToClient,
+    changeStatus,
+    sentPaidInvoiceToClient
   };
 });

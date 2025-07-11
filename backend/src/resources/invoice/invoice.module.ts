@@ -6,6 +6,7 @@ import { ClientService } from '../client/client.service';
 import { InvoiceTemplateService } from '../invoice-template/invoice-template.service';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
+import { MailerService } from 'src/common/mailer/mailer.service';
 
 @Module({
   controllers: [InvoiceController],
@@ -16,6 +17,7 @@ import { S3Service } from 'src/common/s3/s3.service';
     InvoiceTemplateService,
     S3Service,
     PdfGeneratorService,
+    MailerService,
   ],
 })
 export class InvoiceModule {}

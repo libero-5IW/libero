@@ -72,6 +72,12 @@ export class ContractEntity {
   @Expose()
   previewUrl: string;
 
+  @ApiProperty({
+    example: 'drg-1sFH-rgrfz-AW3',
+  })
+  @Expose()
+  docusignEnvelopeId: string;
+
   @ApiProperty({ example: '2025-06-19T10:00:00Z' })
   @Expose()
   createdAt: Date;

@@ -52,44 +52,58 @@ export const useQuoteTemplateStore = defineStore('quoteTemplate', () => {
     } catch (error) {
       console.error('error', error);
       handleError(error, 'Erreur lors de la récupération du template par défaut.')
+    } finally {
+      isLoading.value = false
     }
   }
 
   async function createTemplate(payload: CreateQuoteTemplate) {
+    isLoading.value = true
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.post('/quote-templates', cleanedPayload)
       return QuoteTemplateSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la création du template.')
+    } finally {
+      isLoading.value = false
     }
   }
 
   async function updateTemplate(id: string, payload: Partial<QuoteTemplate>) {
+    isLoading.value = true
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.patch(`/quote-templates/${id}`, cleanedPayload)
       return QuoteTemplateSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la mise à jour du template.')
+    } finally {
+      isLoading.value = false
     }
   }
 
   async function deleteTemplate(id: string) {
+    isLoading.value = true
     try {
       await apiClient.delete(`/quote-templates/${id}`)
       templates.value = templates.value.filter((template) => template.id !== id)
     } catch (error) {
       handleError(error, 'Erreur lors de la suppression du template.')
+    } finally {
+      isLoading.value = false
     }
   }
 
   async function duplicateTemplate(id: string) {
+    isLoading.value = true
     try {
       const { data } = await apiClient.post(`/quote-templates/${id}/duplicate`)
       return QuoteTemplateSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la duplication du template.')
+    } finally {
+      isLoading.value = false
     }
   }
 

@@ -14,8 +14,12 @@ export async function seedDefaultContractTemplate(prisma: PrismaClient) {
         <p><strong>Date de fin :</strong> {{end_date}}</p>
         <p><strong>Montant :</strong> {{total_amount}} € HT</p>
         <p><strong>Modalités de paiement :</strong> {{payment_terms}}</p>
-        <p><strong>Signature Freelance :</strong> {{freelancer_signature}}</p>
-        <p><strong>Signature Client :</strong> {{client_signature}}</p>
+        <p><strong>Signature Freelance nom signature:</strong> {{freelancer_fullname_signed}}</p>
+        <p><strong>Signature Freelance date signature:</strong> {{freelancer_date_signed}}</p>
+        <p><strong>Signature Freelance signature:</strong> {{freelancer_signature}}</p>
+        <p><strong>Signature Client nom signature:</strong> {{client_fullname_signed}}</p>
+        <p><strong>Signature Client date signature:</strong> {{client_date_signed}}</p>
+        <p><strong>Signature Client signature:</strong> {{client_signature}}</p>
       `,
     variables: [
       {
@@ -73,8 +77,32 @@ export async function seedDefaultContractTemplate(prisma: PrismaClient) {
         required: true,
       },
       {
+        variableName: 'freelancer_fullname_signed',
+        label: 'Nom complet du freelance',
+        type: VariableType.string,
+        required: true,
+      },
+      {
+        variableName: 'freelancer_date_signed',
+        label: 'Date de signature du freelance',
+        type: VariableType.string,
+        required: true,
+      },
+      {
         variableName: 'freelancer_signature',
         label: 'Signature du freelance',
+        type: VariableType.string,
+        required: true,
+      },
+      {
+        variableName: 'client_fullname_signed',
+        label: 'Nom complet du client',
+        type: VariableType.string,
+        required: true,
+      },
+      {
+        variableName: 'client_date_signed',
+        label: 'Date de signature du client',
         type: VariableType.string,
         required: true,
       },

@@ -173,8 +173,6 @@ import { generateFinalHtml } from '@/utils/generateFinalHtml';
   const clients = computed(() => clientStore.clients);
   const isLoading = computed(() => quoteStore.isLoading)
 
-  onMounted(initialize);
-
   onMounted(async () => {
     await initialize();
 
@@ -412,7 +410,8 @@ import { generateFinalHtml } from '@/utils/generateFinalHtml';
     orderedTemplateVariables.value.filter(
       (v) =>
         !v.variableName.startsWith('freelancer_') &&
-        !v.variableName.startsWith('client_')
+        !v.variableName.startsWith('client_') &&
+        !v.variableName.startsWith('quote_number')
     )
   );
 

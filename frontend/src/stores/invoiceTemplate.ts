@@ -47,49 +47,64 @@ export const useInvoiceTemplateStore = defineStore('invoiceTemplate', () => {
   }
 
   async function fetchDefaultTemplate() {
+    isLoading.value = true
     try {
       const { data } = await apiClient.get('/invoice-templates/default-template')
       defaultTemplate.value = InvoiceTemplateSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la récupération du template par défaut.')
+    } finally {
+      isLoading.value = false
     }
   }
 
   async function createTemplate(payload: CreateInvoiceTemplate) {
+    isLoading.value = true
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.post('/invoice-templates', cleanedPayload)
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la création du template.')
+    } finally {
+      isLoading.value = false
     }
   }
   
   async function updateTemplate(id: string, payload: Partial<InvoiceTemplate>) {
+    isLoading.value = true
     try {
       const cleanedPayload = removeSystemVariables(payload)
       const { data } = await apiClient.patch(`/invoice-templates/${id}`, cleanedPayload)
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la mise à jour du template.')
+    } finally {
+      isLoading.value = false
     }
   }    
 
   async function deleteTemplate(id: string) {
+    isLoading.value = true
     try {
       await apiClient.delete(`/invoice-templates/${id}`)
       templates.value = templates.value.filter((template) => template.id !== id)
     } catch (error) {
       handleError(error, 'Erreur lors de la suppression du template.')
+    } finally {
+      isLoading.value = false
     }
   }
 
   async function duplicateTemplate(id: string) {
+    isLoading.value = true
     try {
       const { data } = await apiClient.post(`/invoice-templates/${id}/duplicate`)
       return InvoiceTemplateSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la duplication du template.')
+    } finally {
+      isLoading.value = false
     }
   }
 

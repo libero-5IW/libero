@@ -7,6 +7,7 @@ import {
   type Contract,
   type CreateContract,
 } from '@/schemas/contract.schema';
+import { ClientSchema } from '@/schemas/client.schema';
 
 export const useContractStore = defineStore('contract', () => {
   const contracts = ref<Contract[]>([]);
@@ -117,7 +118,7 @@ export const useContractStore = defineStore('contract', () => {
     } finally {
       isLoading.value = false;
     }
-  }  
+  } 
 
   async function exportContracts(
     term = '',
@@ -152,6 +153,42 @@ export const useContractStore = defineStore('contract', () => {
     }
   }  
 
+  async function changeStatus(id: string, newStatus: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/contracts/${id}/change-status`, { newStatus } );
+      return ContractSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors du changement vers le nouveau statut.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+  
+  async function sendContractForSignature(id: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/contracts/${id}/signature`);
+      return ClientSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’envoi du contrat au client.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function sendSignedContractToClient(id: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/contracts/${id}/send-signed`);
+      return ClientSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’envoi du contrat signé au client.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     contracts,
     currentContract,
@@ -163,9 +200,12 @@ export const useContractStore = defineStore('contract', () => {
     fetchNextContractNumber,
     updateContract,
     searchContracts,
+    changeStatus,
+    sendContractForSignature,
     total,
     currentPage,
     pageSize,
-    exportContracts
+    exportContracts,
+    sendSignedContractToClient
   };
 });
