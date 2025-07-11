@@ -206,29 +206,30 @@ model Invoice {
 }
 
 model Contract {
-  id              String   @id @default(uuid())
-  number          Int
-  templateId      String?
-  userId          String
-  clientId        String?
-  quoteId         String?   @unique
-  invoiceId       String?   @unique
-  status          ContractStatus @default(draft)
-  generatedHtml   String
-  issuedAt        DateTime?
-  validUntil      DateTime
-  pdfKey          String
-  previewKey      String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  number              Int
+  templateId          String?
+  userId              String
+  clientId            String?
+  quoteId             String?   @unique
+  invoiceId           String?   @unique
+  status              ContractStatus @default(draft)
+  generatedHtml       String
+  issuedAt            DateTime?
+  validUntil          DateTime
+  pdfKey              String
+  previewKey          String    
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  docusignEnvelopeId  String? @db.VarChar(255)
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
-  template        ContractTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  variableValues  ContractVariableValue[]
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client              Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  template            ContractTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  variableValues      ContractVariableValue[]
 
-  quote           Quote?   @relation(fields: [quoteId], references: [id], onDelete: SetNull)
-  invoice         Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  quote               Quote?   @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  invoice             Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
 
   @@unique([userId, number])
 }

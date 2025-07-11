@@ -9,6 +9,7 @@
 
           <v-form ref="formRef" @submit.prevent="onSubmit">
             <v-text-field
+              class="mb-4"
               v-model="form.firstName"
               label="Prénom"
               type="text"
@@ -16,6 +17,7 @@
               required
             />
             <v-text-field
+              class="mb-4"
               v-model="form.lastName"
               label="Nom"
               type="text"
@@ -23,6 +25,7 @@
               required
             />
             <v-text-field
+              class="mb-4"
               v-model="form.email"
               label="Email"
               type="email"
@@ -30,6 +33,7 @@
               required
             />
             <v-text-field
+              class="mb-4"
               v-model="form.phoneNumber"
               label="Téléphone"
               type="tel"
@@ -37,6 +41,7 @@
               required
             />
             <v-text-field
+              class="mb-4"
               v-model="form.addressLine"
               label="Adresse"
               type="text"
@@ -44,6 +49,7 @@
               required
             />
             <v-text-field
+              class="mb-4"
               v-model="form.postalCode"
               label="Code postal"
               type="text"
@@ -51,6 +57,7 @@
               required
             />
             <v-text-field
+              class="mb-4"
               v-model="form.city"
               label="Ville"
               type="text"
@@ -65,7 +72,7 @@
               required
             />
 
-            <div class="d-flex justify-between mt-6">
+            <div class="d-flex justify-end mt-6 gap-4">
               <div v-if="isEdit" class="d-flex align-center">
                 <v-btn color="error" variant="tonal" @click="showDeleteModal = true">
                   Supprimer
@@ -74,7 +81,7 @@
 
               <div class="d-flex align-center">
                 <v-btn text @click="cancel">Annuler</v-btn>
-                <v-btn color="primary" type="submit" class="ml-2">
+                <v-btn color="primary" type="submit" class="ml-2" :disabled="!formRef?.isValid" >
                   {{ isEdit ? 'Mettre à jour' : 'Créer' }}
                 </v-btn>
               </div>
@@ -151,11 +158,6 @@ const onSubmit = async () => {
   const result = await formRef.value?.validate()
   if (!result?.valid) {
     showToast('error', 'Veuillez remplir tous les champs correctement avant de valider.')
-    return
-  }
-
-  if (!authStore.user?.userId) {
-    showToast('error', 'Utilisateur non connecté.')
     return
   }
 

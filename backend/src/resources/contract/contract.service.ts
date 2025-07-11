@@ -18,6 +18,8 @@ import { ContractTemplateVariableEntity } from '../contract-template/entities/co
 import { S3Service } from 'src/common/s3/s3.service';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
+import { DocuSignService } from './docusign/docusign.service';
+import { ClientEntity } from '../client/entities/client.entity';
 
 @Injectable()
 export class ContractService {
@@ -28,6 +30,7 @@ export class ContractService {
     private readonly contractTemplateService: ContractTemplateService,
     private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly s3Service: S3Service,
+    private readonly docusignService: DocuSignService,
   ) {}
 
   async create(
@@ -304,5 +307,130 @@ export class ContractService {
       excludeExtraneousValues: true,
       enableImplicitConversion: true,
     });
+  }
+
+  async changeStatus(
+    id: string,
+    userId: string,
+    newStatus: ContractStatus,
+  ): Promise<ContractEntity> {
+    const contract = await this.getContractOrThrow(id, userId);
+    const currentStatus = contract.status;
+
+    if (newStatus === currentStatus) {
+      return plainToInstance(ContractEntity, contract, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      });
+    }
+
+    const allowedTransitions: Record<ContractStatus, ContractStatus[]> = {
+      [ContractStatus.draft]: [ContractStatus.sent],
+      [ContractStatus.sent]: [
+        ContractStatus.cancelled,
+        ContractStatus.declined,
+        ContractStatus.expired,
+        ContractStatus.signed,
+      ],
+      [ContractStatus.cancelled]: [],
+      [ContractStatus.declined]: [],
+      [ContractStatus.expired]: [],
+      [ContractStatus.signed]: [],
+    };
+
+    if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
+      throw new BadRequestException(
+        `Transition du statut "${currentStatus}" vers "${newStatus}" non autorisée.`,
+      );
+    }
+
+    const updateData: any = { status: newStatus };
+
+    if (newStatus === ContractStatus.sent) {
+      updateData.issuedAt = new Date();
+    }
+
+    const updatedContract = await this.prisma.contract.update({
+      where: { id },
+      data: updateData,
+      include: { variableValues: true },
+    });
+
+    return plainToInstance(ContractEntity, updatedContract, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+
+  async sendForSignature(id: string, userId: string) {
+    const user = await this.userService.getUserOrThrow(userId);
+    const contract = await this.getContractOrThrow(id, userId);
+
+    if (
+      contract.status !== ContractStatus.draft &&
+      contract.status !== ContractStatus.sent
+    ) {
+      throw new BadRequestException(
+        `Impossible d’envoyer la facture : statut "${contract.status}".`,
+      );
+    }
+
+    const client = await this.clientService.getClientOrThrow(
+      contract.clientId,
+      userId,
+    );
+
+    const newContract = await this.changeStatus(
+      id,
+      userId,
+      ContractStatus.sent,
+    );
+
+    const html = newContract.generatedHtml
+      .replace(
+        /{{freelancer_signature}}/g,
+        '<span style="color:white;font-size:1px;">{{freelancer_signature}}</span>',
+      )
+      .replace(
+        /{{freelancer_fullname_signed}}/g,
+        '<span style="color:white;font-size:1px;">{{freelancer_fullname_signed}}</span>',
+      )
+      .replace(
+        /{{freelancer_date_signed}}/g,
+        '<span style="color:white;font-size:1px;">{{freelancer_date_signed}}</span>',
+      )
+      .replace(
+        /{{client_signature}}/g,
+        '<span style="color:white;font-size:1px;">{{client_signature}}</span>',
+      )
+      .replace(
+        /{{client_fullname_signed}}/g,
+        '<span style="color:white;font-size:1px;">{{client_fullname_signed}}</span>',
+      )
+      .replace(
+        /{{client_date_signed}}/g,
+        '<span style="color:white;font-size:1px;">{{client_date_signed}}</span>',
+      );
+
+    const pdfBuffer = await this.pdfGeneratorService.generateFromHtml(html);
+    const freelancerName = `${user.firstName} ${user.lastName ?? ''}`;
+    const clientName = `${client.firstName} ${client.lastName ?? ''}`;
+
+    const envelopeId = await this.docusignService.sendContractForSignature(
+      pdfBuffer,
+      user.email,
+      freelancerName,
+      client.email,
+      clientName,
+    );
+
+    await this.prisma.contract.update({
+      where: { id },
+      data: {
+        docusignEnvelopeId: envelopeId,
+      },
+    });
+
+    return plainToInstance(ClientEntity, client);
   }
 }

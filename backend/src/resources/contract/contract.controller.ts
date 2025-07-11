@@ -6,7 +6,8 @@ import {
   Param,
   Delete,
   Put,
-  Query
+  Query,
+  Patch,
 } from '@nestjs/common';
 import { ContractService } from './contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -47,10 +48,10 @@ export class ContractController {
   @Get('search')
   searchContracts(
     @Query('term') term: string,
-    @Query('status') status: ContractStatus, 
+    @Query('status') status: ContractStatus,
     @CurrentUser() user: JwtPayload,
   ) {
-    return this.contractService.search(user.userId, term, status); 
+    return this.contractService.search(user.userId, term, status);
   }
 
   @Get(':id')
@@ -73,4 +74,11 @@ export class ContractController {
     return this.contractService.remove(id, user.userId);
   }
 
+  @Patch(':id/signature')
+  async sendForSignature(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.contractService.sendForSignature(id, user.userId);
+  }
 }

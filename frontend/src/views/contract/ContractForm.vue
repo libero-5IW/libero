@@ -314,8 +314,17 @@ const canCreate = computed(() => {
   const hasTemplate = !!selectedTemplateId.value;
   const hasUser = !!currentUser.value;
   const allRequiredFilled = templateVariables.value.every(v =>
-    !v.required || !!variablesValue.value.find(val => val.variableName === v.variableName)?.value
-  );
+      [
+        'freelancer_signature',
+        'freelancer_fullname_signed', 
+        'freelancer_date_signed', 
+        'client_signature', 
+        'client_date_signed', 
+        'client_fullname_signed'
+      ].includes(v.variableName)
+        ? true
+        : !v.required || !!variablesValue.value.find(val => val.variableName === v.variableName)?.value
+    );
 
   return hasTemplate && hasUser && allRequiredFilled;
 });
@@ -329,11 +338,27 @@ const orderedTemplateVariables = computed(() => {
 });
 
 const freelancerVariables = computed(() =>
-  orderedTemplateVariables.value.filter(v => v.variableName.startsWith('freelancer_'))
+  orderedTemplateVariables.value.filter(
+    v =>
+      v.variableName.startsWith('freelancer_') &&
+      ![
+        'freelancer_signature',
+        'freelancer_fullname_signed', 
+        'freelancer_date_signed', 
+      ].includes(v.variableName)
+  )
 );
 
 const clientVariables = computed(() =>
-  orderedTemplateVariables.value.filter(v => v.variableName.startsWith('client_'))
+  orderedTemplateVariables.value.filter(
+    v =>
+      v.variableName.startsWith('client_') &&
+      ![
+        'client_signature',
+        'client_date_signed', 
+        'client_fullname_signed'
+      ].includes(v.variableName)
+  )
 );
 
 const otherVariables = computed(() =>
@@ -358,7 +383,20 @@ async function onCreateContract() {
     return;
   }
 
-  const missingFields = templateVariables.value.filter(v => v.required && !variablesValue.value.find(val => val.variableName === v.variableName)?.value);
+ const missingFields = templateVariables.value.filter(
+    v =>
+      v.required &&
+      ![        
+        'freelancer_signature',
+        'freelancer_fullname_signed', 
+        'freelancer_date_signed', 
+        'client_signature', 
+        'client_date_signed', 
+        'client_fullname_signed'
+      ].includes(v.variableName) &&
+      !variablesValue.value.find(val => val.variableName === v.variableName)?.value
+  );
+
   if (missingFields.length > 0) {
     showToast('error', `Veuillez remplir tous les champs obligatoires : ${missingFields.map(f => f.label).join(', ')}`);
     return;

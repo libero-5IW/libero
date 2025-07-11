@@ -111,7 +111,6 @@ import DocumentCardList from '@/components/DocumentDisplay/DocumentCardList.vue'
 import TemplateSelectionModal from '@/components/Modals/TemplateSelectionModal.vue'; 
 import { useToastHandler } from '@/composables/useToastHandler';
 import type { DocumentCard, ToastStatus } from '@/types';
-import type { Header } from '@/types/Header';
 import { useRouter } from 'vue-router';
 import { useInvoiceTemplateStore } from '@/stores/invoiceTemplate';
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue';
@@ -162,7 +161,8 @@ const documentCards = computed<DocumentCard[]>(() =>
       createdAt: invoice.createdAt ?? '',
       previewUrl: invoice.previewUrl ?? null,
       pdfUrl: invoice.pdfUrl ?? null,
-      clientName: clientNameVar?.value || 'Client inconnu'
+      clientName: clientNameVar?.value || 'Client inconnu',
+      clientId: invoice.clientId
     }
   })
 );
@@ -191,9 +191,11 @@ function getAvailableStatuses(currentStatus: string) {
 async function updateInvoiceStatus(newStatus: string) {
   if (!selectedInvoiceId.value) return;
   const invoice = await invoiceStore.changeStatus(selectedInvoiceId.value, newStatus);
-  await fetchAllInvoices();
   isStatusModalOpen.value = false;
-  showToast('success', `Statut mis à jour avec succès pour la facture ${invoice?.number} !`);
+  if(invoice) {
+    await fetchAllInvoices();
+    showToast('success', `Statut mis à jour avec succès pour la facture ${invoice?.number} !`);
+  }
   selectedInvoiceId.value = null;
 }
 

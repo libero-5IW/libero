@@ -176,7 +176,8 @@ const documentCards = computed<DocumentCard[]>(() =>
       createdAt: quote.createdAt ?? '',
       previewUrl: quote.previewUrl ?? null,
       pdfUrl: quote.pdfUrl ?? null,
-      clientName: clientNameVar?.value || 'Client inconnu'
+      clientName: clientNameVar?.value || 'Client inconnu',
+      clientId: quote.clientId
     }
   })
 );
@@ -204,11 +205,12 @@ function getAvailableStatuses(currentStatus: string) {
 
 async function updateQuoteStatus(newStatus: string) {
   if (!selectedQuoteId.value) return;
-
   const quote = await quoteStore.changeStatus(selectedQuoteId.value, newStatus);
-  await fetchAllQuotes();
   isStatusModalOpen.value = false;
-  showToast('success', `Statut mis à jour avec succès pour le devis ${quote?.number} !`);
+  if(quote) { 
+    await fetchAllQuotes();
+    showToast('success', `Statut mis à jour avec succès pour le devis ${quote?.number} !`);
+  }
   selectedQuoteId.value = null;
 }
 
