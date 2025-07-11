@@ -177,6 +177,18 @@ export const useContractStore = defineStore('contract', () => {
     }
   }
 
+  async function sendSignedContractToClient(id: string) {
+    isLoading.value = true;
+    try {
+      const { data } = await apiClient.patch(`/contracts/${id}/send-signed`);
+      return ClientSchema.parse(data);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’envoi du contrat signé au client.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   return {
     contracts,
     currentContract,
@@ -193,6 +205,7 @@ export const useContractStore = defineStore('contract', () => {
     total,
     currentPage,
     pageSize,
-    exportContracts
+    exportContracts,
+    sendSignedContractToClient
   };
 });

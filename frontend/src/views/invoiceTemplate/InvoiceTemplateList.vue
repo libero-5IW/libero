@@ -1,7 +1,7 @@
 <template>
   <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="invoice-template-page-title" tabindex="-1" ref="mainContent">
-    <div class="flex items-center justify-between mb-6">
-      <span class="text-xl font-semibold">Templates de factures</span>
+    <div class="flex items-center justify-between mb-10">
+      <span class="text-xl font-bold">Templates de factures</span>
       <div class="flex gap-2">
         <v-btn color="primary" @click="createTemplate">
           <v-icon start>mdi-plus</v-icon>

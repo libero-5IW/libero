@@ -148,7 +148,6 @@ import {
 const router = useRouter()
 const route = useRoute()
 const clientStore = useClientStore()
-const authStore = useAuthStore()
 const { showToast } = useToastHandler()
 
 const formRef = ref()

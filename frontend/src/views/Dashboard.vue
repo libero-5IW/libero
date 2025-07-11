@@ -1,6 +1,6 @@
 <template>
   <div
-   class="h-[calc(100vh-64px)] w-[calc(100vw-256px)] max-[1200px]:w-[calc(100vw-200px)] max-[768px]:w-full flex flex-col"
+   class="flex flex-col"
   >
     <div
         class="flex-grow grid grid-cols-2 gap-3 w-full px-8 auto-rows-auto max-[1200px]:grid-cols-1 max-[768px]:grid-cols-1"

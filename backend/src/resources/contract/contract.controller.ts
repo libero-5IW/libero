@@ -117,10 +117,15 @@ export class ContractController {
   }
 
   @Patch(':id/signature')
-  async sendForSignature(
-    @Param('id') id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  sendForSignature(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.contractService.sendForSignature(id, user.userId);
+  }
+
+  @Patch(':id/send-signed')
+  sendSignedContractToClient(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.contractService.sendSignedContractToClient(id, user.userId);
   }
 }

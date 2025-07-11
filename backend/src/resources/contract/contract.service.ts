@@ -23,6 +23,7 @@ import { ClientEntity } from '../client/entities/client.entity';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { generateCSVExport } from 'src/common/utils/csv-export.util';
+import { MailerService } from 'src/common/mailer/mailer.service';
 
 @Injectable()
 export class ContractService {
@@ -34,6 +35,7 @@ export class ContractService {
     private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly s3Service: S3Service,
     private readonly docusignService: DocuSignService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async create(
@@ -539,6 +541,35 @@ export class ContractService {
         docusignEnvelopeId: envelopeId,
       },
     });
+
+    return plainToInstance(ClientEntity, client);
+  }
+
+  async sendSignedContractToClient(id: string, userId: string) {
+    const user = await this.userService.getUserOrThrow(userId);
+    const contract = await this.getContractOrThrow(id, userId);
+
+    if (contract.status !== ContractStatus.signed) {
+      throw new BadRequestException(
+        `Impossible d’envoyer la facture acquittée: statut "${contract.status}".`,
+      );
+    }
+
+    const client = await this.clientService.getClientOrThrow(
+      contract.clientId,
+      userId,
+    );
+
+    const pdfBuffer = await this.s3Service.getFileBuffer(contract.pdfKey);
+    const clientName = `${client.firstName} ${client.lastName.toUpperCase()}`;
+
+    await this.mailerService.sendContractSignedEmail(
+      client.email,
+      clientName,
+      user,
+      contract.number,
+      pdfBuffer,
+    );
 
     return plainToInstance(ClientEntity, client);
   }

@@ -3,6 +3,7 @@ import { PrismaService } from 'src/database/prisma/prisma.service';
 import { S3Service } from 'src/common/s3/s3.service';
 import { DocuSignService } from './docusign.service';
 import { ContractStatus } from '../enums/contract-status.enum';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 
 @Injectable()
 export class DocusignWebhookService {
@@ -12,6 +13,7 @@ export class DocusignWebhookService {
     private readonly prisma: PrismaService,
     private readonly s3Service: S3Service,
     private readonly docusignService: DocuSignService,
+    private readonly pdfGeneratorService: PdfGeneratorService,
   ) {}
 
   async processEnvelopeEvent(payload: any): Promise<void> {
@@ -40,10 +42,19 @@ export class DocusignWebhookService {
         const signedPdf =
           await this.docusignService.downloadSignedPdf(envelopeId);
 
+        const previewBuffer =
+          await this.pdfGeneratorService.generatePreviewFromPdf(signedPdf);
+
         await this.s3Service.uploadFile(
           signedPdf,
           contract.pdfKey,
           'application/pdf',
+        );
+
+        await this.s3Service.uploadFile(
+          previewBuffer,
+          contract.previewKey,
+          'image/png',
         );
 
         await this.prisma.contract.update({

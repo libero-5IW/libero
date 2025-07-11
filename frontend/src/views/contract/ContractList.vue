@@ -101,6 +101,7 @@
         @edit="editContract"
         @change-status="openStatusModal"
         @sent-to-client="openSentConfirmation"
+        @sent-signed-to-client="openSignedSentConfirmation"
         @delete="openDeleteConfirmation"
         @convert-to-invoice="handleConvertToInvoice"
         :isLoading="isLoading"
@@ -133,6 +134,15 @@
   @confirm="confirmSignatureContract"
   />
 
+  <ConfirmationModal
+  v-model="isEmailSignedSentModalOpen"
+  title="Confirmation d'envoi d'email"
+  message="Souhaitez-vous envoyer par email la facture signée au client ?"
+  confirmText="Envoyer"
+  cancelText="Annuler"
+  confirmColor="success"
+  @confirm="confirmSignedSentContract"
+  />
 
   <StatusChangingModal
   v-model="isStatusModalOpen"
@@ -196,6 +206,7 @@ const contracts = computed(() => contractStore.contracts);
 const selectedStatus = ref<string | null>(null);
 const isLoading = computed(() => contractStore.isLoading)
 
+const isEmailSignedSentModalOpen = ref(false);
 const isEmailSentModalOpen = ref(false);
 const isDeleteModalOpen = ref(false);
 const isStatusModalOpen = ref(false)
@@ -287,6 +298,16 @@ async function confirmSignatureContract() {
   selectedContractId.value = null;
 }
 
+async function confirmSignedSentContract() {
+  if (!selectedContractId.value) return;
+  const client = await contractStore.sendSignedContractToClient(selectedContractId.value);
+  if (client) {
+    await fetchAllContracts();
+    showToast('success', `Le contrat signé a bien été envoyé à ${client.firstName} ${client.lastName.toUpperCase()} !`);
+  }
+  selectedContractId.value = null;
+}
+
 async function fetchAllContracts() {
   await contractStore.fetchAllContracts();
 }
@@ -312,6 +333,12 @@ function openSentConfirmation(id: string) {
   selectedContractId.value = id;
   isEmailSentModalOpen.value = true;
 }
+
+function openSignedSentConfirmation(id: string) {
+  selectedContractId.value = id;
+  isEmailSignedSentModalOpen.value = true;
+}
+
 function openStatusModal(id: string) {
   const quote = contractStore.contracts.find(q => q.id === id);
   if (!quote) return;

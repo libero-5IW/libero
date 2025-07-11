@@ -203,6 +203,36 @@ export class MailerService {
     });
   }
 
+  async sendContractSignedEmail(
+    email: string,
+    clientName: string,
+    freelance: UserEntity,
+    contractNumber: number,
+    pdfBuffer: Buffer,
+  ) {
+    await this.mailerService.sendMail({
+      to: email,
+      subject: `Contrat signé - Libero`,
+      template: 'contract-signed',
+      context: {
+        clientName,
+        freelanceName: `${freelance.firstName} ${freelance.lastName.toUpperCase()}`,
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        year: new Date().getFullYear(),
+        title: `Contrat ${contractNumber}`,
+      },
+      attachments: [
+        this.getLogoAttachment(),
+        {
+          filename: `Contrat_${contractNumber}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
+  }
+
   private getLogoAttachment() {
     return {
       filename: 'logo.png',

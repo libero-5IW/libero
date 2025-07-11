@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import * as os from 'os';
 
 @Injectable()
 export class PdfGeneratorService {
@@ -51,5 +54,30 @@ export class PdfGeneratorService {
     await browser.close();
 
     return Buffer.from(pdfBuffer);
+  }
+
+  async generatePreviewFromPdf(pdfBuffer: Buffer): Promise<Buffer> {
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'pdf-preview-'));
+    const tmpPdfPath = path.join(tmpDir, 'doc.pdf');
+    await fs.writeFile(tmpPdfPath, pdfBuffer);
+
+    const browser = await puppeteer.launch({
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
+    const page = await browser.newPage();
+    await page.goto(`file://${tmpPdfPath}`, { waitUntil: 'networkidle0' });
+
+    const screenshotBuffer = await page.screenshot({
+      type: 'png',
+      fullPage: true,
+    });
+
+    await browser.close();
+    await fs.rm(tmpDir, { recursive: true, force: true });
+
+    return Buffer.from(screenshotBuffer as Uint8Array);
   }
 }

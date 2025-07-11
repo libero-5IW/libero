@@ -9,6 +9,7 @@ import { S3Service } from 'src/common/s3/s3.service';
 import { DocuSignService } from './docusign/docusign.service';
 import { DocusignWebhookService } from './docusign/docusign.webhook.service';
 import { DocusignWebhookController } from './docusign/docusign.webhook.controller';
+import { MailerService } from 'src/common/mailer/mailer.service';
 
 @Module({
   controllers: [ContractController, DocusignWebhookController],
@@ -21,6 +22,7 @@ import { DocusignWebhookController } from './docusign/docusign.webhook.controlle
     PdfGeneratorService,
     DocuSignService,
     DocusignWebhookService,
+    MailerService,
   ],
 })
 export class ContractModule {}

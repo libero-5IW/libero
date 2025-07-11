@@ -39,6 +39,14 @@
             :items="invoiceItems"
            />
 
+          <NavGroupAccordian
+            v-model="activeGroup"
+            group-value="clients"
+            main-title="Clients"
+            main-icon="mdi-account-multiple"
+            :items="clientItems"
+          />
+
            <NavItemSingle title="Simulateur" to="/simulateur" icon="mdi-view-dashboard" />
 
 
@@ -108,12 +116,17 @@ const quoteItems = [
       to: '/invoice-template',
     }
   ]
-const clientItems = [
-  { title: 'Liste des clients', to: '/clients' },
-  { title: 'Nouveau client', to: '/clients/new' }
-]
 
-const legalItems = [
+  const clientItems = [
+    { 
+      title: 'Liste des clients',
+      to: '/clients' },
+    { 
+      title: 'Nouveau client',
+      to: '/clients/new' }
+  ]
+
+  const legalItems = [
     {
       title: 'CGU',
       to: '/legal/cgu',

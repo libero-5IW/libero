@@ -141,7 +141,7 @@ export const useInvoiceStore = defineStore('invoice', () => {
     }
   }
 
-    async function sentPaidInvoiceToClient(id: string) {
+  async function sentPaidInvoiceToClient(id: string) {
     isLoading.value = true;
     try {
       const { data } = await apiClient.patch(`/invoices/${id}/send-paid`);
