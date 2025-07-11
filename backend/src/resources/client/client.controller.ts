@@ -40,7 +40,7 @@ export class ClientController {
     return this.clientService.exportToCSV(user.userId, term).then(({ content, filename }) => {
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.end(content);
+      res.end('\uFEFF' + content);
     });
   }  
 
