@@ -58,6 +58,9 @@ services:
       - .env
     environment:
       DATABASE_URL: postgres://admin:admin@postgres:5432/libero
+      DOCUSIGN_PRIVATE_KEY_FILE: /run/secrets/docusign_private_key
+    secrets:
+      - docusign_private_key
     depends_on:
       - postgres
     networks:
@@ -93,6 +96,10 @@ services:
 volumes:
   postgres_data:
   traefik_letsencrypt:
+
+secrets:
+  docusign_private_key:
+    external: true
 
 networks:
   libero-net:
