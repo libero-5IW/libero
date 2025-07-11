@@ -3,7 +3,7 @@ name: Deploy Libero to Swarm
 on:
   push:
     branches:
-      - clusterisation-v2
+      - main
 jobs:
   deploy:
     runs-on: ubuntu-latest
