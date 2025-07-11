@@ -18,7 +18,7 @@ import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { generateCSVExport } from 'src/common/utils/csv-export.util'; 
+import { generateCSVExport } from 'src/common/utils/csv-export.util';
 
 @Injectable()
 export class ContractTemplateService {
@@ -310,11 +310,11 @@ export class ContractTemplateService {
     pageSize?: number,
   ) {
     const baseWhere = buildTemplateSearchQuery(rawSearch, userId);
-  
+
     const adjustedEndDate = endDate
       ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
       : undefined;
-  
+
     const createdAtFilter =
       startDate || adjustedEndDate
         ? {
@@ -324,15 +324,15 @@ export class ContractTemplateService {
             },
           }
         : {};
-  
+
     const where = {
       ...baseWhere,
       ...createdAtFilter,
     };
-  
+
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
     const take = pageSize;
-  
+
     const [templates, totalCount] = await this.prisma.$transaction([
       this.prisma.contractTemplate.findMany({
         where,
@@ -343,17 +343,17 @@ export class ContractTemplateService {
       }),
       this.prisma.contractTemplate.count({ where }),
     ]);
-  
+
     const templatesWithUrls = await Promise.all(
       templates.map(async (template) => {
         const previewUrl = template.previewKey
           ? await this.s3Service.generateSignedUrl(template.previewKey)
           : null;
-  
+
         const pdfUrl = template.pdfKey
           ? await this.s3Service.generateSignedUrl(template.pdfKey)
           : null;
-  
+
         return {
           ...template,
           previewUrl,
@@ -361,22 +361,25 @@ export class ContractTemplateService {
         };
       }),
     );
-  
+
     const templatesWithSystemVariables = await Promise.all(
       templatesWithUrls.map((t) => this.mergeWithSystemVariables(t)),
     );
-  
+
     return {
-      contractTemplate: plainToInstance(ContractTemplateEntity, templatesWithSystemVariables),
+      contractTemplate: plainToInstance(
+        ContractTemplateEntity,
+        templatesWithSystemVariables,
+      ),
       total: totalCount,
     };
-  }  
+  }
 
   async exportToCSV(
     userId: string,
     search: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{ filename: string; content: string }> {
     const result = await this.search(userId, search, startDate, endDate);
 
@@ -405,5 +408,4 @@ export class ContractTemplateService {
 
     return { filename, content };
   }
-
 }

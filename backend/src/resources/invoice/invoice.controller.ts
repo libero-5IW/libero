@@ -7,7 +7,8 @@ import {
   Delete,
   Put,
   Query,
-  Res
+  Res,
+  Patch,
 } from '@nestjs/common';
 import { InvoiceService } from './invoice.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -52,21 +53,16 @@ export class InvoiceController {
     @Query() query: SearchInvoiceDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    const {
-      term = '',
-      status,
-      startDate,
-      endDate,
-      page,
-      pageSize,
-    } = query;
-  
+    const { term = '', status, startDate, endDate, page, pageSize } = query;
+
     const parsedStart = startDate ? new Date(startDate) : undefined;
     const parsedEnd = endDate ? new Date(endDate) : undefined;
-  
+
     const parsedPage = page ? parseInt(String(page), 10) : undefined;
-    const parsedPageSize = pageSize ? parseInt(String(pageSize), 10) : undefined;
-  
+    const parsedPageSize = pageSize
+      ? parseInt(String(pageSize), 10)
+      : undefined;
+
     return this.invoiceService.search(
       user.userId,
       term,
@@ -79,34 +75,28 @@ export class InvoiceController {
   }
 
   @Get('export')
-  exportInvoices(
+  async exportInvoices(
     @Query() query: SearchInvoiceDto,
     @CurrentUser() user: JwtPayload,
     @Res() res: Response,
   ) {
-    const {
-      term = '',
-      status,
-      startDate,
-      endDate,
-    } = query;
-  
+    const { term = '', status, startDate, endDate } = query;
+
     const parsedStart = startDate ? new Date(startDate) : undefined;
     const parsedEnd = endDate ? new Date(endDate) : undefined;
-  
-    return this.invoiceService.exportToCSV(
-      user.userId,
-      term,
-      status,
-      parsedStart,
-      parsedEnd
-    ).then(({ content, filename }) => {
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.end('\uFEFF' + content);
-    });
-  }  
-  
+
+    return this.invoiceService
+      .exportToCSV(user.userId, term, status, parsedStart, parsedEnd)
+      .then(({ content, filename }) => {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${filename}"`,
+        );
+        res.end('\uFEFF' + content);
+      });
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.invoiceService.findOne(id, user.userId);
@@ -126,5 +116,34 @@ export class InvoiceController {
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.invoiceService.remove(id, user.userId);
   }
-  
+
+  @Patch(':id/change-status')
+  changeStatus(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() body: { newStatus: InvoiceStatus },
+  ) {
+    return this.invoiceService.changeStatus(
+      id,
+      user.userId,
+      user.email,
+      body.newStatus,
+    );
+  }
+
+  @Patch(':id/send')
+  sendInvoiceToClient(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.invoiceService.sendInvoiceToClient(id, user.userId);
+  }
+
+  @Patch(':id/send-paid')
+  sendPaidInvoiceToClient(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.invoiceService.sendPaidInvoiceToClient(id, user.userId);
+  }
 }

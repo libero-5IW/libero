@@ -20,7 +20,9 @@ import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { generateCSVExport } from 'src/common/utils/csv-export.util'; 
+import { generateCSVExport } from 'src/common/utils/csv-export.util';
+import { MailerService } from 'src/common/mailer/mailer.service';
+import { ClientEntity } from '../client/entities/client.entity';
 
 @Injectable()
 export class InvoiceService {
@@ -31,6 +33,7 @@ export class InvoiceService {
     private readonly invoiceTemplateService: InvoiceTemplateService,
     private readonly pdfGeneratorService: PdfGeneratorService,
     private readonly s3Service: S3Service,
+    private readonly mailerService: MailerService,
   ) {}
 
   async create(userId: string, dto: CreateInvoiceDto): Promise<InvoiceEntity> {
@@ -274,11 +277,11 @@ export class InvoiceService {
     pageSize?: number,
   ) {
     const baseWhere = buildSearchQuery(search, userId, 'facture');
-  
+
     const adjustedEndDate = endDate
       ? new Date(new Date(endDate).setHours(23, 59, 59, 999))
       : undefined;
-  
+
     const issuedAtFilter =
       startDate || adjustedEndDate
         ? {
@@ -288,16 +291,16 @@ export class InvoiceService {
             },
           }
         : {};
-  
+
     const where = {
       ...baseWhere,
       ...(status ? { status } : {}),
       ...issuedAtFilter,
     };
-  
+
     const skip = page && pageSize ? (page - 1) * pageSize : undefined;
     const take = pageSize;
-  
+
     const [invoices, totalCount] = await this.prisma.$transaction([
       this.prisma.invoice.findMany({
         where,
@@ -313,7 +316,7 @@ export class InvoiceService {
       }),
       this.prisma.invoice.count({ where }),
     ]);
-  
+
     const invoicesWithUrls = await Promise.all(
       invoices.map(async (invoice) => ({
         ...invoice,
@@ -325,7 +328,7 @@ export class InvoiceService {
           : null,
       })),
     );
-  
+
     return {
       invoice: plainToInstance(InvoiceEntity, invoicesWithUrls, {
         excludeExtraneousValues: true,
@@ -333,22 +336,28 @@ export class InvoiceService {
       }),
       total: totalCount,
     };
-  }  
+  }
 
   async exportToCSV(
     userId: string,
     search: string,
     status?: InvoiceStatus,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
   ): Promise<{ filename: string; content: string }> {
-    const result = await this.search(userId, search, status, startDate, endDate);
-  
+    const result = await this.search(
+      userId,
+      search,
+      status,
+      startDate,
+      endDate,
+    );
+
     const rows = result.invoice.map((invoice) => {
       const clientName =
         invoice.variableValues?.find((v) => v.variableName === 'client_name')
           ?.value ?? 'Client inconnu';
-  
+
       const base = {
         numero: invoice.number,
         statut: invoice.status,
@@ -358,18 +367,22 @@ export class InvoiceService {
           : '',
         dateCreation: format(invoice.createdAt, 'dd/MM/yyyy', { locale: fr }),
       };
-  
-      const variableColumns = invoice.variableValues.reduce((acc, v) => {
-        acc[`var_${v.variableName}`] = `${v.value}${v.required ? ' (requis)' : ''}`;
-        return acc;
-      }, {} as Record<string, string>);
-  
+
+      const variableColumns = invoice.variableValues.reduce(
+        (acc, v) => {
+          acc[`var_${v.variableName}`] =
+            `${v.value}${v.required ? ' (requis)' : ''}`;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
       return {
         ...base,
         ...variableColumns,
       };
     });
-  
+
     const staticColumns = {
       numero: 'Numéro',
       statut: 'Statut',
@@ -377,22 +390,22 @@ export class InvoiceService {
       dateEmission: "Date d'émission",
       dateCreation: 'Date de création',
     };
-  
+
     const dynamicVariableKeys = new Set<string>();
     result.invoice.forEach((invoice) =>
       invoice.variableValues.forEach((v) =>
         dynamicVariableKeys.add(`var_${v.variableName}`),
-      )
+      ),
     );
-  
+
     const variableColumns = Array.from(dynamicVariableKeys).reduce(
       (acc, key) => {
         acc[key] = key.replace(/^var_/, 'Variable : ');
         return acc;
       },
-      {} as Record<string, string>
+      {} as Record<string, string>,
     );
-  
+
     const { filename, content } = generateCSVExport({
       rows,
       columns: {
@@ -402,8 +415,174 @@ export class InvoiceService {
       filenamePrefix: 'factures_export',
       firstRowLabel: rows[0]?.client ?? 'inconnu',
     });
-  
+
     return { filename, content };
   }
 
+  private generatePaidHtml(originalHtml: string, paidDate: Date): string {
+    const formattedDate = paidDate.toLocaleDateString('fr-FR');
+    const acquittedNotice = `
+    <div style="margin-top:40px;padding:25px;border:2px dashed #2e7d32;background-color:#e8f5e9;color:#2e7d32;text-align:center;border-radius:6px;">
+      <p style="margin:0;font-size:18px;font-weight:600;">
+        ✅ Facture acquittée
+      </p>
+      <p style="margin:5px 0 0 0;font-size:14px;">
+        Cette facture a été réglée en totalité le <strong>${formattedDate}</strong>.
+      </p>
+    </div>
+  `;
+
+    if (originalHtml.includes('</body>')) {
+      return originalHtml.replace('</body>', `${acquittedNotice}</body>`);
+    }
+
+    return `${originalHtml}${acquittedNotice}`;
+  }
+
+  async changeStatus(
+    id: string,
+    userId: string,
+    userEmail: string,
+    newStatus: InvoiceStatus,
+  ): Promise<InvoiceEntity> {
+    const invoice = await this.getInvoiceOrThrow(id, userId);
+    const currentStatus = invoice.status;
+
+    if (newStatus === currentStatus) {
+      return plainToInstance(InvoiceEntity, invoice, {
+        excludeExtraneousValues: true,
+        enableImplicitConversion: true,
+      });
+    }
+
+    const allowedTransitions: Record<InvoiceStatus, InvoiceStatus[]> = {
+      [InvoiceStatus.draft]: [InvoiceStatus.sent],
+      [InvoiceStatus.sent]: [
+        InvoiceStatus.paid,
+        InvoiceStatus.cancelled,
+        InvoiceStatus.overdue,
+      ],
+      [InvoiceStatus.overdue]: [InvoiceStatus.paid, InvoiceStatus.cancelled],
+      [InvoiceStatus.cancelled]: [],
+      [InvoiceStatus.paid]: [],
+    };
+
+    if (!allowedTransitions[currentStatus]?.includes(newStatus)) {
+      throw new BadRequestException(
+        `Transition du statut "${currentStatus}" vers "${newStatus}" non autorisée.`,
+      );
+    }
+
+    const updateData: any = { status: newStatus };
+
+    if (newStatus === InvoiceStatus.sent) {
+      updateData.issuedAt = new Date();
+    }
+
+    if (newStatus === InvoiceStatus.paid) {
+      const paidHtml = this.generatePaidHtml(invoice.generatedHtml, new Date());
+
+      const { pdfBuffer, previewBuffer } =
+        await this.pdfGeneratorService.generatePdfAndPreview(paidHtml);
+
+      if (invoice.pdfKey) await this.s3Service.deleteFile(invoice.pdfKey);
+      if (invoice.previewKey)
+        await this.s3Service.deleteFile(invoice.previewKey);
+
+      const { pdfKey, previewKey } = await this.s3Service.uploadDocumentAssets(
+        pdfBuffer,
+        previewBuffer,
+        userEmail,
+        'invoices',
+      );
+
+      updateData.generatedHtml = paidHtml;
+      updateData.pdfKey = pdfKey;
+      updateData.previewKey = previewKey;
+    }
+
+    const updatedInvoice = await this.prisma.invoice.update({
+      where: { id },
+      data: updateData,
+      include: { variableValues: true },
+    });
+
+    return plainToInstance(InvoiceEntity, updatedInvoice, {
+      excludeExtraneousValues: true,
+      enableImplicitConversion: true,
+    });
+  }
+
+  async sendInvoiceToClient(id: string, userId: string) {
+    const user = await this.userService.getUserOrThrow(userId);
+    const invoice = await this.getInvoiceOrThrow(id, userId);
+
+    if (
+      invoice.status !== InvoiceStatus.draft &&
+      invoice.status !== InvoiceStatus.sent
+    ) {
+      throw new BadRequestException(
+        `Impossible d’envoyer la facture : statut "${invoice.status}".`,
+      );
+    }
+
+    const client = await this.clientService.getClientOrThrow(
+      invoice.clientId,
+      userId,
+    );
+
+    const pdfBuffer = await this.s3Service.getFileBuffer(invoice.pdfKey);
+    const clientName = `${client.firstName} ${client.lastName.toUpperCase()}`;
+
+    await this.mailerService.sendInvoiceToPayEmail(
+      client.email,
+      clientName,
+      user,
+      invoice.number,
+      pdfBuffer,
+    );
+
+    await this.changeStatus(id, userId, user.email, InvoiceStatus.sent);
+
+    return plainToInstance(ClientEntity, client);
+  }
+
+  async sendPaidInvoiceToClient(id: string, userId: string) {
+    const user = await this.userService.getUserOrThrow(userId);
+    const invoice = await this.getInvoiceOrThrow(id, userId);
+
+    if (
+      invoice.status !== InvoiceStatus.paid &&
+      invoice.status !== InvoiceStatus.sent
+    ) {
+      throw new BadRequestException(
+        `Impossible d’envoyer la facture acquittée: statut "${invoice.status}".`,
+      );
+    }
+
+    const client = await this.clientService.getClientOrThrow(
+      invoice.clientId,
+      userId,
+    );
+
+    const newInvoice = await this.changeStatus(
+      id,
+      userId,
+      user.email,
+      InvoiceStatus.paid,
+    );
+
+    const pdfBuffer = await this.s3Service.getFileBuffer(newInvoice.pdfKey);
+    const clientName = `${client.firstName} ${client.lastName.toUpperCase()}`;
+
+    await this.mailerService.sendInvoicePaidEmail(
+      client.email,
+      clientName,
+      user,
+      invoice.number,
+      pdfBuffer,
+    );
+
+    return plainToInstance(ClientEntity, client);
+  }
 }

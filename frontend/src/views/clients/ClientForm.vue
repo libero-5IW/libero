@@ -13,6 +13,7 @@
 
           <v-form ref="formRef" @submit.prevent="onSubmit" aria-label="Formulaire de création ou modification de client">
             <v-text-field
+              class="mb-4"
               v-model="form.firstName"
               label="Prénom"
               type="text"
@@ -22,6 +23,7 @@
               aria-required="true"
             />
             <v-text-field
+              class="mb-4"
               v-model="form.lastName"
               label="Nom"
               type="text"
@@ -31,6 +33,7 @@
               aria-required="true"
             />
             <v-text-field
+              class="mb-4"
               v-model="form.email"
               label="Email"
               type="email"
@@ -40,6 +43,7 @@
               aria-required="true"
             />
             <v-text-field
+              class="mb-4"
               v-model="form.phoneNumber"
               label="Téléphone"
               type="tel"
@@ -49,6 +53,7 @@
               aria-required="true"
             />
             <v-text-field
+              class="mb-4"
               v-model="form.addressLine"
               label="Adresse"
               type="text"
@@ -58,6 +63,7 @@
               aria-required="true"
             />
             <v-text-field
+              class="mb-4"
               v-model="form.postalCode"
               label="Code postal"
               type="text"
@@ -67,6 +73,7 @@
               aria-required="true"
             />
             <v-text-field
+              class="mb-4"
               v-model="form.city"
               label="Ville"
               type="text"
@@ -85,7 +92,7 @@
               aria-required="true"
             />
 
-            <div class="d-flex justify-between mt-6">
+            <div class="d-flex justify-end mt-6 gap-4">
               <div v-if="isEdit" class="d-flex align-center">
                 <v-btn
                   color="error"
@@ -99,7 +106,7 @@
 
               <div class="d-flex align-center">
                 <v-btn text @click="cancel" aria-label="Annuler la modification">Annuler</v-btn>
-                <v-btn color="primary" type="submit" class="ml-2" :aria-label="isEdit ? 'Mettre à jour le client' : 'Créer le client'">
+                <v-btn color="primary" type="submit" class="ml-2" :aria-label="isEdit ? 'Mettre à jour le client' : 'Créer le client'" :disabled="!formRef?.isValid" >
                   {{ isEdit ? 'Mettre à jour' : 'Créer' }}
                 </v-btn>
               </div>
@@ -141,7 +148,6 @@ import {
 const router = useRouter()
 const route = useRoute()
 const clientStore = useClientStore()
-const authStore = useAuthStore()
 const { showToast } = useToastHandler()
 
 const formRef = ref()
@@ -174,11 +180,6 @@ const onSubmit = async () => {
   const result = await formRef.value?.validate()
   if (!result?.valid) {
     showToast('error', 'Veuillez remplir tous les champs correctement avant de valider.')
-    return
-  }
-
-  if (!authStore.user?.userId) {
-    showToast('error', 'Utilisateur non connecté.')
     return
   }
 

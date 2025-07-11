@@ -129,7 +129,6 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     let user = await this.findByEmail(email);
-    console.log('password', password);
 
     if (!user)
       throw new UnauthorizedException('Email ou mot de passe incorrect.');

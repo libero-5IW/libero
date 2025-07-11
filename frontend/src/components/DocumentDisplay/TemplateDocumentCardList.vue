@@ -33,12 +33,13 @@
           </template>
 
           <v-list v-if="!props.isLoading" class="rounded-xl py-1">
-            <v-list-item @click.stop="onEdit(item.id)">
-              <v-list-item-title>Éditer</v-list-item-title>
-            </v-list-item>
-
+            
             <v-list-item @click.stop="onDuplicate(item.id)">
               <v-list-item-title>Dupliquer</v-list-item-title>
+            </v-list-item>
+            
+            <v-list-item @click.stop="onEdit(item.id)">
+              <v-list-item-title class="text-orange-400">Éditer</v-list-item-title>
             </v-list-item>
 
             <v-list-item @click.stop="onDelete(item.id)">

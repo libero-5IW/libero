@@ -38,29 +38,43 @@
             </v-list-item>
 
             <v-list-item 
-              v-if="item.pdfUrl"
-              :href="item.pdfUrl"
-              target="_blank"
+              v-if="item.clientId && item.status !== 'signed' && (item.status === 'draft' || item.status === 'sent' || item.status === 'accepted')"
+              @click.stop="onSentToClient(item.id)"
             >
-              <v-list-item-title>Envoyer le PDF</v-list-item-title>
+              <v-list-item-title>{{ sentLabel(item.status, false) }} </v-list-item-title>
             </v-list-item>
 
-            <v-list-item @click.stop="onEdit(item.id)">
-              <v-list-item-title>Éditer</v-list-item-title>
+            <v-list-item 
+              v-if="item.clientId && props.type=== 'contract' && item.status === 'signed'"
+              @click.stop="onSentSignedToClient(item.id)"
+            >
+              <v-list-item-title>{{ sentLabel(item.status, true) }} </v-list-item-title>
             </v-list-item>
 
+            <v-list-item 
+              v-if="item.clientId && props.type === 'invoice' && (item.status === 'paid' || item.status === 'sent')"
+              @click.stop="onSentPaidToClient(item.id)"
+            >
+              <v-list-item-title>{{ sentLabel(item.status, true) }} </v-list-item-title>
+            </v-list-item>
+
+            
             <v-list-item
               v-if="props.type === 'quote'"
               @click.stop="onConvertToContract(item)"
-            >
+              >
               <v-list-item-title>Transformer en Contrat</v-list-item-title>
             </v-list-item>
-
+          
             <v-list-item
               v-if="props.type === 'quote' || props.type === 'contract'"
               @click.stop="onConvertToInvoice(item)"
-            >
+              >
               <v-list-item-title>Transformer en Facture</v-list-item-title>
+            </v-list-item>
+        
+            <v-list-item v-if="item.status === 'draft'" @click.stop="onEdit(item.id)">
+              <v-list-item-title class="text-orange-400">Éditer</v-list-item-title>
             </v-list-item>
 
             <v-list-item @click.stop="onDelete(item.id)">
@@ -76,7 +90,7 @@
       </v-card-title>
 
       <v-card-subtitle class="pb-4 text-sm text-gray-600">
-        Créé le {{ formatDate(item.createdAt) }} — <span class="capitalize">{{ translateStatus(item.status) }}</span>
+        Créé le {{ formatDate(item.createdAt) }} — <strong class="uppercase text-black">{{ translateStatus(item.status) }}</strong>
       </v-card-subtitle>
     </v-card>
   </div>
@@ -84,6 +98,7 @@
 
 <script setup lang="ts">
 import type { DocumentCard } from '@/types'
+import { translateStatus } from '@/utils/status'
 
 const props = defineProps<{
   items: DocumentCard[]
@@ -96,9 +111,36 @@ const emit = defineEmits<{
   (e: 'edit', id: string): void
   (e: 'delete', id: string): void
   (e: 'change-status', id: string): void
+  (e: 'sent-to-client', id: string): void
+  (e: 'sent-paid-to-client', id: string): void
+  (e: 'sent-signed-to-client', id: string): void
   (e: 'convert-to-invoice', item: DocumentCard): void
   (e: 'convert-to-contract', item: DocumentCard): void
 }>()
+
+function sentLabel (status: string, invoicePaid: boolean) {
+  let message = 'Renvoyer';
+  if (status === 'draft' || status === 'signed') {
+    message = 'Envoyer'
+  }
+  if(props.type === 'quote') {
+    message += ' le devis' 
+  } 
+  else if (props.type === 'contract' && (status === 'draft' || status === 'sent')) {
+    message += ' pour signature'
+  } 
+  else if (props.type === 'contract' && status === 'signed') {
+        message += ' le contrat signé'
+  }
+  else {
+    if(invoicePaid && (status === 'paid' || status === 'sent')) {
+      message = 'Envoyer la facture acquittée'
+    } else {
+            message += ' la facture non acquittée'
+    }
+  }
+  return message
+}
 
 function onEdit(id: string) {
   emit('edit', id)
@@ -118,6 +160,18 @@ function onDelete(id: string) {
   emit('delete', id)
 }
 
+function onSentToClient(id: string) {
+  emit('sent-to-client', id)
+}
+
+function onSentPaidToClient(id: string) {
+  emit('sent-paid-to-client', id)
+}
+
+function onSentSignedToClient(id: string) {
+  emit('sent-signed-to-client', id)
+}
+
 function onConvertToInvoice(item: DocumentCard) {
   emit('convert-to-invoice', item)
 }
@@ -128,31 +182,5 @@ function onConvertToContract(item: DocumentCard) {
 
 function onChangeStatus(item: DocumentCard) {
   emit('change-status', item.id)
-}
-
-function translateStatus (status: string) {
-  switch (status) {
-    case 'draft':
-      return 'Brouillon';
-    case 'sent':
-      return 'Envoyé';
-    case 'signed':
-      return 'Signé';
-    case 'expired':
-      return 'Expiré';
-    case 'cancelled':
-      return 'Annulé';
-    case 'paid':
-      return 'Payé';
-    case 'overdue':
-      return '';
-    case 'accepted':
-      return '';
-    case 'refused':
-      return '';
-    default:
-      return status;
-  }
-
 }
 </script>

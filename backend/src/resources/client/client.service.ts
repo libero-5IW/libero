@@ -11,7 +11,7 @@ import { ClientEntity } from './entities/client.entity';
 import { UserService } from '../user/user.service';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { generateCSVExport } from '../../common/utils/csv-export.util'
+import { generateCSVExport } from '../../common/utils/csv-export.util';
 
 @Injectable()
 export class ClientService {
@@ -67,14 +67,14 @@ export class ClientService {
     userId: string,
     updateClientDto: UpdateClientDto,
   ): Promise<ClientEntity> {
-    await this.getClientOrThrow(id, userId);
+    const client = await this.getClientOrThrow(id, userId);
 
-    if (updateClientDto.email) {
+    if (client.email) {
       const clientWithSameEmail = await this.prisma.client.findUnique({
         where: {
           userId_email: {
             userId,
-            email: updateClientDto.email,
+            email: client.email,
           },
         },
       });
@@ -119,7 +119,7 @@ export class ClientService {
 
   async search(userId: string, term: string): Promise<ClientEntity[]> {
     const raw = term.trim().toLowerCase();
-  
+
     const clients = await this.prisma.client.findMany({
       where: {
         userId,
@@ -133,13 +133,16 @@ export class ClientService {
       },
       orderBy: { createdAt: 'desc' },
     });
-  
-    return plainToInstance(ClientEntity, clients);
-  }  
 
-  async exportToCSV(userId: string, term?: string): Promise<{ filename: string; content: string }> {
+    return plainToInstance(ClientEntity, clients);
+  }
+
+  async exportToCSV(
+    userId: string,
+    term?: string,
+  ): Promise<{ filename: string; content: string }> {
     const raw = term?.trim().toLowerCase();
-  
+
     const clients = await this.prisma.client.findMany({
       where: {
         userId,
@@ -157,7 +160,7 @@ export class ClientService {
       },
       orderBy: { createdAt: 'desc' },
     });
-  
+
     const rows = clients.map((client) => ({
       prenom: client.firstName,
       nom: client.lastName,
@@ -169,7 +172,7 @@ export class ClientService {
       pays: client.country,
       dateCreation: format(client.createdAt, 'dd/MM/yyyy', { locale: fr }),
     }));
-  
+
     const columns = {
       prenom: 'Prénom',
       nom: 'Nom',
@@ -181,13 +184,14 @@ export class ClientService {
       pays: 'Pays',
       dateCreation: 'Date de création',
     };
-  
+
     return generateCSVExport({
       rows,
       columns,
       filenamePrefix: 'clients_export',
-      firstRowLabel: clients[0] ? `${clients[0].firstName}_${clients[0].lastName}` : 'inconnu',
+      firstRowLabel: clients[0]
+        ? `${clients[0].firstName}_${clients[0].lastName}`
+        : 'inconnu',
     });
-  }  
-
+  }
 }

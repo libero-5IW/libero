@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { Readable } from 'stream';
 
 @Injectable()
 export class S3Service {
@@ -87,5 +88,28 @@ export class S3Service {
     return await getSignedUrl(this.s3, command, {
       expiresIn: expiresInSeconds,
     });
+  }
+
+  async getFileBuffer(key: string): Promise<Buffer> {
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+    });
+
+    const response = await this.s3.send(command);
+
+    if (!response.Body || !(response.Body instanceof Readable)) {
+      throw new Error(
+        `Fichier introuvable ou corps non lisible pour la clé : ${key}`,
+      );
+    }
+
+    const chunks: Uint8Array[] = [];
+
+    for await (const chunk of response.Body) {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+
+    return Buffer.concat(chunks);
   }
 }

@@ -1,8 +1,9 @@
 export const CONTRACT_STATUS = {
     DRAFT: 'draft',
-    SENT: 'sent',
+    AWAITING_SIGNATURE: 'sent',
     SIGNED: 'signed',
     EXPIRED: 'expired',
     CANCELLED: 'cancelled',
+    DECLINED: 'declined'
 } as const;
   

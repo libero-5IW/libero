@@ -22,9 +22,10 @@ apiClient.interceptors.response.use(
     async (error) => {  
       const status = error.response?.status
       const authStore = useAuthStore()
+      await authStore.isUserAuthenticated()
       const token = localStorage.getItem('token')
 
-      if (status === 401 && (!token || !authStore.isAuthenticated)) {
+      if (status === 401 && (!token && !authStore.isAuthenticated)) {
         await authStore.logout();
       }
       return Promise.reject(error);

@@ -45,9 +45,11 @@ export class ValidateContractOnCreatePipe<
       );
     }
 
-    const systemVariables = await this.prisma.contractTemplateVariable.findMany({
-      where: { templateId: 'defaultTemplate' },
-    });
+    const systemVariables = await this.prisma.contractTemplateVariable.findMany(
+      {
+        where: { templateId: 'defaultTemplate' },
+      },
+    );
 
     return [...template.variables, ...systemVariables];
   }
@@ -64,7 +66,18 @@ export class ValidateContractOnCreatePipe<
       const { variableName, required, type } = variable;
       const rawValue = valueMap.get(variableName);
 
-      if (required && this.isEmpty(rawValue)) {
+      if (
+        required &&
+        this.isEmpty(rawValue) &&
+        ![
+          'freelancer_signature',
+          'freelancer_fullname_signed',
+          'freelancer_date_signed',
+          'client_signature',
+          'client_date_signed',
+          'client_fullname_signed',
+        ].includes(variableName)
+      ) {
         throw new BadRequestException(
           `La variable requise "${variableName}" est manquante ou vide.`,
         );

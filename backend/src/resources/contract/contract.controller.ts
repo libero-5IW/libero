@@ -7,7 +7,8 @@ import {
   Delete,
   Put,
   Query,
-  Res
+  Patch,
+  Res,
 } from '@nestjs/common';
 import { ContractService } from './contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -18,7 +19,6 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ValidateContractOnCreatePipe } from './pipes/create-validate-contract-variables.pipe';
 import { ValidateContractOnUpdatePipe } from './pipes/update-validate-contract.pipe';
 import { PrismaService } from 'src/database/prisma/prisma.service';
-import { ContractStatus } from '@prisma/client';
 import { SearchContractDto } from './dto/search-contract.dto';
 import { Response } from 'express';
 
@@ -52,21 +52,16 @@ export class ContractController {
     @Query() query: SearchContractDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    const {
-      term = '',
-      status,
-      startDate,
-      endDate,
-      page,
-      pageSize,
-    } = query;
-  
+    const { term = '', status, startDate, endDate, page, pageSize } = query;
+
     const parsedStart = startDate ? new Date(startDate) : undefined;
     const parsedEnd = endDate ? new Date(endDate) : undefined;
-  
+
     const parsedPage = page ? parseInt(String(page), 10) : undefined;
-    const parsedPageSize = pageSize ? parseInt(String(pageSize), 10) : undefined;
-  
+    const parsedPageSize = pageSize
+      ? parseInt(String(pageSize), 10)
+      : undefined;
+
     return this.contractService.search(
       user.userId,
       term,
@@ -76,7 +71,7 @@ export class ContractController {
       parsedPage,
       parsedPageSize,
     );
-  }   
+  }
 
   @Get('export')
   exportContracts(
@@ -84,24 +79,22 @@ export class ContractController {
     @CurrentUser() user: JwtPayload,
     @Res() res: Response,
   ) {
-    const {
-      term = '',
-      status,
-      startDate,
-      endDate,
-    } = query;
-  
+    const { term = '', status, startDate, endDate } = query;
+
     const parsedStart = startDate ? new Date(startDate) : undefined;
     const parsedEnd = endDate ? new Date(endDate) : undefined;
-  
+
     return this.contractService
       .exportToCSV(user.userId, term, status, parsedStart, parsedEnd)
       .then(({ content, filename }) => {
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader(
+          'Content-Disposition',
+          `attachment; filename="${filename}"`,
+        );
         res.end('\uFEFF' + content);
       });
-  }  
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -123,4 +116,16 @@ export class ContractController {
     return this.contractService.remove(id, user.userId);
   }
 
+  @Patch(':id/signature')
+  sendForSignature(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    return this.contractService.sendForSignature(id, user.userId);
+  }
+
+  @Patch(':id/send-signed')
+  sendSignedContractToClient(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ) {
+    return this.contractService.sendSignedContractToClient(id, user.userId);
+  }
 }
