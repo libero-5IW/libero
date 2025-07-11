@@ -22,6 +22,7 @@ export function generateCSVExport({
   const content = stringify.stringify(rows, {
     header: true,
     columns,
+    delimiter: ';',
   })
 
   const slug = rows[0]

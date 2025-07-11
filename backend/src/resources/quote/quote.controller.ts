@@ -99,7 +99,7 @@ export class QuoteController {
     ).then(({ content, filename }) => {
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.end(content);
+      res.end('\uFEFF' + content);
     });
   }  
 
