@@ -25,8 +25,7 @@
             :model-value="invoiceNumberVariable.value"
             :label="invoiceNumberVariable.label || 'Numéro de la facture'"
             readonly
-            class="mb-4"
-            :style="{ pointerEvents: 'none', opacity: 0.6 }"
+            class="mb-4 pointer-events-none opacity-60"
           />
 
           <v-card flat class="mb-4 pa-4">

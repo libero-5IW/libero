@@ -7,57 +7,68 @@
     width="250"
     class="transition-transform duration-300 ease-in-out"
   >
-    <div class="p-4">
-      <img src="@/assets/logo.png" alt="Logo" class="w-1/3 h-auto mx-auto" />
+    <div class="d-flex flex-column h-full">
+      <div>
+        <div class="p-4">
+          <img src="@/assets/logo.png" alt="Logo" class="w-1/3 h-auto mx-auto" />
+        </div>
+        <v-list>
+          <NavItemSingle title="Dashboard" to="/dashboard" icon="mdi-view-dashboard" />
+          
+          <NavGroupAccordian
+            v-model="activeGroup"
+            group-value="quote"
+            main-title="Devis"
+            main-icon="mdi-file-eye"
+            :items="quoteItems"
+           />
+
+          <NavGroupAccordian
+            v-model="activeGroup"
+            group-value="contract"
+            main-title="Contrats"
+            main-icon="mdi-file-sign"
+            :items="contractItems"
+           />
+
+          <NavGroupAccordian
+            v-model="activeGroup"
+            group-value="invoice"
+            main-title="Factures"
+            main-icon="mdi-invoice-list"
+            :items="invoiceItems"
+           />
+
+           <NavItemSingle title="Simulateur" to="/simulateur" icon="mdi-view-dashboard" />
+
+
+        </v-list>
+      </div>
+      <v-spacer />
+      <div>
+        <v-list>
+          <NavGroupAccordian
+            v-model="activeGroup"
+            group-value="legal"
+            main-title="Légal"
+            main-icon="mdi-file-document-outline"
+            :items="legalItems"
+          />
+        </v-list>
+      </div>
     </div>
-
-    <v-list>
-      <NavItemSingle title="Dashboard" to="/dashboard" icon="mdi-view-dashboard" />
-
-      <NavGroupAccordian
-        v-model="activeGroup"
-        group-value="quote"
-        main-title="Devis"
-        main-icon="mdi-file-eye"
-        :items="quoteItems"
-      />
-
-      <NavGroupAccordian
-        v-model="activeGroup"
-        group-value="contract"
-        main-title="Contrats"
-        main-icon="mdi-file-sign"
-        :items="contractItems"
-      />
-
-      <NavGroupAccordian
-        v-model="activeGroup"
-        group-value="invoice"
-        main-title="Factures"
-        main-icon="mdi-invoice-list"
-        :items="invoiceItems"
-      />
-
-      <NavGroupAccordian
-        v-model="activeGroup"
-        group-value="clients"
-        main-title="Clients"
-        main-icon="mdi-account-multiple"
-        :items="clientItems"
-      />
-    </v-list>
   </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
 import NavGroupAccordian from './NavGroupAccordian.vue'
-import NavItemSingle from './NavItemSingle.vue'
+  import NavItemSingle from './NavItemSingle.vue'
 
-defineProps<{
-  modelValue?: boolean
-  permanent?: boolean
-}>()
+  defineProps<{
+    modelValue?: boolean
+    permanent?: boolean
+  }>()
 
 defineEmits<{
   'update:modelValue': [value: boolean]
@@ -101,5 +112,20 @@ const clientItems = [
   { title: 'Liste des clients', to: '/clients' },
   { title: 'Nouveau client', to: '/clients/new' }
 ]
+
+const legalItems = [
+    {
+      title: 'CGU',
+      to: '/legal/cgu',
+    },
+    {
+      title: 'Mentions légales',
+      to: '/legal/mentions-legales',
+    },
+    {
+      title: 'Politique de confidentialité',
+      to: '/legal/politique-confidentialite',
+    },
+  ]
 </script>
 

@@ -149,8 +149,7 @@
                     <v-list-item
                     v-for="rule in rules"
                     :key="rule.text"
-                    class="d-flex align-center ma-0 pa-0"
-                    style="font-size: 0.85rem; color: #4a4a4a; line-height: 1.1;"
+                    class="d-flex align-center ma-0 pa-0 text-[0.85rem] text-[#4a4a4a] leading-[1.1]"
                     >
                     <v-icon :color="rule.valid ? 'success' : 'error'" class="mr-2">
                         {{ rule.valid ? 'mdi-check-circle' : 'mdi-close-circle' }}

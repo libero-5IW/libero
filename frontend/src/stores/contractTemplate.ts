@@ -25,6 +25,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       total.value = data.length
       currentPage.value = 1
     } catch (error) {
+      templates.value = []
       handleError(error, 'Erreur lors de la récupération des templates de contrat.')
     } finally {
       isLoading.value = false
@@ -37,6 +38,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       const { data } = await apiClient.get(`/contract-templates/${id}`)
       currentTemplate.value = ContractTemplateSchema.parse(data)
     } catch (error) {
+      currentTemplate.value = null
       handleError(error, 'Erreur lors de la récupération du template de contrat.')
     } finally {
       isLoading.value = false

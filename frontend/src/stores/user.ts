@@ -58,6 +58,15 @@ export const useUserStore = defineStore('userStore', () => {
     }
   }
 
+  async function fetch2FAStatus() {
+    try {
+      const res = await apiClient.get('/users/me')
+      return !!res.data.isTwoFactorEnabled
+    } catch (err: any) {
+      throw err.response?.data?.message || 'Erreur lors de la récupération du statut 2FA'
+    }
+  }
+
   return {
     user,
     loading,
@@ -66,5 +75,6 @@ export const useUserStore = defineStore('userStore', () => {
     updateProfile,
     changePassword,
     deleteAccount,
+    fetch2FAStatus
   }
 })

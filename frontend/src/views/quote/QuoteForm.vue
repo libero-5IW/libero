@@ -24,8 +24,7 @@
             :model-value="quoteNumberVariable.value"
             :label="quoteNumberVariable.label || 'Numéro du devis'"
             readonly
-            class="mb-4"
-            :style="{ pointerEvents: 'none', opacity: 0.6 }"
+            class="mb-4 pointer-events-none opacity-60"
           />
 
           <v-card flat class="mb-4 pa-4">
@@ -392,8 +391,7 @@ import { generateFinalHtml } from '@/utils/generateFinalHtml';
     orderedTemplateVariables.value.filter(
       (v) =>
         !v.variableName.startsWith('freelancer_') &&
-        !v.variableName.startsWith('client_') &&
-        v.variableName !== 'quote_number'
+        !v.variableName.startsWith('client_')
     )
   );
 
@@ -428,7 +426,7 @@ import { generateFinalHtml } from '@/utils/generateFinalHtml';
       variableValues: variablesValue.value.map(v => ({
         variableName: v.variableName,
         value: v.value,
-      })),
+      })),    
     };
 
     const quote = await quoteStore.createQuote(payload);

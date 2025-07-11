@@ -19,8 +19,32 @@
         />
       </v-col>
 
-      <v-col cols="12" md="4">
-        <v-card flat class="sticky-preview" :class="{ 'fullscreen-preview': isPreviewFullscreen }">
+      <!-- Preview Column -->
+      <v-col cols="12" md="4" class="h-full">
+        <template v-if="!isPreviewFullscreen">
+          <v-card flat class="sticky-preview h-full">
+            <QuoteTemplatePreview
+              :contentHtml="template.contentHtml"
+              :variables="getLabelVariables(template.variables)"
+              fileName="devis"
+            />
+            <div class="d-flex justify-center pa-2">
+              <v-btn
+                icon
+                @click="togglePreviewFullscreen"
+                :title="isPreviewFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
+              >
+                <v-icon>{{ isPreviewFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}</v-icon>
+              </v-btn>
+            </div>
+          </v-card>
+        </template>
+      </v-col>
+    </v-row>
+
+    <teleport to="body" v-if="isPreviewFullscreen">
+      <div class="fixed inset-0 z-[2000] bg-white flex flex-col items-center justify-center overflow-auto m-0 rounded-none">
+        <v-card flat class="w-full h-full max-w-[90vw] max-h-[90vh] overflow-auto">
           <QuoteTemplatePreview
             :contentHtml="template.contentHtml"
             :variables="getLabelVariables(template.variables)"
@@ -36,8 +60,8 @@
             </v-btn>
           </div>
         </v-card>
-      </v-col>
-    </v-row>
+      </div>
+    </teleport>
 
     <ImportVariableModal
       v-model="showImportModal"
