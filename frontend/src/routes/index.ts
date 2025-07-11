@@ -14,7 +14,7 @@ import contractRoutes from '@/routes/contract'
 import legalRoutes from './legal';
 import apiRoutes from './api'
 
-const routes: Array<RouteRecordRaw> = [
+const authenticatedRoutes: Array<RouteRecordRaw> = [
   {
     path: '/',
     component: DefaultLayout,
@@ -34,6 +34,11 @@ const routes: Array<RouteRecordRaw> = [
     ]
   },
   
+]
+
+const routes: Array<RouteRecordRaw> = [
+  ...authenticatedRoutes,
+  ...publicRoutes,
 ]
 
 const router = createRouter({
