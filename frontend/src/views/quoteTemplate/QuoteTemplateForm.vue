@@ -1,8 +1,21 @@
 <template>
-   <v-card flat class="mb-4">
-        <EditableHeader v-model="template.name" back-route-name="QuoteTemplateList" />
-      </v-card>
-  <v-container fluid>
+  <v-card flat class="mb-4">
+    <EditableHeader
+      v-model="template.name"
+      back-route-name="QuoteTemplateList"
+      aria-label="Édition du nom du template de devis"
+    />
+  </v-card>
+
+  <v-container
+    fluid
+    role="main"
+    aria-labelledby="quote-template-title"
+    tabindex="-1"
+    ref="mainContent"
+  >
+    <h1 id="quote-template-title" class="sr-only">Édition d’un template de devis</h1>
+
     <v-row>
       <v-col cols="12" md="8">
         <QuoteTemplateFormMain
@@ -13,7 +26,7 @@
           :variables="template.variables"
           :isLoading="isLoading"
           @openEditModal="openEditModal"
-          @openRemoveModal="removeVariable" 
+          @openRemoveModal="removeVariable"
           @openImportModal="showImportModal = true"
           @openVariableFormModal="openCreateModal"
         />
@@ -22,7 +35,7 @@
       <!-- Preview Column -->
       <v-col cols="12" md="4" class="h-full">
         <template v-if="!isPreviewFullscreen">
-          <v-card flat class="sticky-preview h-full">
+          <v-card flat class="sticky-preview h-full" :class="{ 'fullscreen-preview': isPreviewFullscreen }">
             <QuoteTemplatePreview
               :contentHtml="template.contentHtml"
               :variables="getLabelVariables(template.variables)"
@@ -49,14 +62,18 @@
             :contentHtml="template.contentHtml"
             :variables="getLabelVariables(template.variables)"
             fileName="devis"
+            aria-label="Prévisualisation du template PDF de devis"
+            role="region"
           />
           <div class="d-flex justify-center pa-2">
             <v-btn
               icon
               @click="togglePreviewFullscreen"
-              :title="isPreviewFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'"
+              :aria-label="isPreviewFullscreen ? 'Quitter le mode plein écran' : 'Activer le mode plein écran'"
             >
-              <v-icon>{{ isPreviewFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}</v-icon>
+              <v-icon>
+                {{ isPreviewFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen' }}
+              </v-icon>
             </v-btn>
           </div>
         </v-card>

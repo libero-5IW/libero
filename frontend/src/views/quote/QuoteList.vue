@@ -1,8 +1,8 @@
 <template>
-  <div class="ml-4 mt-8">
+  <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="quote-page-title" tabindex="-1" ref="mainContent">
     <div class="flex items-center justify-between mb-10">
-      <h1 class="text-xl font-bold">Liste des devis</h1>
-      <v-btn color="primary" @click="showTemplateModal = true">
+      <h1 id="quote-page-title" class="text-xl font-bold">Liste des devis</h1>
+      <v-btn color="primary" @click="showTemplateModal = true" aria-label="Créer un nouveau devis">
         <v-icon start>mdi-plus</v-icon>
         Nouveau devis
       </v-btn>
@@ -12,10 +12,11 @@
       <SearchInput
         v-model="search"
         placeholder="Rechercher un devis"
-        @search="fetchQuotes"
         class="w-64"
         density="compact"
         hide-details
+        aria-label="Rechercher un devis"
+        @search="fetchQuotes"
       />
 
       <v-select
@@ -24,63 +25,56 @@
         item-title="label"
         item-value="value"
         label="Filtrer par statut"
+        class="w-48"
         density="compact"
         hide-details
-        class="w-48"
         clearable
+        aria-label="Filtrer les devis par statut"
         @update:modelValue="fetchQuotes"
       />
 
       <v-text-field
-          v-model="startDate"
-          label="Date de début"
-          type="date"
-          density="compact"
-          hide-details
-          class="w-48"
-        >
+        v-model="startDate"
+        label="Date de début"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+        aria-label="Filtrer par date de début d’envoi au client"
+      >
         <template #append-inner>
           <v-tooltip text="Date d'envoi" location="top">
             <template #activator="{ props }">
-              <v-icon
-                v-bind="props"
-                icon="mdi-information-outline"
-                class="ml-1"
-                size="18"
-              />
+              <v-icon v-bind="props" icon="mdi-information-outline" class="ml-1" size="18" />
             </template>
           </v-tooltip>
         </template>
       </v-text-field>
 
       <v-text-field
-          v-model="endDate"
-          label="Date de fin"
-          type="date"
-          density="compact"
-          hide-details
-          class="w-48"
-        >
-          <template #append-inner>
-            <v-tooltip text="Date d'envoi" location="top">
-              <template #activator="{ props }">
-                <v-icon
-                  v-bind="props"
-                  icon="mdi-information-outline"
-                  class="ml-1"
-                  size="18"
-                />
-              </template>
-            </v-tooltip>
-          </template>
-        </v-text-field>
+        v-model="endDate"
+        label="Date de fin"
+        type="date"
+        class="w-48"
+        density="compact"
+        hide-details
+        aria-label="Filtrer par date de fin d’envoi au client"
+      >
+        <template #append-inner>
+          <v-tooltip text="Date d'envoi" location="top">
+            <template #activator="{ props }">
+              <v-icon v-bind="props" icon="mdi-information-outline" class="ml-1" size="18" />
+            </template>
+          </v-tooltip>
+        </template>
+      </v-text-field>
     </div>
 
     <v-progress-linear
-    v-if="isLoading"
-    indeterminate
-    color="primary"
-    class="mb-4"
+      v-if="isLoading"
+      indeterminate
+      color="primary"
+      class="mb-4"
     />
 
     <div v-if="documentCards.length > 0">
@@ -100,11 +94,12 @@
     <div
       v-else
       class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+      role="status"
+      aria-live="polite"
     >
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucun devis créé pour le moment.</p>
     </div>
-
   </div>
 
   <TemplateSelectionModal 
@@ -139,10 +134,10 @@
   />
 
   <Pagination
-  :total-items="quoteStore.total"
-  :current-page="quoteStore.currentPage"
-  :page-size="quoteStore.pageSize"
-  @page-changed="handlePageChange"
+    :total-items="quoteStore.total"
+    :current-page="quoteStore.currentPage"
+    :page-size="quoteStore.pageSize"
+    @page-changed="handlePageChange"
   />
 </template>
 

@@ -8,16 +8,25 @@
     @templateSelected="handleTemplateSelected"
   />
 
-  <div v-if="selectedTemplateId">
+  <div
+    v-if="selectedTemplateId"
+    class="focus:outline-none"
+    role="main"
+    aria-labelledby="invoice-form-title"
+    tabindex="-1"
+    ref="mainContent"
+  >
     <v-container fluid>
       <v-row dense>
         <v-col cols="12" md="8">
+          <h1 id="invoice-form-title" class="sr-only">Création d’une facture</h1>
 
           <v-text-field
             :model-value="currentTemplate?.name ?? 'Template inconnu'"
             label="Template utilisé"
             readonly
             class="mb-6"
+            aria-label="Template utilisé"
           />
 
           <v-text-field
@@ -26,6 +35,8 @@
             :label="invoiceNumberVariable.label || 'Numéro de la facture'"
             readonly
             class="mb-4 pointer-events-none opacity-60"
+            :style="{ pointerEvents: 'none', opacity: 0.6 }"
+            aria-label="Numéro de la facture"
           />
 
           <v-card flat class="mb-4 pa-4">
@@ -33,6 +44,7 @@
               title="Informations du Freelance"
               :variables="freelancerVariables"
               :variablesValue="variablesValue"
+              section-label="Section informations du freelance"
             />
 
             <TemplateVariableSection
@@ -41,12 +53,14 @@
               :variablesValue="variablesValue"
               :clients="clients"
               v-model:selectedClientId="selectedClientId"
+              section-label="Section informations du client"
             />
 
             <TemplateVariableSection
               title="Autres Informations"
               :variables="otherVariables"
               :variablesValue="variablesValue"
+              section-label="Section autres informations"
             />
 
             <v-btn
@@ -54,6 +68,8 @@
               color="primary"
               @click="onCreateInvoice"
               :disabled="!canCreate || isLoading"
+              aria-label="Créer la facture"
+              role="button"
             >
               <template v-if="!isLoading">
                 <v-icon start>mdi-content-save</v-icon>
@@ -64,6 +80,7 @@
                 indeterminate
                 size="20"
                 color="secondary"
+                aria-label="Chargement de la création de la facture"
               />
             </v-btn>
           </v-card>
@@ -74,28 +91,33 @@
             :contentHtml="previewHtml"
             :variables="previewVariables"
             fileName="facture"
+            aria-label="Prévisualisation de la facture PDF"
+            role="region"
           />
         </v-col>
       </v-row>
-    </v-container>
 
-    <v-btn
-      v-if="isEditMode"
-      color="primary"
-      @click="saveInvoice"
-      :disabled="isLoading"
-    >
-      <template v-if="!isLoading">
-        <v-icon start>mdi-content-save</v-icon>
-        Enregistrer
-      </template>
-      <v-progress-circular
-        v-else
-        indeterminate
-        size="20"
-        color="white"
-      />
-    </v-btn>
+      <v-btn
+        v-if="isEditMode"
+        color="primary"
+        @click="saveInvoice"
+        :disabled="isLoading"
+        aria-label="Enregistrer la facture"
+        role="button"
+      >
+        <template v-if="!isLoading">
+          <v-icon start>mdi-content-save</v-icon>
+          Enregistrer
+        </template>
+        <v-progress-circular
+          v-else
+          indeterminate
+          size="20"
+          color="white"
+          aria-label="Enregistrement en cours de la facture"
+        />
+      </v-btn>
+    </v-container>
   </div>
 </template>
 

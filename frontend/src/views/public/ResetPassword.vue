@@ -12,6 +12,7 @@
       <v-card class="px-2 py-4 mx-auto" max-width="600" elevation="0">
           
           <div v-if="!tokenValid">
+            <h1 id="form-title-expired" class="sr-only" tabindex="-1">Lien expiré</h1>
             <v-card-title>
               <span class="font-weight-black">Lien expiré</span>
             </v-card-title>
@@ -31,6 +32,7 @@
           </div>
 
           <div v-else>
+            <h1 id="form-title" class="sr-only" tabindex="-1">Nouveau mot de passe</h1>
             <v-card-title>
               <span class="font-weight-black">Nouveau mot de passe</span>
             </v-card-title>
@@ -40,7 +42,7 @@
             </v-card-subtitle>
             
             <v-card-text>
-              <v-form  ref="formRef" lazy-validation>
+              <v-form  ref="formRef" lazy-validation role="form" aria-labelledby="form-title"              >
                 <v-text-field
                 label="Nouveau mot de passe"
                 type="password"
@@ -107,12 +109,19 @@ onMounted(async () => {
   if (!token) {
     tokenValid.value = false;
     loadingToken.value = false;
+
+    const expiredTitle = document.getElementById('form-title-expired');
+    if (expiredTitle) expiredTitle.focus();
+    
     return;
   }
-  
+
   await authStore.checkResetToken(token);
   tokenValid.value = true;
   loadingToken.value = false;
+
+  const resetTitle = document.getElementById('form-title');
+  if (resetTitle) resetTitle.focus();
 });
 
 const submit = async () => {
