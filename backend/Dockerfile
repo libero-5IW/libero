@@ -1,5 +1,5 @@
-FROM --platform=linux/arm64 node:20-slim
-#FROM node:20-slim
+#FROM --platform=linux/arm64 node:20-slim
+FROM node:20-slim
 
 RUN apt-get update && apt-get install -y \
     chromium \
@@ -24,8 +24,8 @@ RUN apt-get update && apt-get install -y \
     libvulkan1 \
     libgbm1 \ 
     --no-install-recommends \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
