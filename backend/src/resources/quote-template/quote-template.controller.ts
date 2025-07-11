@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Res
 } from '@nestjs/common';
 import { QuoteTemplateService } from './quote-template.service';
 import { CreateQuoteTemplateDto } from './dto/create-quote-template.dto';
@@ -17,6 +18,7 @@ import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { SearchQuoteTemplateDto } from './dto/search-quote-template.dto';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @Controller('quote-templates')
@@ -68,6 +70,29 @@ export class QuoteTemplateController {
       parsedPageSize,
     );
   }
+
+  @Get('export')
+  exportTemplates(
+    @Query() query: SearchQuoteTemplateDto,
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const { term = '', startDate, endDate } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.quoteTemplateService.exportToCSV(
+      user.userId,
+      term,
+      parsedStart,
+      parsedEnd,
+    ).then(({ content, filename }) => {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.end('\uFEFF' + content);
+    });
+  }  
 
   @Get()
   findAll(

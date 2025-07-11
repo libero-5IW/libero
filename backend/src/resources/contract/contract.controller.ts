@@ -6,7 +6,8 @@ import {
   Param,
   Delete,
   Put,
-  Query
+  Query,
+  Res
 } from '@nestjs/common';
 import { ContractService } from './contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -19,6 +20,7 @@ import { ValidateContractOnUpdatePipe } from './pipes/update-validate-contract.p
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { ContractStatus } from '@prisma/client';
 import { SearchContractDto } from './dto/search-contract.dto';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @ApiTags('Contracts')
@@ -75,6 +77,31 @@ export class ContractController {
       parsedPageSize,
     );
   }   
+
+  @Get('export')
+  exportContracts(
+    @Query() query: SearchContractDto,
+    @CurrentUser() user: JwtPayload,
+    @Res() res: Response,
+  ) {
+    const {
+      term = '',
+      status,
+      startDate,
+      endDate,
+    } = query;
+  
+    const parsedStart = startDate ? new Date(startDate) : undefined;
+    const parsedEnd = endDate ? new Date(endDate) : undefined;
+  
+    return this.contractService
+      .exportToCSV(user.userId, term, status, parsedStart, parsedEnd)
+      .then(({ content, filename }) => {
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.end('\uFEFF' + content);
+      });
+  }  
 
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: JwtPayload) {

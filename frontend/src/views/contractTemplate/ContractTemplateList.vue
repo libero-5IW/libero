@@ -1,11 +1,17 @@
 <template>
   <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="contract-template-page-title" tabindex="-1" ref="mainContent">
     <div class="flex items-center justify-between mb-6">
-      <span id="contract-template-page-title" class="text-xl font-semibold">Templates de contrats</span>
-      <v-btn color="primary" @click="createTemplate" aria-label="Créer un nouveau template de contrat">
+      <span class="text-xl font-semibold">Templates de contrats</span>
+      <div class="flex gap-2">
+      <v-btn color="primary" @click="createTemplate">
         <v-icon start>mdi-plus</v-icon>
         Nouveau template
       </v-btn>
+      <v-btn color="primary" @click="exportTemplatesAsCSV">
+        <v-icon start>mdi-download</v-icon>
+        Exporter CSV
+      </v-btn>
+      </div>
     </div>
     
     <div class="flex items-center gap-4 mb-6">
@@ -196,6 +202,19 @@ async function handleSearch(term: string) {
     await contractTemplate.fetchAllTemplates(false)
   } else {
     await contractTemplate.searchTemplates(term, startDate.value, endDate.value)
+  }
+}
+
+async function exportTemplatesAsCSV() {
+  try {
+    await contractTemplate.exportContractTemplates(
+      search.value,
+      startDate.value ?? undefined,
+      endDate.value ?? undefined
+    );
+    showToast('success', 'Export CSV généré avec succès.');
+  } catch (e) {
+    showToast('error', 'Erreur lors de l’export CSV.');
   }
 }
 

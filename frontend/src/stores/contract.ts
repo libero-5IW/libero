@@ -119,6 +119,39 @@ export const useContractStore = defineStore('contract', () => {
     }
   }  
 
+  async function exportContracts(
+    term = '',
+    status?: string,
+    startDate?: string,
+    endDate?: string
+  ) {
+    try {
+      const response = await apiClient.get('/contracts/export', {
+        params: {
+          term,
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+        responseType: 'blob',
+      });
+  
+      const disposition = response.headers?.['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? `contrats_export_${Date.now()}.csv`;
+  
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’export CSV.');
+    }
+  }  
+
   return {
     contracts,
     currentContract,
@@ -133,5 +166,6 @@ export const useContractStore = defineStore('contract', () => {
     total,
     currentPage,
     pageSize,
+    exportContracts
   };
 });

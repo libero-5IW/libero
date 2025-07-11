@@ -18,6 +18,9 @@ import { InvoiceTemplateVariableEntity } from '../invoice-template/entities/invo
 import { S3Service } from 'src/common/s3/s3.service';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { buildSearchQuery } from 'src/common/utils/buildSearchQuery.util';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { generateCSVExport } from 'src/common/utils/csv-export.util'; 
 
 @Injectable()
 export class InvoiceService {
@@ -331,5 +334,76 @@ export class InvoiceService {
       total: totalCount,
     };
   }  
+
+  async exportToCSV(
+    userId: string,
+    search: string,
+    status?: InvoiceStatus,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{ filename: string; content: string }> {
+    const result = await this.search(userId, search, status, startDate, endDate);
+  
+    const rows = result.invoice.map((invoice) => {
+      const clientName =
+        invoice.variableValues?.find((v) => v.variableName === 'client_name')
+          ?.value ?? 'Client inconnu';
+  
+      const base = {
+        numero: invoice.number,
+        statut: invoice.status,
+        client: clientName,
+        dateEmission: invoice.issuedAt
+          ? format(invoice.issuedAt, 'dd/MM/yyyy', { locale: fr })
+          : '',
+        dateCreation: format(invoice.createdAt, 'dd/MM/yyyy', { locale: fr }),
+      };
+  
+      const variableColumns = invoice.variableValues.reduce((acc, v) => {
+        acc[`var_${v.variableName}`] = `${v.value}${v.required ? ' (requis)' : ''}`;
+        return acc;
+      }, {} as Record<string, string>);
+  
+      return {
+        ...base,
+        ...variableColumns,
+      };
+    });
+  
+    const staticColumns = {
+      numero: 'Numéro',
+      statut: 'Statut',
+      client: 'Client',
+      dateEmission: "Date d'émission",
+      dateCreation: 'Date de création',
+    };
+  
+    const dynamicVariableKeys = new Set<string>();
+    result.invoice.forEach((invoice) =>
+      invoice.variableValues.forEach((v) =>
+        dynamicVariableKeys.add(`var_${v.variableName}`),
+      )
+    );
+  
+    const variableColumns = Array.from(dynamicVariableKeys).reduce(
+      (acc, key) => {
+        acc[key] = key.replace(/^var_/, 'Variable : ');
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+  
+    const { filename, content } = generateCSVExport({
+      rows,
+      columns: {
+        ...staticColumns,
+        ...variableColumns,
+      },
+      filenamePrefix: 'factures_export',
+      firstRowLabel: rows[0]?.client ?? 'inconnu',
+    });
+  
+    return { filename, content };
+  }
 
 }

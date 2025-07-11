@@ -16,6 +16,9 @@ import { VariableType } from 'src/common/enums/variable-type.enum';
 import { buildTemplateSearchQuery } from 'src/common/utils/buildTemplateSearchQuery';
 import { S3Service } from 'src/common/s3/s3.service';
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { generateCSVExport } from 'src/common/utils/csv-export.util';
 
 @Injectable()
 export class InvoiceTemplateService {
@@ -365,5 +368,39 @@ export class InvoiceTemplateService {
       total: totalCount,
     };
   }
+
+  async exportToCSV(
+    userId: string,
+    search: string,
+    startDate?: Date,
+    endDate?: Date
+  ): Promise<{ filename: string; content: string }> {
+    const result = await this.search(userId, search, startDate, endDate);
+  
+    const rows = result.invoiceTemplate.map((template) => ({
+      nom: template.name,
+      dateCreation: format(template.createdAt, 'dd/MM/yyyy', { locale: fr }),
+      variables: template.variables.length,
+      nomsVariables: template.variables
+        .map((v) => `${v.variableName}${v.required ? ' (requis)' : ''}`)
+        .join(', '),
+    }));
+  
+    const staticColumns = {
+      nom: 'Nom du modèle',
+      dateCreation: 'Date de création',
+      variables: 'Nombre de variables',
+      nomsVariables: 'Noms des variables',
+    };
+  
+    const { filename, content } = generateCSVExport({
+      rows,
+      columns: staticColumns,
+      filenamePrefix: 'templates_facture_export',
+      firstRowLabel: rows[0]?.nom ?? 'inconnu',
+    });
+  
+    return { filename, content };
+  }  
     
 }
