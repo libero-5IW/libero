@@ -45,8 +45,4 @@ const user = computed(() => userStore.user)
 onMounted(() => {
   userStore.fetchCurrentUser()
 })
-
-const logout = async () => {
-  await authStore.logout();
-}
 </script>

@@ -16,6 +16,7 @@ import { TwoFactorAuthService } from './2fa/2fa.service';
 import { UserService } from '../user/user.service';
 import { RequestResetPasswordDto } from './dto/request-reset-password';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -45,7 +46,8 @@ export class AuthController {
   @Post('2fa/verify')
   async verify2fa(@Body() body: { userId: string; token: string }) {
     const user = await this.userService.findOne(body.userId);
-    if (!user || !user.twoFactorSecret) throw new UnauthorizedException('Utilisateur ou secret 2FA introuvable');
+    if (!user || !user.twoFactorSecret)
+      throw new UnauthorizedException('Utilisateur ou secret 2FA introuvable');
 
     const isValid = this.twoFAService.verifyToken(
       user.twoFactorSecret,
@@ -82,7 +84,7 @@ export class AuthController {
   }
 
   @Get('me')
-  async getAuthInfo(@CurrentUser() user: any) {
+  async getAuthInfo(@CurrentUser() user: JwtPayload) {
     const userInDb = await this.userService.findOne(user.userId);
     if (!userInDb) {
       throw new UnauthorizedException('Utilisateur introuvable');

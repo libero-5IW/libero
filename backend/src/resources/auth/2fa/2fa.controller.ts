@@ -1,14 +1,6 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Req,
-  UseGuards,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Controller, Post, Body, Req } from '@nestjs/common';
 import { TwoFactorAuthService } from './2fa.service';
-import { UserService } from '../../user/user.service'; 
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UserService } from '../../user/user.service';
 
 @Controller('2fa')
 export class TwoFactorAuthController {
@@ -17,7 +9,6 @@ export class TwoFactorAuthController {
     private readonly usersService: UserService,
   ) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post('generate')
   async generate(@Req() req) {
     const user = req.user;
@@ -29,7 +20,6 @@ export class TwoFactorAuthController {
     return { qrCode, secret: secret.base32 };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('enable')
   async enable(@Req() req, @Body('token') token: string) {
     const user = await this.usersService.findOne(req.user.userId);
@@ -41,10 +31,12 @@ export class TwoFactorAuthController {
     return { valid: isValid };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('disable')
   async disable(@Req() req, @Body('password') password: string) {
-    await this.usersService.disableTwoFactorWithPassword(req.user.userId, password);
+    await this.usersService.disableTwoFactorWithPassword(
+      req.user.userId,
+      password,
+    );
     return { success: true };
   }
 }
