@@ -19,33 +19,33 @@
          </div>
        </template>
      </LoginForm>
-   </CenteredContainer>
-  <div v-else class="px-4 py-8 max-w-[400px] mx-auto flex flex-col items-center justify-center bg-white rounded-lg">
-    <div class="w-full">
-      <div class="flex justify-center mb-4">
-        <v-icon color="primary" size="40">mdi-shield-key-outline</v-icon>
-      </div>
-      <h2 class="text-2xl font-black mb-2 text-center">Vérification en deux étapes</h2>
-      <div class="mb-6 text-gray-600 text-center text-base">Veuillez entrer le code de vérification généré par votre application d'authentification.</div>
-      <v-text-field
-        v-model="twoFAToken"
-        label="Code 2FA"
-        maxlength="6"
-        class="mb-4 text-center text-lg tracking-widest"
+     <div v-else class="px-4 py-8 max-w-[400px] mx-auto flex flex-col items-center justify-center bg-white rounded-lg">
+       <div class="w-full">
+         <div class="flex justify-center mb-4">
+           <v-icon color="primary" size="40">mdi-shield-key-outline</v-icon>
+          </div>
+          <h2 class="text-2xl font-black mb-2 text-center">Vérification en deux étapes</h2>
+          <div class="mb-6 text-gray-600 text-center text-base">Veuillez entrer le code de vérification généré par votre application d'authentification.</div>
+          <v-text-field
+          v-model="twoFAToken"
+          label="Code 2FA"
+          maxlength="6"
+          class="mb-4 text-center text-lg tracking-widest"
         prepend-inner-icon="mdi-lock"
         type="text"
         inputmode="numeric"
         placeholder="123456"
         hide-details="auto"
-      />
-      <v-btn :loading="loading" color="primary" block class="mb-2" @click="handle2FAVerify">
-        Vérifier
-      </v-btn>
-      <div class="text-center mt-2">
-        <v-btn variant="text" @click="reset2FA">Retour</v-btn>
+        />
+        <v-btn :loading="loading" color="primary" block class="mb-2" @click="handle2FAVerify">
+          Vérifier
+        </v-btn>
+        <div class="text-center mt-2">
+          <v-btn variant="text" @click="reset2FA">Retour</v-btn>
+        </div>
       </div>
     </div>
-  </div>
+  </CenteredContainer>
 </template>
 
 <script setup lang="ts">
