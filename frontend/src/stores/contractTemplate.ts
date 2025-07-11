@@ -25,6 +25,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       total.value = data.length
       currentPage.value = 1
     } catch (error) {
+      templates.value = []
       handleError(error, 'Erreur lors de la récupération des templates de contrat.')
     } finally {
       isLoading.value = false
@@ -37,6 +38,7 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
       const { data } = await apiClient.get(`/contract-templates/${id}`)
       currentTemplate.value = ContractTemplateSchema.parse(data)
     } catch (error) {
+      currentTemplate.value = null
       handleError(error, 'Erreur lors de la récupération du template de contrat.')
     } finally {
       isLoading.value = false
@@ -136,6 +138,37 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
     }
   }  
 
+  async function exportContractTemplates(
+    term = '',
+    startDate?: string,
+    endDate?: string
+  ) {
+    try {
+      const response = await apiClient.get('/contract-templates/export', {
+        params: {
+          term,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+        responseType: 'blob',
+      });
+  
+      const disposition = response.headers?.['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? `contract_templates_export_${Date.now()}.csv`;
+  
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’export CSV des templates de contrat.');
+    }
+  }  
+
   return {
     templates,
     currentTemplate,
@@ -152,5 +185,6 @@ export const useContractTemplateStore = defineStore('contractTemplate', () => {
     total,
     currentPage,
     pageSize,
+    exportContractTemplates
   }
 })

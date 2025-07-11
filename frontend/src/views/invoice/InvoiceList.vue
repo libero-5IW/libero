@@ -1,11 +1,17 @@
 <template>
-  <div class="ml-4 mt-8">
+  <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="invoice-page-title" tabindex="-1" ref="mainContent">
     <div class="flex items-center justify-between mb-10">
       <h1 class="text-xl font-bold">Liste des factures</h1>
-      <v-btn color="primary" @click="showTemplateModal = true">
-        <v-icon start>mdi-plus</v-icon>
-        Nouveau facture
-      </v-btn>
+      <div class="flex gap-2">
+        <v-btn color="primary" @click="showTemplateModal = true">
+          <v-icon start>mdi-plus</v-icon>
+          Nouveau facture
+        </v-btn>
+        <v-btn color="primary" @click="exportInvoicesAsCSV">
+          <v-icon start>mdi-download</v-icon>
+          Exporter CSV
+        </v-btn>
+      </div>
     </div>
 
     <div class="flex items-center gap-4 mb-6">
@@ -15,6 +21,7 @@
         class="w-64"
         density="compact"
         hide-details
+        aria-label="Rechercher une facture"
         @search="fetchInvoices"
       />
 
@@ -28,6 +35,7 @@
         density="compact"
         hide-details
         clearable
+        aria-label="Filtrer les factures par statut"
         @update:modelValue="fetchInvoices"
       />
 
@@ -38,16 +46,12 @@
         class="w-48"
         density="compact"
         hide-details
+        aria-label="Filtrer par date de début d’envoi au client"
       >
         <template #append-inner>
           <v-tooltip text="Date d'envoi" location="top">
             <template #activator="{ props }">
-              <v-icon
-                v-bind="props"
-                icon="mdi-information-outline"
-                class="ml-1"
-                size="18"
-              />
+              <v-icon v-bind="props" icon="mdi-information-outline" class="ml-1" size="18" />
             </template>
           </v-tooltip>
         </template>
@@ -60,16 +64,12 @@
         class="w-48"
         density="compact"
         hide-details
+        aria-label="Filtrer par date de fin d’envoi au client"
       >
         <template #append-inner>
           <v-tooltip text="Date d'envoi" location="top">
             <template #activator="{ props }">
-              <v-icon
-                v-bind="props"
-                icon="mdi-information-outline"
-                class="ml-1"
-                size="18"
-              />
+              <v-icon v-bind="props" icon="mdi-information-outline" class="ml-1" size="18" />
             </template>
           </v-tooltip>
         </template>
@@ -77,10 +77,10 @@
     </div>
 
     <v-progress-linear
-    v-if="isLoading"
-    indeterminate
-    color="primary"
-    class="mb-4"
+      v-if="isLoading"
+      indeterminate
+      color="primary"
+      class="mb-4"
     />
 
     <div v-if="documentCards.length > 0">
@@ -98,11 +98,12 @@
     <div
       v-else
       class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+      role="status"
+      aria-live="polite"
     >
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucune facture créée pour le moment.</p>
     </div>
-
   </div>
 
   <TemplateSelectionModal 
@@ -163,6 +164,8 @@ const isLoading = computed(() => invoiceStore.isLoading)
 
 const isDeleteModalOpen = ref(false);
 const selectedInvoiceId = ref<string | null>(null);
+
+const mainContent = ref<HTMLElement | null>(null);
 
 const statusOptions = [
   { label: 'Tous', value: null },
@@ -268,6 +271,11 @@ async function handlePageChange(page: number) {
 }
 
 onMounted(async () => {
+
+  if (mainContent.value) {
+    mainContent.value.focus();
+  }
+
   const status = history.state?.toastStatus as ToastStatus;
   const message = history.state?.toastMessage as string;
 
@@ -277,6 +285,20 @@ onMounted(async () => {
 
   await invoiceStore.searchInvoices('', null, null, null, 1);
 });
+
+async function exportInvoicesAsCSV() {
+  try {
+    await invoiceStore.exportInvoices(
+      search.value,
+      selectedStatus.value ?? undefined,
+      startDate.value ?? undefined,
+      endDate.value ?? undefined
+    );
+    showToast('success', 'Export CSV généré avec succès.');
+  } catch (e) {
+    showToast('error', 'Erreur lors de l’export CSV.');
+  }
+}
 
 watch([search, selectedStatus, startDate, endDate], async () => {
   await invoiceStore.searchInvoices(

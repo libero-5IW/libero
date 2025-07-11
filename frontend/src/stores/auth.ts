@@ -29,16 +29,18 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await apiClient.post('/auth/login', data);
       const token = response.data.token;
-      localStorage.setItem('token', token);
+      if (token) {
+        localStorage.setItem('token', token);
 
-      const me = await apiClient.get('/auth/me');
-      user.value = ApiCurrentUserSchema.parse(me.data);
-
-      isAuthenticated.value = true;
-      router.push('/dashboard');
-
+        const me = await apiClient.get('/auth/me');
+        user.value = ApiCurrentUserSchema.parse(me.data);
+        isAuthenticated.value = true;
+        router.push('/dashboard');
+      }
+      return response.data;
     } catch (error) {
-      handleError(error, 'Erreur lors de la connexion.')
+      handleError(error, 'Erreur lors de la connexion.');
+      throw error;
     } finally {
       loading.value = false;
     }

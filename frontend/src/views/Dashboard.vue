@@ -1,145 +1,105 @@
 <template>
-  <v-container fluid class="dashboard-container">
-    <div class="dashboard-grid">
-      <v-card class="card card-1x1">
-        <v-card-title>Card 1</v-card-title>
-      </v-card>
+  <div
+   class="h-[calc(100vh-64px)] w-[calc(100vw-256px)] max-[1200px]:w-[calc(100vw-200px)] max-[768px]:w-full flex flex-col"
+  >
+    <div
+        class="flex-grow grid grid-cols-2 gap-3 w-full px-8 auto-rows-auto max-[1200px]:grid-cols-1 max-[768px]:grid-cols-1"
+    >
+      <div
+        class="flex flex-col h-full p-3 gap-y-4 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      >
+        <div class="flex-[] flex flex-col overflow-hidden">
+          <RevenueSummaryCard
+            :invoices="invoiceStore.invoices"
+            :clients="clientStore.clients"
+            :contracts="contractStore.contracts"
+            :quotes="quoteStore.quotes"
+          />
+        </div>
 
-      <v-card class="card card-1x2">
-        <v-card-title>Card 2</v-card-title>
-      </v-card>
+        <div class="flex-[1] flex mt-6 flex-col overflow-hidden">
+          <ClientsStatsCard
+            :invoices="invoiceStore.invoices"
+            :clients="clientStore.clients"
+            :onEdit="editClient"
+          />
+        </div>
+      </div>
 
-      <v-card class="card card-2x2">
-        <v-card-title>Card 3</v-card-title>
-      </v-card>
+      <div
+        class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      >
+        <RevenueChart :invoices="invoiceStore.invoices" />
+      </div>
 
-      <v-card class="card card-1x1">
-        <v-card-title>Card 4</v-card-title>
-      </v-card>
+      <router-link :to="{ name: 'InvoiceList' }" class="no-underline text-inherit">
+        <div
+          class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+        >
+          <InvoiceStatsCard :invoices="invoiceStore.invoices" :onEdit="editInvoice" />
+        </div>
+      </router-link>
 
-      <v-card class="card card-2x2">
-        <v-card-title>Card 5</v-card-title>
-      </v-card>
-
-      <v-card class="card card-1x2">
-        <v-card-title>Card 6</v-card-title>
-      </v-card>
-
-      <v-card class="card card-1x2">
-        <v-card-title>Card 7</v-card-title>
-      </v-card>
+      <router-link :to="{ name: 'QuoteList' }" class="no-underline text-inherit">
+        <div
+          class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+        >
+          <QuoteStatsCard :quotes="quoteStore.quotes" :onEdit="editQuote" />
+        </div>
+      </router-link>
     </div>
-  </v-container>
+  </div>
 </template>
-
-
 
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth';
 import { useUserStore } from '@/stores/user';
+import { useInvoiceStore } from '@/stores/invoice';
+import { useContractStore } from '@/stores/contract';
+import { useClientStore } from '@/stores/client';
+import { useQuoteStore } from '@/stores/quote';
 import { computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
-const userStore = useUserStore()
-const authStore = useAuthStore()
-const user = computed(() => userStore.user)
+import InvoiceStatsCard from '@/components/Dashboard/InvoiceStatsCard.vue';
+import QuoteStatsCard from '@/components/Dashboard/QuoteStatsCard.vue';
+import RevenueChart from '@/components/Dashboard/RevenueChart.vue';
+import RevenueSummaryCard from '@/components/Dashboard/RevenueSummaryCard.vue';
+import ClientsStatsCard from '@/components/Dashboard/ClientsStatsCard.vue';
 
-onMounted(() => {
-  userStore.fetchCurrentUser()
-})
+const userStore = useUserStore();
+const authStore = useAuthStore();
+const invoiceStore = useInvoiceStore();
+const clientStore = useClientStore();
+const quoteStore = useQuoteStore();
+const contractStore = useContractStore();
+const router = useRouter();
 
-const logout = async () => {
-  await authStore.logout();
+const user = computed(() => userStore.user);
+
+onMounted(async () => {
+  userStore.fetchCurrentUser();
+  if (invoiceStore.invoices.length === 0) {
+    await invoiceStore.fetchAllInvoices();
+  }
+  if (clientStore.clients.length === 0) {
+    await clientStore.fetchAllClients();
+  }
+  if (quoteStore.quotes.length === 0) {
+    await quoteStore.fetchAllQuotes();
+  }
+});
+
+function editInvoice(id: string) {
+  router.push({ name: 'InvoiceEdit', params: { id } });
 }
+
+function editClient(id: string) {
+  router.push({ name: 'ClientEdit', params: { id } });
+}
+function editQuote(id: string) {
+  router.push({ name: 'QuoteEdit', params: { id } });
+}
+
 </script>
-
-<style scoped>
-.dashboard-container {
-  height: calc(100vh - 64px); /* Subtract top nav height */
-  width: calc(100vw - 256px); /* Subtract left nav width */
-}
-
-.dashboard-grid {
-  display: grid;
-  height: 100%;
-  width: 100%;
-  gap: 12px;
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: minmax(0, 1fr);
-  grid-auto-flow: dense;
-}
-
-/* Card base style */
-.card {
-  display: flex;
-  flex-direction: column;
-  padding: 12px;
-  width: 100%;
-  height: 100%;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-/* Size modifiers (row/col spans) */
-.card-1x1 {
-  grid-column: span 3;
-  grid-row: span 1;
-}
-
-.card-2x1 {
-  grid-column: span 6;
-  grid-row: span 1;
-}
-
-.card-1x2 {
-  grid-column: span 3;
-  grid-row: span 2;
-}
-
-.card-2x2 {
-  grid-column: span 6;
-  grid-row: span 2;
-}
-
-@media (max-width: 1200px) {
-  .dashboard-container {
-    width: calc(100vw - 200px);
-  }
-  
-  .dashboard-grid {
-    grid-template-columns: repeat(8, 1fr);
-  }
-  
-  .card-1x1 {
-    grid-column: span 2;
-  }
-  
-  .card-2x1 {
-    grid-column: span 4;
-  }
-  
-  .card-1x2 {
-    grid-column: span 2;
-  }
-  
-  .card-2x2 {
-    grid-column: span 4;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-container {
-    width: 100vw;
-  }
-  
-  .dashboard-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-  
-  .card-1x1, .card-2x1, .card-1x2, .card-2x2 {
-    grid-column: span 4;
-  }
-}
-</style>

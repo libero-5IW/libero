@@ -1,11 +1,17 @@
 <template>
-  <div class="ml-4 mt-8">
+  <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="quote-template-page-title" tabindex="-1" ref="mainContent">
     <div class="flex items-center justify-between mb-6">
       <span class="text-xl font-semibold">Templates de devis</span>
-      <v-btn color="primary" @click="createTemplate">
-        <v-icon start>mdi-plus</v-icon>
-        Nouveau template
-      </v-btn>
+      <div class="flex gap-2">
+        <v-btn color="primary" @click="createTemplate">
+          <v-icon start>mdi-plus</v-icon>
+          Nouveau template
+        </v-btn>
+        <v-btn color="primary" @click="exportTemplatesAsCSV">
+          <v-icon start>mdi-download</v-icon>
+          Exporter CSV
+        </v-btn>
+      </div>
     </div>
 
     <div class="flex items-center gap-4 mb-6">
@@ -15,6 +21,7 @@
         class="w-64"
         density="compact"
         hide-details
+        aria-label="Rechercher un template de devis"
       />
 
       <v-text-field
@@ -24,6 +31,7 @@
         class="w-48"
         density="compact"
         hide-details
+        aria-label="Filtrer par date de début de création"
       >
         <template #append-inner>
           <v-tooltip text="Date de création" location="top">
@@ -46,6 +54,7 @@
         class="w-48"
         density="compact"
         hide-details
+        aria-label="Filtrer par date de fin de création"
       >
         <template #append-inner>
           <v-tooltip text="Date de création" location="top">
@@ -63,10 +72,10 @@
     </div>
 
     <v-progress-linear
-    v-if="isLoading"
-    indeterminate
-    color="primary"
-    class="mb-4"
+      v-if="isLoading"
+      indeterminate
+      color="primary"
+      class="mb-4"
     />
 
     <div v-if="documentCards.length > 0">
@@ -82,6 +91,8 @@
     <div
       v-else
       class="flex flex-col items-center justify-center text-gray-500 text-lg h-[60vh]"
+      role="status"
+      aria-live="polite"
     >
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucun template de devis créé pour le moment.</p>
@@ -192,6 +203,19 @@
     endDate.value,
     page
   )
+  }
+
+  async function exportTemplatesAsCSV() {
+  try {
+    await quoteTemplate.exportQuoteTemplates(
+      search.value,
+      startDate.value ?? undefined,
+      endDate.value ?? undefined
+    );
+    showToast('success', 'Export CSV généré avec succès.');
+  } catch (e) {
+    showToast('error', 'Erreur lors de l’export CSV.');
+  }
   }
 
   watch([search, startDate, endDate], async () => {

@@ -30,6 +30,8 @@ model User {
   tvaNumber                 String?
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
+  twoFactorSecret           String?  @db.VarChar(255)
+  isTwoFactorEnabled        Boolean @default(false)
   resetPasswordToken        String?
   resetPasswordTokenExpiry  DateTime?
   lastPasswordUpdate        DateTime @default(now())
@@ -37,13 +39,14 @@ model User {
   loginAttempts             Int @default(0)
   lockedUntil               DateTime?
 
-  quoteTemplates            QuoteTemplate[]
-  quotes                    Quote[]
-  invoiceTemplates          InvoiceTemplate[]
-  invoices                  Invoice[]
-  clients                   Client[] 
-  contractTemplates         ContractTemplate[]
-  contracts                 Contract[]
+
+  quoteTemplates    QuoteTemplate[]
+  quotes            Quote[]
+  invoiceTemplates  InvoiceTemplate[]
+  invoices          Invoice[]
+  clients           Client[] 
+  contractTemplates ContractTemplate[]
+  contracts         Contract[]
 }
 
 enum ResetTokenSource {

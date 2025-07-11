@@ -17,5 +17,3 @@ RUN npm run build
 # Installer un serveur statique léger pour servir les fichiers
 RUN npm install -g serve
 CMD ["serve", "-s", "dist", "-l", "5173"]
-
-EXPOSE 5173

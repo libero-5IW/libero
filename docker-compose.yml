@@ -39,9 +39,9 @@ services:
       - backend
     volumes:
       - ./frontend:/app/frontend
-      - ./frontend/node_modules:/app/frontend/node_modules
+      - node_modules:/app/frontend/node_modules
 
 
 volumes:
     postgres_data: {}
-    node_modules: {}
+    node_modules: 

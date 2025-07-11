@@ -43,8 +43,7 @@ export const useQuoteStore = defineStore('quote', () => {
     try {
       isLoading.value = true;
       const { data } = await apiClient.post('/quotes', payload);
-      const test = QuoteSchema.parse(data);
-      return test;
+      return QuoteSchema.parse(data);
     } catch (error) {
       handleError(error, 'Erreur lors de la création du devis.');
     } finally {
@@ -117,6 +116,42 @@ export const useQuoteStore = defineStore('quote', () => {
     }
   }
 
+  async function exportQuotes(
+    term = '',
+    status?: string,
+    startDate?: string,
+    endDate?: string
+  ) {
+    try {
+      const response = await apiClient.get('/quotes/export', {
+        params: {
+          term,
+          ...(status ? { status } : {}),
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        },
+        responseType: 'blob',
+      });
+  
+      const disposition = response.headers['content-disposition'];
+      const match = disposition?.match(/filename="(.+)"/);
+      const filename = match?.[1] ?? `export_${Date.now()}.csv`;
+  
+      const blob = new Blob([response.data], {
+        type: 'text/csv;charset=utf-8;',
+      });
+  
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      handleError(error, 'Erreur lors de l’export CSV.');
+    }
+  }  
+  
   return {
     quotes,
     currentQuote,
@@ -130,6 +165,7 @@ export const useQuoteStore = defineStore('quote', () => {
     deleteQuote,
     fetchNextQuoteNumber,
     updateQuote,
-    searchQuotes
+    searchQuotes,
+    exportQuotes
   };
 });
