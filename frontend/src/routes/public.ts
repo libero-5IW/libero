@@ -45,7 +45,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'NotFound',
         component: NotFound,
         meta: { requiresAuth: false }
-      }
+      },
+      {
+        path: '/privacy-policy',
+        component: () => import('@/views/legal/PolitiqueConfidentialite.vue'),
+        meta: { requiresAuth: false }
+      },
     ],
   }
 ];

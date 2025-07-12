@@ -3,6 +3,7 @@
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
     :permanent="permanent"
+    color="secondary"
     location="left"
     width="250"
     class="transition-transform duration-300 ease-in-out"
