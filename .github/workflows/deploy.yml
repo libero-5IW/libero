@@ -48,6 +48,15 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "docker-stack.yml"
           target: "/home/ubuntu/libero/"
+          
+      - name: Upload monitoring/prometheus.yml to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.OVH_HOST }}
+          username: ${{ secrets.OVH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "monitoring/prometheus.yml"
+          target: "/home/ubuntu/libero/monitoring/"
 
       - name: Deploy to OVH Swarm
         uses: appleboy/ssh-action@v1.0.3
