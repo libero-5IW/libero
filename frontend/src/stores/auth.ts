@@ -59,6 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
       await apiClient.post('/auth/register', data);
     } catch (error) {
       handleError(error, 'Erreur lors de l’inscription.')
+      throw error;
     } finally {
       loading.value = false;
     }
