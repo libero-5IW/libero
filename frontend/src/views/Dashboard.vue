@@ -79,7 +79,7 @@ const router = useRouter();
 const user = computed(() => userStore.user);
 
 onMounted(async () => {
-  userStore.fetchCurrentUser();
+  await userStore.fetchCurrentUser();
   if (invoiceStore.invoices.length === 0) {
     await invoiceStore.fetchAllInvoices();
   }

@@ -92,8 +92,7 @@
               aria-required="true"
             />
 
-            <div class="d-flex justify-end mt-6 gap-4">
-              <div v-if="isEdit" class="d-flex align-center">
+            <div class="d-flex mt-6 align-center justify-space-between">
                 <v-btn
                   color="error"
                   variant="tonal"
@@ -102,8 +101,7 @@
                 >
                   Supprimer
                 </v-btn>
-              </div>
-
+              
               <div class="d-flex align-center">
                 <v-btn text @click="cancel" aria-label="Annuler la modification">Annuler</v-btn>
                 <v-btn color="primary" type="submit" class="ml-2" :aria-label="isEdit ? 'Mettre à jour le client' : 'Créer le client'" :disabled="!formRef?.isValid" >
@@ -129,10 +127,9 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, onMounted, ref, nextTick } from 'vue'
+import { reactive, onMounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useClientStore } from '@/stores/client'
-import { useAuthStore } from '@/stores/auth'
 import { useToastHandler } from '@/composables/useToastHandler'
 import { phoneNumberRules } from '@/utils/validationRules'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
