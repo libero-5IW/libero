@@ -96,7 +96,7 @@ services:
     image: prom/prometheus:latest
     volumes:
       - prometheus_data:/prometheus
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - libero-net
     deploy:
