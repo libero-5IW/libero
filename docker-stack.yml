@@ -158,11 +158,61 @@ services:
       labels:
         - "traefik.enable=false"
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - network.host=0.0.0.0
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - libero-net
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.4
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - libero-net
+    depends_on:
+      - elasticsearch
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.kibana.rule=Host(`kibana.liberogestion.fr`)"
+        - "traefik.http.routers.kibana.entrypoints=websecure"
+        - "traefik.http.routers.kibana.tls.certresolver=le"
+        - "traefik.http.services.kibana.loadbalancer.server.port=5601"
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.13.4
+    user: root
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+    networks:
+      - libero-net
+    depends_on:
+      - elasticsearch
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+
 volumes:
   postgres_data:
   traefik_letsencrypt:
   grafana_data:
   prometheus_data:
+  es_data:
 
 secrets:
   docusign_private_key:
