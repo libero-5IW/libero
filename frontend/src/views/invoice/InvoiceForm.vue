@@ -246,6 +246,15 @@ async function initialize() {
     selectedTemplateId.value = templateIdFromState;
   }
 
+  if (state?.fromContractId && templateIdFromState) {
+    form.value.templateId = templateIdFromState;
+    form.value.clientId = state.clientId;
+    form.value.contractId = state.fromContractId;
+    form.value.variableValues = state.variables;
+    variablesValue.value = state.variables;
+    selectedTemplateId.value = templateIdFromState;
+  }
+
   if (!templateId && !isEditMode.value) {
     showTemplateModal.value = true;
     return;
