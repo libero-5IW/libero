@@ -4,7 +4,8 @@ import type { RouteRecordRaw } from 'vue-router';
 const apiRoutes: RouteRecordRaw[] = [
     {
         path: '/simulateur',
-        component: MonEntrepriseSimulator
+        component: MonEntrepriseSimulator,
+        meta: { requiresAuth: true }
       }
 ];
 

@@ -7,9 +7,10 @@ const clientRoutes: Array<RouteRecordRaw> = [
   {
     path: '/clients',
     children: [
-      { path: '', name: 'ClientList', component: ClientList },
-      { path: 'new', name: 'ClientCreate', component: ClientForm },
-      { path: ':id/edit', name: 'ClientEdit', component: ClientForm, props: true },
+      { 
+        path: '', name: 'ClientList', component: ClientList, meta: { requiresAuth: true } },
+      { path: 'new', name: 'ClientCreate', component: ClientForm, meta: { requiresAuth: true }   },
+      { path: ':id/edit', name: 'ClientEdit', component: ClientForm, props: true, meta: { requiresAuth: true } },
     ]
   }
 ]

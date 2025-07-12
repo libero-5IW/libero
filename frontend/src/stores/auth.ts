@@ -84,7 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isUserAuthenticated = async () => {
     const response = await apiClient.get('/auth/is-authenticated');     
-    isAuthenticated.value = response.data;
+    isAuthenticated.value = response.data && !!localStorage.getItem('token');
   };
 
   const sendResetPasswordEmail = async (email: string) => {

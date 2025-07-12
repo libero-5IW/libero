@@ -59,12 +59,16 @@ router.beforeEach(async (to, from, next) => {
     if (requiresAuth && !authStore.isAuthenticated && !authStore.authAlreadyChecked) {
       await authStore.verifyAuth();
     }
-    
+
+    if (to.path === '/' && !authStore.isAuthenticated) {
+      return next({ path: '/home' });
+    }
+
     if (requiresAuth && !authStore.isAuthenticated) {
       return next({ name: 'Login' });
     }
     
-    if (publicOnly && authStore.isAuthenticated) {
+    if (authStore.isAuthenticated && (publicOnly || to.path === '/')) {
       return next({ name: 'Dashboard' });
     }
 
