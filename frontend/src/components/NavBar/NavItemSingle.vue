@@ -2,7 +2,6 @@
   <v-list-item
     :to="to"
     :value="to"
-    class="mx-1 my-2 group"
     :active="route.path === to"
     :class="{
       'bg-[rgba(var(--v-theme-text-secondary-light),_0.12)]': route.path === to
@@ -14,12 +13,7 @@
         :class="route.path === to ? 'text-primary' : 'text-secondary'"
       />
     </template>
-    <v-list-item-title
-      :class="{
-        'text-primary': route.path === to,
-        'text-secondary': route.path !== to
-      }"
-    >
+    <v-list-item-title class="text-primary">
       {{ title }}
     </v-list-item-title>
   </v-list-item>
