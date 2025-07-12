@@ -488,6 +488,11 @@ onMounted(async () => {
 
   if (message && status) {
     showToast(status, message);
+    
+    history.replaceState(
+      { ...history.state, toastStatus: null, toastMessage: null },
+      ''
+    );
   }
 
   await quoteStore.searchQuotes('', null, null, null, 1);

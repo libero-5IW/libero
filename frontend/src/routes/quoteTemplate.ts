@@ -6,11 +6,10 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/quote-template',
         children: [
-            { path: '', name: 'QuoteTemplateList', component: QuoteTemplateList },
-            { path: 'new', name: 'QuoteTemplateForm', component: QuoteTemplateForm },
-            { path: 'edit/:id', name: 'QuoteTemplateEdit', component: QuoteTemplateForm },
+            { path: '', name: 'QuoteTemplateList', component: QuoteTemplateList, meta: { requiresAuth: true } },
+            { path: 'new', name: 'QuoteTemplateForm', component: QuoteTemplateForm, meta: { requiresAuth: true } },
+            { path: 'edit/:id', name: 'QuoteTemplateEdit', component: QuoteTemplateForm, meta: { requiresAuth: true } },
         ],
-        // meta: { requiresAuth: true },
     }
 ];
 
