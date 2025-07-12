@@ -1,46 +1,49 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '@/config/axios'
-import type { ChangePasswordData, User } from '@/schemas/user.schema'
+import { UserSchema, type ChangePasswordData, type User } from '@/schemas/user.schema'
+import { handleError } from '@/utils/handleError'
 
 export const useUserStore = defineStore('userStore', () => {
   const user = ref<User>()
   const loading = ref(false)
-  const error = ref<string | null>(null)
 
   const fetchCurrentUser = async () => {
     loading.value = true
-    error.value = null
     try {
-      const res = await apiClient.get<User>('/users/me')
-      user.value = res.data
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Erreur lors du chargement de l’utilisateur'
+      const { data } = await apiClient.get<User>('/users/me')
+      console.log('data', data);
+      
+      user.value = UserSchema.parse(data)
+    } catch (error) {
+      handleError(error, 'Erreur lors du chargement de l’utilisateur.')
+      throw error
     } finally {
       loading.value = false
     }
   }
 
-  const updateProfile = async (data: Partial<User>) => {
+  const updateProfile = async (payload: Partial<User>) => {
     loading.value = true
-    error.value = null
     try {
-      const res = await apiClient.patch<User>('/users/me', data)
-      user.value = res.data
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Erreur lors de la mise à jour du profil.'
+      const { data } = await apiClient.patch('/users/me', payload)
+      user.value = UserSchema.parse(data)
+    } catch (error) {
+      handleError(error, 'Erreur lors de la mise à jour du profil.')
+      throw error
     } finally {
       loading.value = false
     }
   }
 
-  const changePassword = async (data: ChangePasswordData) => {
+  const changePassword = async (payload: ChangePasswordData) => {
     loading.value = true
-    error.value = null
     try {
-      await apiClient.patch('/users/me/password', data)
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Erreur lors du changement de mot de passe.'
+      const { data } = await apiClient.patch('/users/me/password', payload)
+      user.value = UserSchema.parse(data)
+    } catch (error) {
+      handleError(error, 'Erreur lors de la mise à jour du profil.')
+      throw error
     } finally {
       loading.value = false
     }
@@ -48,29 +51,32 @@ export const useUserStore = defineStore('userStore', () => {
 
   const deleteAccount = async () => {
     loading.value = true
-    error.value = null
     try {
       await apiClient.delete('/users/me')
-    } catch (err: any) {
-      error.value = err.response?.data?.message || 'Erreur lors de la suppression du compte.'
+    } catch (error) {
+      handleError(error, 'Erreur lors de la mise à jour du profil.')
+      throw error
     } finally {
       loading.value = false
     }
   }
 
   async function fetch2FAStatus() {
+    loading.value = true
     try {
       const res = await apiClient.get('/users/me')
       return !!res.data.isTwoFactorEnabled
-    } catch (err: any) {
-      throw err.response?.data?.message || 'Erreur lors de la récupération du statut 2FA'
+    } catch (error) {
+      handleError(error, 'Erreur lors de la récupération du statut 2FA.')
+      throw error
+    } finally {
+      loading.value = false
     }
   }
 
   return {
     user,
     loading,
-    error,
     fetchCurrentUser,
     updateProfile,
     changePassword,

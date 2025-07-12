@@ -92,7 +92,7 @@ const handleUserMenuClick = (action: string) => {
   
   switch (action) {
     case 'profile':
-      router.push('/profile')
+      router.push('/settings/profile')
       break
     case 'settings':
       router.push('/settings')

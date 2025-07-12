@@ -7,7 +7,7 @@ import invoiceRoutes from './invoice';
 import publicRoutes from '@/routes/public'
 import dashboardRoute from '@/routes/dashboard'
 import clientRoutes from '@/routes/client'
-import profileRoutes from '@/routes/profile'
+import SettingsRoutes from '@/routes/settings'
 import { useAuthStore } from '@/stores/auth';
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
 import contractRoutes from '@/routes/contract'
@@ -26,7 +26,7 @@ const authenticatedRoutes: Array<RouteRecordRaw> = [
       ...invoiceRoutes,
       ...dashboardRoute,
       ...clientRoutes,
-      ...profileRoutes,
+      ...SettingsRoutes,
       ...publicRoutes,
       ...contractRoutes,
       ...legalRoutes,
