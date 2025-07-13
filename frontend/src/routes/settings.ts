@@ -1,8 +1,9 @@
 import type { RouteRecordRaw } from 'vue-router'
 import Profile from '@/views/settings/Profile.vue'
-import Security from '@/views/settings/Security.vue'
+import TwoFactor from '@/views/settings/TwoFactor.vue'
 import Settings from '@/views/settings/Settings.vue'
 import ChangePassword from '@/views/settings/ChangePassword.vue'
+import DeleteAccount from '@/views/settings/DeleteAccount.vue'
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -22,15 +23,21 @@ const routes: Array<RouteRecordRaw> = [
         meta: { requiresAuth: true }
       },
       {
-        path: 'security',
-        name: 'Security',
-        component: Security,
+        path: 'two-factor-authentification',
+        name: 'TwoFactor',
+        component: TwoFactor,
         meta: { requiresAuth: true }
       },
       {
         path: 'password',
         name: 'ChangePassword',
         component: ChangePassword,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'delete-account',
+        name: 'DeleteAccount',
+        component: DeleteAccount,
         meta: { requiresAuth: true }
       }
     ]

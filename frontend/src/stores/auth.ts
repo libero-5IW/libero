@@ -14,6 +14,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = ref(false);
   const errorMessage = ref('');
   const authAlreadyChecked = ref(false);
+  const skipNextUnauthorized = ref(false)
 
 
   const clearState = () => {
@@ -21,6 +22,7 @@ export const useAuthStore = defineStore('auth', () => {
     errorMessage.value = '';
     isAuthenticated.value = false;
     user.value = null;
+    skipNextUnauthorized.value = false;
   };
 
   const login = async (data: LoginData) => {
@@ -46,10 +48,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (toastOptions?: { status: string, message: string }) => {
     cleanAllStates();
     localStorage.removeItem('token');
-    await router.push({name: 'Login'})
+    await router.push({
+      name: 'Login',
+      state: toastOptions ? {
+        toastStatus: toastOptions.status,
+        toastMessage: toastOptions.message
+      } : undefined
+    })
   };
 
   const register = async (data: RegisterData) => {
@@ -142,6 +150,7 @@ export const useAuthStore = defineStore('auth', () => {
     sendResetPasswordEmail,
     resetPassword,
     checkResetToken,
-    isUserAuthenticated
+    isUserAuthenticated,
+    skipNextUnauthorized
   };
 });

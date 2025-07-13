@@ -12,8 +12,6 @@ export const useUserStore = defineStore('userStore', () => {
     loading.value = true
     try {
       const { data } = await apiClient.get<User>('/users/me')
-      console.log('data', data);
-      
       user.value = UserSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors du chargement de l’utilisateur.')
@@ -52,7 +50,8 @@ export const useUserStore = defineStore('userStore', () => {
   const deleteAccount = async () => {
     loading.value = true
     try {
-      await apiClient.delete('/users/me')
+      const { data } = await apiClient.delete('/users/me')
+      return UserSchema.parse(data)
     } catch (error) {
       handleError(error, 'Erreur lors de la mise à jour du profil.')
       throw error

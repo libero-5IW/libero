@@ -19,7 +19,6 @@
       </div>
     </div>
 
-    <!-- Contenu -->
     <div>
       <v-container class="py-8">
         <v-row justify="center">
@@ -39,8 +38,9 @@ const route = useRoute()
 
 const tabs = [
   { name: 'profile', label: 'Profil', route: '/settings/profile' },
-  { name: 'security', label: 'Sécurité', route: '/settings/security' },
-  { name: 'password', label: 'Changer le mot de passe', route: '/settings/password' },
+  { name: 'twoFactor', label: '2FA', route: '/settings/two-factor-authentification' },
+  { name: 'password', label: 'Changer mon mot de passe', route: '/settings/password' },
+  { name: 'deleteAccount', label: 'Supprimer mon compte', route: '/settings/delete-account' },
 ]
 
 const isActive = (path: string) => route.path === path
