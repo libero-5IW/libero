@@ -48,9 +48,13 @@ RUN npx prisma generate
 # Build en production
 RUN npm run build
 
+# Copie du script d'entrée
+COPY entrypoint.sh /app/backend/entrypoint.sh
+RUN chmod +x /app/backend/entrypoint.sh
+
 EXPOSE 3000
 
-CMD ["npm", "run", "start:prod"]
+ENTRYPOINT ["./entrypoint.sh"]
 
 #dev 
 # RUN npx prisma migrate
