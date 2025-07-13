@@ -5,10 +5,13 @@ import NotFound from '@/views/public/NotFound.vue';
 import RequestPasswordReset from '@/views/public/RequestPasswordReset.vue';
 import ResetPassword from '@/views/public/ResetPassword.vue';
 import Landing from '@/views/public/Landing.vue';
+import PrivacyPolicy from '@/views/legal/PolitiqueConfidentialite.vue';
+import PublicContainer from '@/components/Container/PublicContainer.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
+    component: PublicContainer,
     children: [
       {
         path: 'home',
@@ -48,7 +51,7 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: '/privacy-policy',
-        component: () => import('@/views/legal/PolitiqueConfidentialite.vue'),
+        component: PrivacyPolicy,
         meta: { requiresAuth: false }
       },
     ],

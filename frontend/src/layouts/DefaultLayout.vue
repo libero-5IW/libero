@@ -35,5 +35,4 @@ import VerticalNavBar from '@/components/NavBar/VerticalNavBar.vue'
 
 const { mdAndUp } = useDisplay()
 const drawer = ref(true)
-
 </script>
