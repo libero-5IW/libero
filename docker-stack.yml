@@ -60,6 +60,7 @@ services:
       AWS_ACCESS_KEY_ID_FILE: /run/secrets/aws_access_key_id
       AWS_SECRET_ACCESS_KEY_FILE: /run/secrets/aws_secret_access_key
       AWS_BUCKET_NAME_FILE: /run/secrets/aws_bucket_name
+      AWS_REGION_FILE: /run/secrets/aws_region
       MAIL_FROM_FILE: /run/secrets/mail_from
       SMTP_HOST_FILE: /run/secrets/smtp_host
       SMTP_PORT_FILE: /run/secrets/smtp_port
@@ -75,6 +76,7 @@ services:
       - aws_access_key_id
       - aws_secret_access_key
       - aws_bucket_name
+      - aws_region
       - mail_from
       - smtp_host
       - smtp_port
@@ -252,6 +254,8 @@ secrets:
   aws_secret_access_key:
     external: true
   aws_bucket_name:
+    external: true
+  aws_region:
     external: true
   mail_from:
     external: true
