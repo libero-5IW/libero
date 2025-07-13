@@ -28,7 +28,14 @@ apiClient.interceptors.response.use(
       const isProtectedRoute = currentRoute.matched.some(r => r.meta.requiresAuth === true);
 
       if (status === 401 && isProtectedRoute && !authStore.isAuthenticated) {
-        await authStore.logout();
+        if (!authStore.skipNextUnauthorized) {
+            await authStore.logout({
+              status: 'error',
+              message: 'Connectez-vous pour accèder à l\'application.'
+            })
+          } else {
+            authStore.skipNextUnauthorized = false
+          }
       }
       return Promise.reject(error);
     }
