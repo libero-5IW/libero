@@ -92,6 +92,9 @@ services:
       - libero-net
     deploy:
       replicas: 2
+      placement:
+        preferences:
+          - spread: node.hostname
       restart_policy:
         condition: on-failure
       labels:
@@ -111,6 +114,9 @@ services:
       replicas: 3
       restart_policy:
         condition: on-failure
+      placement:
+        preferences:
+          - spread: node.hostname
       labels:
         - "traefik.enable=true"
         - "traefik.http.routers.frontend.rule=Host(`liberogestion.fr`) || Host(`www.liberogestion.fr`)"
