@@ -203,6 +203,54 @@ export class MailerService {
     });
   }
 
+  async sendReminderBeforeDue(
+    clientEmail: string,
+    clientName: string,
+    freelance: UserEntity,
+    invoiceNumber: number,
+    dueDate: Date,
+  ) {
+    await this.mailerService.sendMail({
+      to: clientEmail,
+      subject: `Rappel - Facture bientôt échue - Libero`,
+      template: 'invoice-reminder',
+      context: {
+        clientName: clientName,
+        freelanceName: `${freelance.firstName} ${freelance.lastName.toUpperCase()}`,
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        title: `Facture ${invoiceNumber}`,
+        dueDate: dueDate.toLocaleDateString('fr-FR'),
+        year: new Date().getFullYear(),
+      },
+      attachments: [this.getLogoAttachment()],
+    });
+  }
+
+  async sendLateInvoiceNotice(
+    clientEmail: string,
+    clientName: string,
+    freelance: UserEntity,
+    invoiceNumber: number,
+    dueDate: Date,
+  ) {
+    await this.mailerService.sendMail({
+      to: clientEmail,
+      subject: `Retard de paiement - Facture échue - Libero`,
+      template: 'invoice-late',
+      context: {
+        clientName: clientName,
+        freelanceName: `${freelance.firstName} ${freelance.lastName.toUpperCase()}`,
+        freelanceEmail: freelance.email,
+        freelanceCompany: freelance.companyName,
+        title: `Facture ${invoiceNumber}`,
+        dueDate: dueDate.toLocaleDateString('fr-FR'),
+        year: new Date().getFullYear(),
+      },
+      attachments: [this.getLogoAttachment()],
+    });
+  }
+
   async sendContractSignedEmail(
     email: string,
     clientName: string,

@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -67,8 +68,15 @@ export class UserService {
       changePasswordDto.currentPassword,
       user.password,
     );
+
     if (!isMatch) {
       throw new UnauthorizedException('Mot de passe actuel incorrect');
+    }
+
+    if (changePasswordDto.currentPassword === changePasswordDto.newPassword) {
+      throw new BadRequestException(
+        'Le nouveau mot de passe doit être différent de l’ancien.',
+      );
     }
 
     const newHashedPassword = await bcrypt.hash(
@@ -83,6 +91,8 @@ export class UserService {
         lastPasswordUpdate: new Date(),
       },
     });
+
+    return plainToInstance(UserEntity, user);
   }
 
   async getUserOrThrow(id: string) {

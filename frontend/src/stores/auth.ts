@@ -59,6 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
       await apiClient.post('/auth/register', data);
     } catch (error) {
       handleError(error, 'Erreur lors de l’inscription.')
+      throw error;
     } finally {
       loading.value = false;
     }
@@ -83,7 +84,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isUserAuthenticated = async () => {
     const response = await apiClient.get('/auth/is-authenticated');     
-    isAuthenticated.value = response.data;
+    isAuthenticated.value = response.data && !!localStorage.getItem('token');
   };
 
   const sendResetPasswordEmail = async (email: string) => {

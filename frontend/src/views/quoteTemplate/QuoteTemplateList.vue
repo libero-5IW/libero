@@ -233,6 +233,11 @@
     
     if(message && status) {
       showToast(status, message);
+
+      history.replaceState(
+        { ...history.state, toastStatus: null, toastMessage: null },
+        ''
+      );
     }
 
     await quoteTemplate.searchTemplates('', null, null, 1)

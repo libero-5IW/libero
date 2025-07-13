@@ -6,9 +6,9 @@ const routes: Array<RouteRecordRaw> = [
     {
         path: '/invoice',
         children: [
-          { path: '', name: 'InvoiceList', component: InvoiceList },
-          { path: 'new', name: 'InvoiceForm', component: InvoiceForm },
-          { path: ':id/edit', name: 'InvoiceEdit', component: InvoiceForm, props: true },
+          { path: '', name: 'InvoiceList', component: InvoiceList, meta: { requiresAuth: true } },
+          { path: 'new', name: 'InvoiceForm', component: InvoiceForm, meta: { requiresAuth: true } },
+          { path: ':id/edit', name: 'InvoiceEdit', component: InvoiceForm, props: true, meta: { requiresAuth: true } },
         ],
       }
       

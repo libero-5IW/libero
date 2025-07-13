@@ -12,8 +12,10 @@ export const UserSchema = z.object({
   country: z.string(),
   legalStatus: z.string(),
   siret: z.string(),
-  tvaNumber: z.string(),
+  tvaNumber: z.string().optional().nullable(),
   createdAt: z.string(),
+  twoFactorSecret: z.string().optional().nullable(),
+  isTwoFactorEnabled: z.boolean()
 })
 
 export const ApiCurrentUserSchema = z.object({
@@ -43,7 +45,7 @@ export const RegisterDataSchema = z.object({
     country: z.string().min(1, 'Pays requis'),
     legalStatus: z.string().min(1, 'Statut légal requis'),
     siret: z.string().min(1, 'Numéro de siret requis').regex(/^\d{14}$/, 'Le SIRET doit contenir exactement 14 chiffres'),
-    tvaNumber: z.string().optional()
+    tvaNumber: z.string().optional(),
 })
 
 export const ChangePasswordSchema = z.object({

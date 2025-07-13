@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from './api';
 import { useAuthStore } from '@/stores/auth';
+import router from '@/routes'
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
@@ -23,9 +24,10 @@ apiClient.interceptors.response.use(
       const status = error.response?.status
       const authStore = useAuthStore()
       await authStore.isUserAuthenticated()
-      const token = localStorage.getItem('token')
+      const currentRoute = router.currentRoute.value;
+      const isProtectedRoute = currentRoute.matched.some(r => r.meta.requiresAuth === true);
 
-      if (status === 401 && (!token && !authStore.isAuthenticated)) {
+      if (status === 401 && isProtectedRoute && !authStore.isAuthenticated) {
         await authStore.logout();
       }
       return Promise.reject(error);

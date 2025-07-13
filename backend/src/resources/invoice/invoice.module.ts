@@ -7,8 +7,10 @@ import { InvoiceTemplateService } from '../invoice-template/invoice-template.ser
 import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
 import { S3Service } from 'src/common/s3/s3.service';
 import { MailerService } from 'src/common/mailer/mailer.service';
-
+import { ScheduleModule } from '@nestjs/schedule';
+import { InvoiceCronService } from './invoice.cron';
 @Module({
+  imports: [ScheduleModule.forRoot()],
   controllers: [InvoiceController],
   providers: [
     InvoiceService,
@@ -18,6 +20,7 @@ import { MailerService } from 'src/common/mailer/mailer.service';
     S3Service,
     PdfGeneratorService,
     MailerService,
+    InvoiceCronService,
   ],
 })
 export class InvoiceModule {}
