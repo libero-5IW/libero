@@ -53,13 +53,37 @@ services:
 
   backend:
     image: projetlibero/libero-backend:latest
-    env_file:
-      - .env
     environment:
       DATABASE_URL: postgres://admin:admin@postgres:5432/libero
       DOCUSIGN_PRIVATE_KEY_FILE: /run/secrets/docusign_private_key
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      AWS_ACCESS_KEY_ID_FILE: /run/secrets/aws_access_key_id
+      AWS_SECRET_ACCESS_KEY_FILE: /run/secrets/aws_secret_access_key
+      AWS_BUCKET_NAME_FILE: /run/secrets/aws_bucket_name
+      MAIL_FROM_FILE: /run/secrets/mail_from
+      SMTP_HOST_FILE: /run/secrets/smtp_host
+      SMTP_PORT_FILE: /run/secrets/smtp_port
+      SMTP_USER_FILE: /run/secrets/smtp_user
+      SMTP_PASS_FILE: /run/secrets/smtp_pass
+      DOCUSIGN_INTEGRATION_KEY_FILE: /run/secrets/docusign_integration_key
+      DOCUSIGN_BASE_URL_FILE: /run/secrets/docusign_base_url
+      DOCUSIGN_ACCOUNT_ID_FILE: /run/secrets/docusign_account_id
+      DOCUSIGN_USER_ID_FILE: /run/secrets/docusign_user_id
     secrets:
       - docusign_private_key
+      - jwt_secret
+      - aws_access_key_id
+      - aws_secret_access_key
+      - aws_bucket_name
+      - mail_from
+      - smtp_host
+      - smtp_port
+      - smtp_user
+      - smtp_pass
+      - docusign_integration_key
+      - docusign_base_url
+      - docusign_account_id
+      - docusign_user_id
     depends_on:
       - postgres
     networks:
@@ -221,6 +245,33 @@ secrets:
     external: true
   grafana_admin_password:
     external: true
+  jwt_secret:
+    external: true
+  aws_access_key_id:
+    external: true
+  aws_secret_access_key:
+    external: true
+  aws_bucket_name:
+    external: true
+  mail_from:
+    external: true
+  smtp_host:
+    external: true
+  smtp_port:
+    external: true
+  smtp_user:
+    external: true
+  smtp_pass:
+    external: true
+  docusign_integration_key:
+    external: true
+  docusign_base_url:
+    external: true
+  docusign_account_id:
+    external: true
+  docusign_user_id:
+    external: true
+
 
 networks:
   libero-net:
