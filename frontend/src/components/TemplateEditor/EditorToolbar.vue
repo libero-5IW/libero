@@ -90,6 +90,7 @@
   <script setup lang="ts">
   import type { Editor } from '@tiptap/vue-3'
   
+  
   const props = defineProps<{ editor: Editor }>()
 
   import { ref, watch } from 'vue'
