@@ -54,7 +54,7 @@ RUN chmod +x /app/backend/entrypoint.sh
 
 EXPOSE 3000
 
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["sh", "./entrypoint.sh"]
 
 #dev 
 # RUN npx prisma migrate
