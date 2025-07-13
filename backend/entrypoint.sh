@@ -11,6 +11,7 @@ for file in /run/secrets/*; do
   echo "[entrypoint] Exported $key"
 done
 
-echo "[entrypoint] Starting app with JWT_SECRET=${JWT_SECRET:0:4}..."  # Debug: affiche les 4 1ers chars
+# Debug POSIX-compatible
+echo "[entrypoint] Starting app with JWT_SECRET=$(echo "$JWT_SECRET" | cut -c1-4)..."
 
 exec npm run start:prod
