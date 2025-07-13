@@ -40,7 +40,35 @@ services:
       - ./frontend:/app/frontend
       - node_modules:/app/frontend/node_modules
 
+  matomo_db:
+    image: mariadb:10.5
+    container_name: matomo-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - matomo_db_data:/var/lib/mysql
 
+  matomo:
+    image: matomo:latest
+    container_name: matomo
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      MATOMO_DATABASE_HOST: ${MATOMO_DB_HOST}
+      MATOMO_DATABASE_ADAPTER: mysqli
+      MATOMO_DATABASE_TABLES_PREFIX: matomo_
+      MATOMO_DATABASE_USERNAME: ${MATOMO_DB_USER}
+      MATOMO_DATABASE_PASSWORD: ${MATOMO_DB_PASSWORD}
+      MATOMO_DATABASE_DBNAME: ${MATOMO_DB_NAME}
+    volumes:
+      - matomo_data:/var/www/html
 volumes:
     postgres_data: {}
     node_modules: 
+    matomo_db_data:
+    matomo_data:
