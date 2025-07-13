@@ -21,22 +21,18 @@
           Il se peut que le service distant soit indisponible ou qu'une extension de navigateur bloque le chargement.
         </v-alert>
       </div>
-      <div v-if="error" class="mt-2">
-        <v-alert type="error">{{ error }}</v-alert>
-      </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue';
+import { ref, onMounted, watch, nextTick, computed } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { legalStatus as legalStatusList } from '@/constants/legal-status';
 
 const userStore = useUserStore();
 const legalStatus = ref('');
-const loading = ref(true);
-const error = ref('');
+const loading = computed(() => userStore.loading);
 const simulatorError = ref(false);
 
 function getModuleName(status: string) {
@@ -87,16 +83,8 @@ function injectWidgetScript(status: string) {
 }
 
 onMounted(async () => {
-  loading.value = true;
-  error.value = '';
-  try {
-    await userStore.fetchCurrentUser();
-    legalStatus.value = userStore.user?.legalStatus || '';
-  } catch (e: any) {
-    error.value = e?.response?.data?.message || 'Erreur lors de la récupération du statut juridique.';
-  } finally {
-    loading.value = false;
-  }
+  await userStore.fetchCurrentUser();
+  legalStatus.value = userStore.user?.legalStatus || '';
 });
 
 watch(
