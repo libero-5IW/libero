@@ -93,6 +93,7 @@ services:
     deploy:
       replicas: 2
       placement:
+        max_replicas_per_node: 1
         preferences:
           - spread: node.hostname
       restart_policy:
@@ -115,6 +116,7 @@ services:
       restart_policy:
         condition: on-failure
       placement:
+        max_replicas_per_node: 1
         preferences:
           - spread: node.hostname
       labels:
@@ -281,7 +283,6 @@ secrets:
     external: true
   docusign_user_id:
     external: true
-
 
 networks:
   libero-net:
