@@ -242,6 +242,24 @@ services:
       placement:
         constraints:
           - node.role == manager
+  backup:
+    build:
+      context: ./backups
+    environment:
+      - PGPASSWORD=admin
+    volumes:
+      - postgres_data:/var/lib/postgresql/data:ro
+      - backup_data:/backups
+      - /home/ubuntu/.aws:/root/.aws:ro
+      - /home/ubuntu/.config/rclone:/root/.config/rclone:ro
+    networks:
+      - libero-net
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - "traefik.enable=false"
 
 volumes:
   postgres_data:
@@ -249,6 +267,8 @@ volumes:
   grafana_data:
   prometheus_data:
   es_data:
+  backup_data:
+
 
 secrets:
   docusign_private_key:
