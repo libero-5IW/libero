@@ -73,7 +73,7 @@
       <v-spacer />
       <div>
         <v-list>
-          <NavItemSingle title="Aide" to="/help" icon="mdi-help-circle-outline" />
+          <NavItemSingle title="Aide" to="/help" target="_blank" icon="mdi-help-circle-outline" />
           <NavItemSingle title="Paramètres" to="/settings" icon="mdi-cog" />
           <NavGroupAccordian
             v-model="activeGroup"

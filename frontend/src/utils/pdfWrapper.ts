@@ -1,33 +1,31 @@
-export function ensurePdfWrapper(html: string, logoUrl: string): string {
+export function ensurePdfWrapper(html: string, docTitle: string): string {
   const style = `
     .pdf-wrapper {
-      font-family: 'Roboto Condensed', 'Roboto', 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
+      font-family: 'Roboto', Arial, sans-serif;
       color: #212121;
       font-size: 13px;
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      padding: 24px 16px;
+      padding: 32px 24px;
       margin: 0;
-      max-width: 100%;
+      max-width: 800px;
       box-sizing: border-box;
     }
     .pdf-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
       border-bottom: 2px solid #3F51B5;
-      padding-bottom: 12px;
-      margin-bottom: 32px;
-    }
-    .pdf-logo {
-      max-width: 120px;
-      height: auto;
+      padding-bottom: 18px;
+      margin-bottom: 36px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-start;
     }
     .pdf-title {
       font-size: 2.2em;
       color: #3F51B5;
       font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
       margin: 0;
     }
     h1, h2, h3, h4, h5, h6 {
@@ -58,16 +56,18 @@ export function ensurePdfWrapper(html: string, logoUrl: string): string {
       font-size: 0.98em;
     }
     th, td {
-      border: 1px solid #bbb;
-      padding: 8px 12px;
+      border: 1px solid #d1d5db;
+      padding: 10px 14px;
       text-align: left;
     }
     th {
-      background: #E8EAF6;
+      background: #f0f4ff;
       color: #3F51B5;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
     tr:nth-child(even) {
-      background: #fafbfc;
+      background: #f9fafb;
     }
     .section-card {
       background: #f7fafd;
@@ -82,7 +82,7 @@ export function ensurePdfWrapper(html: string, logoUrl: string): string {
     .text-justify { text-align: justify; }
   `;
 
-  const header = `<div class="pdf-header"><img src="${logoUrl}" class="pdf-logo" /></div>`;
+  const header = `<div class="pdf-header"><span class="pdf-title">${docTitle}</span></div>`;
   const bodyHtml = html.trim().startsWith('<div class="pdf-wrapper"')
     ? html.replace('<div class="pdf-wrapper">', `<div class="pdf-wrapper">${header}`)
     : `<div class="pdf-wrapper">${header}${html}</div>`;

@@ -147,8 +147,6 @@ const variableMode = ref<'create' | 'edit'>('create')
 const originalVariableName = ref('')
 const otherTemplates = ref([])
 
-let logoUrl = `${window.location.origin}/logo.png`;
-
 onMounted(async () => {
   const idParam = route.params.id
   templateId.value = Array.isArray(idParam) ? idParam[0] : idParam || ''
@@ -231,7 +229,7 @@ async function saveTemplate() {
   try {
     const htmlForBackend = ensurePdfWrapper(
       replaceChipsWithBrackets(template.contentHtml ?? ''),
-      logoUrl
+      'Devis'
     );
         const payload = {
       name: template.name,

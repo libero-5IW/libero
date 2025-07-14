@@ -6,24 +6,49 @@ export async function seedDefaultInvoiceTemplate(prisma: PrismaClient) {
     name: 'Modèle de base - Facture',
     userId: null,
     contentHtml: `
-        <h1>Facture n°{{invoice_number}}</h1>
-        <br>
-        <p><strong>Émise le :</strong> {{issue_date}}</p>
-        <p><strong>Échéance :</strong> {{due_date}}</p>
-        <br>
-        <p><strong>Freelance :</strong> {{freelancer_name}}, {{freelancer_address}}</p>
-        <p><strong>SIRET :</strong> {{freelancer_siret}}</p>
-        <br>
-        <p><strong>Client :</strong> {{client_name}}, {{client_address}}</p>
-        <br>
-        <p><strong>Prestation :</strong> {{prestation_description}}</p>
-        <p><strong>Montant HT :</strong> {{total_amount}} €</p>
-        <br>
-        <p><strong>Conditions de paiement :</strong> {{payment_terms}}</p>
-        <p><strong>Pénalités de retard :</strong> {{late_penalty}}</p>
-        <br>
-        <p><strong>Détail TVA :</strong> {{tva_detail}}</p>
-      `,
+      <div style="font-family: 'Roboto', Arial, sans-serif; color: #212121; background: #fff; border-radius: 8px; padding: 32px 24px; max-width: 800px; margin: auto;">
+        <div style="border-bottom: 2px solid #3F51B5; padding-bottom: 18px; margin-bottom: 36px;">
+          <span style="font-size: 2.2em; color: #3F51B5; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">Facture n°{{invoice_number}}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 24px;">
+          <div style="width: 48%;">
+            <h3 style="color: #3F51B5; font-size: 1.1em; margin-bottom: 0.5em;">Freelance</h3>
+            <p><strong>{{freelancer_name}}</strong></p>
+            <p>{{freelancer_address}}</p>
+            <p>SIRET : {{freelancer_siret}}</p>
+          </div>
+          <div style="width: 48%;">
+            <h3 style="color: #3F51B5; font-size: 1.1em; margin-bottom: 0.5em;">Client</h3>
+            <p><strong>{{client_name}}</strong></p>
+            <p>{{client_address}}</p>
+          </div>
+        </div>
+        <div style="margin-bottom: 24px;">
+          <p>Émise le : {{issue_date}}</p>
+          <p>Échéance : {{due_date}}</p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.98em;">
+          <thead>
+            <tr>
+              <th style="background: #f0f4ff; color: #3F51B5; font-weight: 600; letter-spacing: 0.5px; border: 1px solid #d1d5db; padding: 10px 14px;">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border: 1px solid #d1d5db; padding: 10px 14px;">{{prestation_description}}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top: 32px; text-align: right;">
+          <p style="font-size: 1.1em;"><strong>Montant HT : {{total_amount}} €</strong></p>
+        </div>
+        <div style="margin-top: 24px;">
+          <p><strong>Conditions de paiement :</strong> {{payment_terms}}</p>
+          <p><strong>Pénalités de retard :</strong> {{late_penalty}}</p>
+          <p><strong>Détail TVA :</strong> {{tva_detail}}</p>
+        </div>
+      </div>
+    `,
     variables: [
       {
         variableName: 'invoice_number',
