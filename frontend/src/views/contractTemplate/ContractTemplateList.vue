@@ -1,74 +1,74 @@
 <template>
-  <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="contract-template-page-title" tabindex="-1" ref="mainContent">
-    <div class="flex items-center justify-between mb-10">
-      <span class="text-xl font-bold">Templates de contrats</span>
-      <div class="flex gap-2">
-      <v-btn color="primary" @click="createTemplate">
-        <v-icon start>mdi-plus</v-icon>
-        Nouveau template
-      </v-btn>
-      <v-btn color="primary" @click="exportTemplatesAsCSV">
-        <v-icon start>mdi-download</v-icon>
-        Exporter CSV
-      </v-btn>
-      </div>
-    </div>
+  <div class="ml-4 focus:outline-none" role="main" aria-labelledby="contract-template-page-title" tabindex="-1" ref="mainContent">
+    <Heading>Liste des modèles de contrat</Heading>      
     
-    <div class="flex items-center gap-4 mb-6">
-      <SearchInput
-        v-model="search"
-        placeholder="Rechercher un template"
-        class="w-64"
-        density="compact"
-        hide-details
-        aria-label="Rechercher un template de contrat"
-      />
+    <div class="flex flex-col lg:flex-row flex-wrap w-full items-start justify-between gap-4 mb-6">
+      <div class="flex w-full flex-col lg:w-auto lg:flex-row gap-4">
+        <SearchInput
+          v-model="search"
+          placeholder="Rechercher un template"
+          class="w-full lg:w-80 text-base"
+          density="comfortable"
+          hide-details
+          aria-label="Rechercher un template de contrat"
+        />
 
-      <v-text-field
-        v-model="startDate"
-        label="Date de début"
-        type="date"
-        class="w-48"
-        density="compact"
-        hide-details
-        aria-label="Filtrer par date de début de création"
-      >
-        <template #append-inner>
-          <v-tooltip text="Date de création" location="top">
-            <template #activator="{ props }">
-              <v-icon
-                v-bind="props"
-                icon="mdi-information-outline"
-                class="ml-1"
-                size="18"
-              />
-            </template>
-          </v-tooltip>
-        </template>
-      </v-text-field>
+        <v-text-field
+          v-model="startDate"
+          label="Date de début"
+          type="date"
+          class="w-full lg:w-64 text-base"
+          density="comfortable"
+          hide-details
+          aria-label="Filtrer par date de début de création"
+        >
+          <template #append-inner>
+            <v-tooltip text="Date de création" location="top">
+              <template #activator="{ props }">
+                <v-icon
+                  v-bind="props"
+                  icon="mdi-information-outline"
+                  class="ml-1"
+                  size="18"
+                />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-text-field>
 
-      <v-text-field
-        v-model="endDate"
-        label="Date de fin"
-        type="date"
-        class="w-48"
-        density="compact"
-        hide-details
-        aria-label="Filtrer par date de fin de création"
-      >
-        <template #append-inner>
-          <v-tooltip text="Date de création" location="top">
-            <template #activator="{ props }">
-              <v-icon
-                v-bind="props"
-                icon="mdi-information-outline"
-                class="ml-1"
-                size="18"
-              />
-            </template>
-          </v-tooltip>
-        </template>
-      </v-text-field>
+        <v-text-field
+          v-model="endDate"
+          label="Date de fin"
+          class="w-full lg:w-64 text-base"
+          density="comfortable"
+          hide-details
+          aria-label="Filtrer par date de fin de création"
+        >
+          <template #append-inner>
+            <v-tooltip text="Date de création" location="top">
+              <template #activator="{ props }">
+                <v-icon
+                  v-bind="props"
+                  icon="mdi-information-outline"
+                  class="ml-1"
+                  size="18"
+                />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-text-field>
+      </div>
+
+      <div class="flex w-full flex-col lg:w-auto lg:flex-row gap-2">
+        <v-btn color="primary" @click="createTemplate">
+          <v-icon start>mdi-plus</v-icon>
+          Nouveau template
+        </v-btn>
+        <v-btn color="primary" @click="exportTemplatesAsCSV">
+          <v-icon start>mdi-download</v-icon>
+          Exporter CSV
+        </v-btn>
+      </div>
     </div>
 
     <v-progress-linear
@@ -127,6 +127,7 @@ import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 import TemplateDocumentCardList from '@/components/DocumentDisplay/TemplateDocumentCardList.vue';
 import SearchInput from '@/components/SearchInput.vue'
 import Pagination from '@/components/Pagination.vue'
+import Heading from '@/components/Header/Heading.vue'
 
 const search = ref('')
 const router = useRouter()

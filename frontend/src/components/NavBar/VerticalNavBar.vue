@@ -3,28 +3,27 @@
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
     :permanent="permanent"
-    color="secondary"
+    color="navbar"
     location="left"
     width="250"
     class="transition-transform duration-300 ease-in-out"
   >
     <div class="d-flex flex-column h-full">
       <div>
-        <div class="p-4"  v-if="lgAndUp">
-          <img src="@/assets/logo.png" alt="Logo" class="w-1/3 h-auto mx-auto" />
+        <div class="mt-6 mb-10 p-4"  v-if="lgAndUp">
+          <img src="@/assets/logo1.png" alt="Logo" class="w-1/3 h-auto mx-auto" />
         </div>
 
-        <v-list class="px-2 mb-2 border-b border-gray-200">
+        <v-list class=" mb-2 border-b border-gray-200">
           <v-list-item
-            class="rounded-lg hover:bg-gray-100 cursor-pointer"
-            @click="goToProfile"
+            class="rounded-lg"
           >
             <div class="flex items-center space-x-3">
               <v-avatar size="32" color="surface">
                 <v-icon color="primary">mdi-account</v-icon>
               </v-avatar>
 
-              <div class="flex flex-col leading-tight">
+              <div class="flex flex-col leading-tight ml-4">
                 <span class="text-xs text-gray-500">Mon compte</span>
                 <span class="font-medium text-sm">{{ userFullName }}</span>
               </div>
@@ -32,7 +31,7 @@
           </v-list-item>
         </v-list>
         <v-list>
-          <NavItemSingle title="Dashboard" to="/dashboard" icon="mdi-view-dashboard" />
+          <NavItemSingle title="Tableau de bord" to="/dashboard" icon="mdi-view-dashboard" />
           
           <NavGroupAccordian
             v-model="activeGroup"
@@ -87,7 +86,7 @@
               prepend-icon="mdi-logout"
               title="Déconnexion"
               @click="logout"
-              class="px-2 mb-2 mt-4 border-t border-gray-200 text-error hover:bg-red-50"
+              class="px-2 mb-2 mt-4 border-t border-gray-200 text-black hover:bg-red-50"
             />
         </v-list>
       </div>
@@ -102,7 +101,6 @@ import NavItemSingle from './NavItemSingle.vue'
 import { useDisplay } from 'vuetify'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth';
-import { useTheme } from 'vuetify'
 import { useUserStore } from '@/stores/user';
 
   defineProps<{
@@ -115,11 +113,8 @@ defineEmits<{
 }>()
 
 const activeGroup = ref<string | null>(null)
-const theme = useTheme()
 const router = useRouter()
 const { lgAndUp } = useDisplay()
-const showNotifications = ref(false)
-const showUserMenu = ref(false)
 const authStore = useAuthStore()
 const userStore = useUserStore()
 
@@ -193,11 +188,6 @@ const quoteItems = [
 
   const logout = async () => {
     await authStore.logout();
-  }
-
-
-  const goToProfile = () => {
-    router.push('/profile')
   }
 </script>
 

@@ -133,6 +133,7 @@ import { useClientStore } from '@/stores/client'
 import { useToastHandler } from '@/composables/useToastHandler'
 import { phoneNumberRules } from '@/utils/validationRules'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
+import Heading from '@/components/Header/Heading.vue';
 import { 
     addressLineRules, 
     cityRules,  

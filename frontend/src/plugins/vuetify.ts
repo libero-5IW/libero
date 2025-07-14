@@ -8,7 +8,7 @@ const customLightTheme: ThemeDefinition = {
   dark: false,
   colors: {
     background: '#FAFAFA',
-    appbar: '#27282c',
+    navbar: '#EAEAFC',
     surface: '#FFFFFF',
     primary: '#3F51B5',     
     secondary: '#7986CB',   

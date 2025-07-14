@@ -1,79 +1,80 @@
 <template>
-  <div class="ml-4 mt-8 focus:outline-none" role="main" aria-labelledby="quote-page-title" tabindex="-1" ref="mainContent">
-    <div class="flex items-center justify-between mb-10">
-    <h1 class="text-xl font-bold">Liste des devis</h1>
-    <div class="flex gap-2">
-      <v-btn color="primary" @click="showTemplateModal = true">
-        <v-icon start>mdi-plus</v-icon>
-        Nouveau devis
-      </v-btn>
-      <v-btn color="primary" @click="exportQuotesAsCSV">
-        <v-icon start>mdi-download</v-icon>
-        Exporter CSV
-      </v-btn>
-    </div>
-  </div>
+  <div class="ml-4 focus:outline-none" role="main" aria-labelledby="quote-page-title" tabindex="-1" ref="mainContent">
+    <Heading>Liste des devis</Heading>
+    
+    <div class="flex flex-col lg:flex-row flex-wrap w-full items-start justify-between gap-4 mb-6">
+      <div class="flex w-full flex-col lg:w-auto lg:flex-row gap-4">
+        <SearchInput
+          v-model="search"
+          placeholder="Rechercher un devis"
+          class="w-full lg:w-80 text-base"
+          density="comfortable"
+          hide-details
+          aria-label="Rechercher un devis"
+          @search="fetchQuotes"
+        />
 
-    <div class="flex items-center gap-4 mb-6">
-      <SearchInput
-        v-model="search"
-        placeholder="Rechercher un devis"
-        class="w-64"
-        density="compact"
-        hide-details
-        aria-label="Rechercher un devis"
-        @search="fetchQuotes"
-      />
+        <v-select
+          v-model="selectedStatus"
+          :items="statusOptions"
+          item-title="label"
+          item-value="value"
+          label="Filtrer par statut"
+          class="w-full lg:w-64 text-base"
+          density="comfortable"
+          hide-details
+          clearable
+          aria-label="Filtrer les devis par statut"
+          @update:modelValue="fetchQuotes"
+        />
 
-      <v-select
-        v-model="selectedStatus"
-        :items="statusOptions"
-        item-title="label"
-        item-value="value"
-        label="Filtrer par statut"
-        class="w-48"
-        density="compact"
-        hide-details
-        clearable
-        aria-label="Filtrer les devis par statut"
-        @update:modelValue="fetchQuotes"
-      />
+        <v-text-field
+          v-model="startDate"
+          label="Date de début"
+          type="date"
+          class="w-full lg:w-64 text-base"
+          density="comfortable"
+          hide-details
+          aria-label="Filtrer par date de début d’envoi au client"
+        >
+          <template #append-inner>
+            <v-tooltip text="Date d'envoi" location="top">
+              <template #activator="{ props }">
+                <v-icon v-bind="props" icon="mdi-information-outline" class="ml-1" size="18" />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-text-field>
 
-      <v-text-field
-        v-model="startDate"
-        label="Date de début"
-        type="date"
-        class="w-48"
-        density="compact"
-        hide-details
-        aria-label="Filtrer par date de début d’envoi au client"
-      >
-        <template #append-inner>
-          <v-tooltip text="Date d'envoi" location="top">
-            <template #activator="{ props }">
-              <v-icon v-bind="props" icon="mdi-information-outline" class="ml-1" size="18" />
-            </template>
-          </v-tooltip>
-        </template>
-      </v-text-field>
+        <v-text-field
+          v-model="endDate"
+          label="Date de fin"
+          type="date"
+          class="w-full lg:w-64 text-base"
+          density="comfortable"
+          hide-details
+          aria-label="Filtrer par date de fin d’envoi au client"
+        >
+          <template #append-inner>
+            <v-tooltip text="Date d'envoi" location="top">
+              <template #activator="{ props }">
+                <v-icon v-bind="props" icon="mdi-information-outline" class="ml-1" size="18" />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-text-field>
+      </div>
 
-      <v-text-field
-        v-model="endDate"
-        label="Date de fin"
-        type="date"
-        class="w-48"
-        density="compact"
-        hide-details
-        aria-label="Filtrer par date de fin d’envoi au client"
-      >
-        <template #append-inner>
-          <v-tooltip text="Date d'envoi" location="top">
-            <template #activator="{ props }">
-              <v-icon v-bind="props" icon="mdi-information-outline" class="ml-1" size="18" />
-            </template>
-          </v-tooltip>
-        </template>
-      </v-text-field>
+      <div class="flex w-full flex-col lg:w-auto lg:flex-row gap-2">
+        <v-btn color="primary" @click="showTemplateModal = true">
+          <v-icon start>mdi-plus</v-icon>
+          Nouveau devis
+        </v-btn>
+        <v-btn color="primary" @click="exportQuotesAsCSV">
+          <v-icon start>mdi-download</v-icon>
+          Exporter CSV
+        </v-btn>
+      </div>
     </div>
 
     <v-progress-linear
@@ -185,6 +186,7 @@ import SearchInput from '@/components/SearchInput.vue'
 import { QUOTE_STATUS } from '@/constants/status/quote-status.constant';
 import Pagination from '@/components/Pagination.vue';
 import StatusChangingModal from '@/components/Modals/StatusChangingModal.vue';
+import Heading from '@/components/Header/Heading.vue';
 
 const search = ref('')
 const quoteTemplateStore = useQuoteTemplateStore();

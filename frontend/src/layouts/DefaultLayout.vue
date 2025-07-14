@@ -2,7 +2,6 @@
   <v-app>
     <!-- Responsive app bar -->
     <v-app-bar
-      color="surface"
       elevation="1"
       v-if="!mdAndUp"
     >
