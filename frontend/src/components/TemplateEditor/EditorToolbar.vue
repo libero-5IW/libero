@@ -89,6 +89,8 @@
   
   <script setup lang="ts">
   import type { Editor } from '@tiptap/vue-3'
+  import Color from '@tiptap/extension-color'
+  import TextStyle from '@tiptap/extension-text-style'
   
   const props = defineProps<{ editor: Editor }>()
 
