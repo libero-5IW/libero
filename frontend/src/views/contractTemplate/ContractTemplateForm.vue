@@ -80,6 +80,7 @@ import {
   replaceBracketsWithChips,
   replaceChipsWithBrackets
 } from '@/composables/useTemplateVariableParser'
+import { ensurePdfWrapper } from '@/utils/pdfWrapper'
 
 const template = reactive({
   id: '',
@@ -110,6 +111,7 @@ const otherTemplates = ref([])
 
 const isLoading = computed(() => contractTemplate.isLoading)
 
+let logoUrl = `${window.location.origin}/logo.png`;
 
 onMounted(async () => {
   const idParam = route.params.id
@@ -191,9 +193,13 @@ function getLabelVariables(vars: ContractTemplateVariable[]) {
 
 async function saveTemplate() {
   try {
+    const htmlForBackend = ensurePdfWrapper(
+      replaceChipsWithBrackets(template.contentHtml ?? ''),
+      logoUrl
+    );
     const payload = {
       name: template.name,
-      contentHtml: replaceChipsWithBrackets(template.contentHtml ?? ''),
+      contentHtml: htmlForBackend,
       variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
     }
 

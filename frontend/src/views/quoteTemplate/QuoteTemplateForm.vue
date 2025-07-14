@@ -116,6 +116,7 @@ import {
   replaceBracketsWithChips,
   replaceChipsWithBrackets
 } from '@/composables/useTemplateVariableParser'
+import { ensurePdfWrapper } from '@/utils/pdfWrapper'
 
 const template = reactive({
   id: '',
@@ -144,6 +145,8 @@ const showVariableForm = ref(false)
 const variableMode = ref<'create' | 'edit'>('create')
 const originalVariableName = ref('')
 const otherTemplates = ref([])
+
+let logoUrl = `${window.location.origin}/logo.png`;
 
 onMounted(async () => {
   const idParam = route.params.id
@@ -225,12 +228,15 @@ function getLabelVariables(vars: QuoteTemplateVariable[]) {
 
 async function saveTemplate() {
   try {
-    const payload = {
+    const htmlForBackend = ensurePdfWrapper(
+      replaceChipsWithBrackets(template.contentHtml ?? ''),
+      logoUrl
+    );
+        const payload = {
       name: template.name,
-      contentHtml: replaceChipsWithBrackets(template.contentHtml ?? ''),
+      contentHtml: htmlForBackend,
       variables: template.variables.filter(v => v.templateId !== 'defaultTemplate')
     }
-
     const response = templateId.value
       ? await quoteTemplate.updateTemplate(templateId.value, payload)
       : await quoteTemplate.createTemplate(payload)
