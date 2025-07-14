@@ -19,24 +19,24 @@
       <v-row dense>
         <v-col cols="12" md="8">
           <h1 id="contract-form-title" class="sr-only">Création d’un contrat</h1>
-
-          <v-text-field
-            :model-value="currentTemplate?.name ?? 'Template inconnu'"
-            label="Template utilisé"
-            readonly
-            class="mb-6"
-            aria-label="Template utilisé"
-          />
-
-          <v-text-field
-            v-if="contractNumberVariable"
-            :model-value="contractNumberVariable.value"
-            :label="contractNumberVariable.label || 'Numéro du contrat'"
-            readonly
-            class="mb-4"
-            aria-label="Numéro du contrat"
-            :style="{ pointerEvents: 'none', opacity: 0.6 }"
-          />
+          <v-card flat class="mb-4 pa-4">
+            <v-text-field
+              :model-value="currentTemplate?.name ?? 'Template inconnu'"
+              label="Template utilisé"
+              readonly
+              class="mb-6 pointer-events-none opacity-80"
+              aria-label="Template utilisé"
+            />
+  
+            <v-text-field
+              v-if="contractNumberVariable"
+              :model-value="contractNumberVariable.value"
+              :label="contractNumberVariable.label || 'Numéro du contrat'"
+              readonly
+              class="mb-4 pointer-events-none opacity-80"
+              aria-label="Numéro du contrat"
+            />
+          </v-card>
 
           <v-card flat class="mb-4 pa-4">
             <TemplateVariableSection
@@ -308,9 +308,13 @@ async function fillSystemValues(variables: ContractTemplateVariable[]) {
 
   const user = currentUser.value;
   if (!user) return;
-
+  console.log('variables.some(v => v.variableName === )', variables.some(v => v.variableName === 'contract_number'));
+  console.log('variables', variables);
+  
   if (variables.some(v => v.variableName === 'contract_number')) {
     const nextNumber = await contractStore.fetchNextContractNumber();
+    console.log('nextNumber', nextNumber);
+    
     if (nextNumber) updateVariable('contract_number', `${nextNumber}`);
   }
 

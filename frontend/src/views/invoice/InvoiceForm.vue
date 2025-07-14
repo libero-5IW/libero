@@ -24,7 +24,7 @@
               :model-value="currentTemplate?.name ?? 'Template inconnu'"
               label="Template utilisé"
               readonly
-              class="mb-6 pointer-events-none opacity-80"
+
               aria-label="Template utilisé"
             />
   

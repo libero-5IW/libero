@@ -24,7 +24,6 @@ export class ValidateInvoiceOnUpdatePipe<
           `La variable requise "${variableName}" est manquante ou vide.`,
         );
       }
-      
 
       if (rawValue !== undefined && rawValue !== null && rawValue !== '') {
         const isValid = this.validateValueType(rawValue, type, variableName);
