@@ -1,12 +1,12 @@
 <template>
   <div class="max-w-4xl mx-auto mt-8">
     <div class="flex justify-center mb-6">
-      <div class="bg-white border rounded-t-lg px-8 py-3 shadow flex items-center space-x-4">
+      <div class="bg-primary border rounded-t-lg px-8 py-3 shadow flex items-center space-x-4">
         <template v-for="(item, index) in tabs" :key="item.name">
           <router-link
             :to="item.route"
             class="text-sm font-medium transition-colors"
-            :class="isActive(item.route) ? 'text-primary font-weight-medium' : 'text-gray-400'"
+            :class="isActive(item.route) ? 'text-surface font-weight-medium' : 'text-gray-300'"
           >
             {{ item.label }}
           </router-link>

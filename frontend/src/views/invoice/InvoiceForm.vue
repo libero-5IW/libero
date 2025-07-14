@@ -17,26 +17,27 @@
   >
     <v-container fluid>
       <v-row dense>
-        <v-col cols="12" md="8">
+        <v-col cols="12" md="8" >
           <h1 id="invoice-form-title" class="sr-only">Création d’une facture</h1>
+          <v-card flat class="mb-4 pa-4">
+            <v-text-field
+              :model-value="currentTemplate?.name ?? 'Template inconnu'"
+              label="Template utilisé"
+              readonly
+              class="mb-6 pointer-events-none opacity-80"
+              aria-label="Template utilisé"
+            />
+  
+            <v-text-field
+              v-if="invoiceNumberVariable"
+              :model-value="invoiceNumberVariable.value"
+              :label="invoiceNumberVariable.label || 'Numéro de la facture'"
+              readonly
+              class="mb-4 pointer-events-none opacity-80"
+              aria-label="Numéro de la facture"
+            />
 
-          <v-text-field
-            :model-value="currentTemplate?.name ?? 'Template inconnu'"
-            label="Template utilisé"
-            readonly
-            class="mb-6"
-            aria-label="Template utilisé"
-          />
-
-          <v-text-field
-            v-if="invoiceNumberVariable"
-            :model-value="invoiceNumberVariable.value"
-            :label="invoiceNumberVariable.label || 'Numéro de la facture'"
-            readonly
-            class="mb-4 pointer-events-none opacity-60"
-            :style="{ pointerEvents: 'none', opacity: 0.6 }"
-            aria-label="Numéro de la facture"
-          />
+          </v-card>
 
           <v-card flat class="mb-4 pa-4">
             <TemplateVariableSection

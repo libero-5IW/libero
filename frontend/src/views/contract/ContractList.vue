@@ -1,5 +1,5 @@
 <template>
-  <div class="ml-4 focus:outline-none" role="main" aria-labelledby="contract-page-title" tabindex="-1" ref="mainContent">
+  <div class="flex flex-col min-h-screen ml-4 focus:outline-none" role="main" aria-labelledby="contract-page-title" tabindex="-1" ref="mainContent">
     <Heading>Liste des contrats</Heading>      
     
     <div class="flex flex-col lg:flex-row flex-wrap w-full items-start justify-between gap-4 mb-6">
@@ -116,6 +116,15 @@
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucun contrat créé pour le moment.</p>
     </div>
+
+      <div class="mt-auto mb-3 items-center justify-center">
+        <Pagination
+          :total-items="contractStore.total"
+          :current-page="contractStore.currentPage"
+          :page-size="contractStore.pageSize"
+          @page-changed="handlePageChange"
+        />
+      </div>
   </div>
 
   <TemplateSelectionModal 
@@ -167,13 +176,6 @@
   :fetchTemplates="fetchInvoiceTemplates"
   type="contrat"
   @templateSelected="handleInvoiceTemplateSelected"
-  />
-
-  <Pagination
-    :total-items="contractStore.total"
-    :current-page="contractStore.currentPage"
-    :page-size="contractStore.pageSize"
-    @page-changed="handlePageChange"
   />
 </template>
 

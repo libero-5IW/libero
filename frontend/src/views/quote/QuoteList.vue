@@ -1,5 +1,5 @@
 <template>
-  <div class="ml-4 focus:outline-none" role="main" aria-labelledby="quote-page-title" tabindex="-1" ref="mainContent">
+  <div class="flex flex-col min-h-screen ml-4 focus:outline-none" role="main" aria-labelledby="quote-page-title" tabindex="-1" ref="mainContent">
     <Heading>Liste des devis</Heading>
     
     <div class="flex flex-col lg:flex-row flex-wrap w-full items-start justify-between gap-4 mb-6">
@@ -108,6 +108,15 @@
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucun devis créé pour le moment.</p>
     </div>
+
+      <div class="mt-auto mb-3 items-center justify-center">
+          <Pagination
+          :total-items="quoteStore.total"
+          :current-page="quoteStore.currentPage"
+          :page-size="quoteStore.pageSize"
+          @page-changed="handlePageChange"
+        />
+      </div>
   </div>
 
   <ConfirmationModal
@@ -156,13 +165,6 @@
     type="contrat"
     :fetchTemplates="fetchContractTemplates"
     @templateSelected="handleContractTemplateSelected"
-  />
-
-  <Pagination
-    :total-items="quoteStore.total"
-    :current-page="quoteStore.currentPage"
-    :page-size="quoteStore.pageSize"
-    @page-changed="handlePageChange"
   />
 </template>
 

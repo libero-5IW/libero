@@ -1,5 +1,5 @@
 <template>
-  <div class="ml-4 focus:outline-none" role="main" aria-labelledby="invoice-template-page-title" tabindex="-1" ref="mainContent">
+  <div class="flex flex-col min-h-screen ml-4 focus:outline-none" role="main" aria-labelledby="invoice-template-page-title" tabindex="-1" ref="mainContent">
     <Heading>Liste des modèles de factures</Heading>      
     
     <div class="flex flex-col lg:flex-row flex-wrap w-full items-start justify-between gap-4 mb-6">
@@ -108,14 +108,17 @@
       confirmColor="error"
       @confirm="confirmDeleteTemplate"
     />
+
+    <div class="mt-auto mb-3 items-center justify-center">
+      <Pagination
+        :total-items="invoiceTemplate.total"
+        :current-page="invoiceTemplate.currentPage"
+        :page-size="invoiceTemplate.pageSize"
+        @page-changed="handlePageChange"
+      />
+    </div>
   </div>
 
-  <Pagination
-    :total-items="invoiceTemplate.total"
-    :current-page="invoiceTemplate.currentPage"
-    :page-size="invoiceTemplate.pageSize"
-    @page-changed="handlePageChange"
-  />
 </template>
 
 <script setup lang="ts">

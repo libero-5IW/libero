@@ -82,12 +82,14 @@
             main-icon="mdi-file-document-outline"
             :items="legalItems"
           />
-            <v-list-item
-              prepend-icon="mdi-logout"
-              title="Déconnexion"
-              @click="logout"
-              class="px-2 mb-2 mt-4 border-t border-gray-200 text-black hover:bg-red-50"
-            />
+            <v-list-item @click="logout" class="px-5 mb-2 mt-4 border-t border-gray-200 text-black">
+              <template #prepend>
+                <v-icon size="18" class="mr-0">mdi-logout</v-icon>
+              </template>
+              <v-list-item-title> 
+                <span class="text-m font-medium">Déconnexion</span>
+              </v-list-item-title>
+            </v-list-item>
         </v-list>
       </div>
     </div>

@@ -1,5 +1,5 @@
 <template>
-  <div class="ml-4 focus:outline-none" role="main" aria-labelledby="invoice-page-title" tabindex="-1" ref="mainContent">
+  <div class="flex flex-col min-h-screen ml-4 focus:outline-none" role="main" aria-labelledby="invoice-page-title" tabindex="-1" ref="mainContent">
     <Heading>Liste des factures</Heading>   
 
     <div class="flex flex-col lg:flex-row flex-wrap w-full items-start justify-between gap-4 mb-6">
@@ -106,6 +106,15 @@
       <v-icon size="48" class="mb-4" color="grey">mdi-file-document-outline</v-icon>
       <p>Aucune facture créée pour le moment.</p>
     </div>
+
+      <div class="mt-auto mb-3 items-center justify-center">
+          <Pagination
+            :total-items="invoiceStore.total"
+            :current-page="invoiceStore.currentPage"
+            :page-size="invoiceStore.pageSize"
+            @page-changed="handlePageChange"
+          />
+      </div>
   </div>
 
   <TemplateSelectionModal 
@@ -150,13 +159,6 @@
     cancelText="Annuler"
     confirmColor="error"
     @confirm="confirmDeleteInvoice"
-  />
-
-  <Pagination
-    :total-items="invoiceStore.total"
-    :current-page="invoiceStore.currentPage"
-    :page-size="invoiceStore.pageSize"
-    @page-changed="handlePageChange"
   />
 </template>
 

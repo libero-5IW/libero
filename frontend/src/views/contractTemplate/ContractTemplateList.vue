@@ -1,5 +1,5 @@
 <template>
-  <div class="ml-4 focus:outline-none" role="main" aria-labelledby="contract-template-page-title" tabindex="-1" ref="mainContent">
+  <div class="flex flex-col min-h-screen ml-4 focus:outline-none" role="main" aria-labelledby="contract-template-page-title" tabindex="-1" ref="mainContent">
     <Heading>Liste des modèles de contrat</Heading>      
     
     <div class="flex flex-col lg:flex-row flex-wrap w-full items-start justify-between gap-4 mb-6">
@@ -107,14 +107,18 @@
       confirmColor="error"
       @confirm="confirmDeleteTemplate"
     />
+
+    <div class="mt-auto mb-3 items-center justify-center">
+      <Pagination
+        :total-items="contractTemplate.total"
+        :current-page="contractTemplate.currentPage"
+        :page-size="contractTemplate.pageSize"
+        @page-changed="handlePageChange"
+      />
+    </div>
   </div>
 
-  <Pagination
-    :total-items="contractTemplate.total"
-    :current-page="contractTemplate.currentPage"
-    :page-size="contractTemplate.pageSize"
-    @page-changed="handlePageChange"
-  />
+
 </template>
 
 <script setup lang="ts">

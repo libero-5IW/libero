@@ -9,10 +9,9 @@
       @openImportModal="handleOpenImportModal"
       @openVariableFormModal="handleOpenVariableFormModal"
     />
-  </v-card>
 
-  <v-card flat class="text-right mt-4">
-    <v-btn color="primary" @click="onSave" :disabled="isLoading">
+    <v-card-actions class="d-flex justify-end w-full px-4 pb-4">
+      <v-btn color="primary" variant="flat" class="px-4 py-2" @click="onSave" :disabled="isLoading">
         <template v-if="!isLoading">
           <v-icon start>mdi-content-save</v-icon>
           {{ isEdit ? 'Modifier' : 'Créer' }}
@@ -21,9 +20,11 @@
           v-else
           indeterminate
           size="20"
-          color="secondary"
+          color="white"
+          aria-label="Chargement de la sauvegarde du template"
         />
-    </v-btn>
+      </v-btn>
+    </v-card-actions>
   </v-card>
 </template>
 

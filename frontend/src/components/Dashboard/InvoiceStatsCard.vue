@@ -1,5 +1,5 @@
 <template>
-  <v-card class="pa-4 d-flex flex-column justify-center align-center">
+  <v-card class="pa-4 d-flex h-full flex-column justify-center align-center">
     <v-card-title class="text-h6">Résumé des factures</v-card-title>
     <v-divider class="my-2" />
 

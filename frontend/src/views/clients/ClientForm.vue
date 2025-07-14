@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="d-flex justify-center" role="main" aria-labelledby="client-form-title" tabindex="-1" ref="mainContent">
+  <v-container fluid class="d-flex justify-center mt-8" role="main" aria-labelledby="client-form-title" tabindex="-1" ref="mainContent">
     <h1 id="client-form-title" class="sr-only">
       {{ isEdit ? 'Modifier un client' : 'Créer un client' }}
     </h1>
