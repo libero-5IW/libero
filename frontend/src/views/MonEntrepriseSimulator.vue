@@ -4,7 +4,6 @@
     <v-progress-circular v-if="loading" indeterminate color="primary" class="my-4" />
     <template v-else>
       <div v-if="getModuleName(legalStatus)" id="widget-container">
-        <!-- Widget injecté ici -->
       </div>
       <template v-else>
         <v-alert type="info">

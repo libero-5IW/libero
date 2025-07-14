@@ -39,6 +39,7 @@
         <v-text-field
           v-model="endDate"
           label="Date de fin"
+          type="date"
           class="w-full lg:w-64 text-base"
           density="comfortable"
           hide-details

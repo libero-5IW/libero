@@ -1,6 +1,6 @@
 <template>
   <div
-    class="ml-4 focus:outline-none"
+    class="flex flex-col min-h-screen ml-4 focus:outline-none"
     role="main"
     aria-labelledby="client-page-title"
     tabindex="-1"
@@ -40,6 +40,20 @@
     >
       <template #item.actions="{ item }">
         <div class="flex gap-3 items-center">
+          <v-tooltip text="Voir" location="top">
+            <template #activator="{ props }">
+              <v-icon
+                v-bind="props"
+                color="black"
+                class="cursor-pointer text-gray-600 hover:text-primary transition-colors duration-200"
+                @click="viewClient(item.id)"
+                aria-label="Voir le client"
+              >
+                mdi-eye
+              </v-icon>
+            </template>
+          </v-tooltip>
+
           <v-tooltip text="Modifier" location="top">
             <template #activator="{ props }">
               <v-icon
@@ -123,6 +137,10 @@ const createClient = () => {
 
 const editClient = (id: string) => {
   router.push({ name: 'ClientEdit', params: { id } })
+}
+
+const viewClient = (id: string) => {
+  router.push({ name: 'ClientView', params: { id } })
 }
 
 const confirmDelete = (id: string) => {

@@ -1,6 +1,6 @@
 <template>
   <div
-   class="flex flex-col"
+   class="flex flex-col mt-8"
   >
     <div
         class="flex-grow grid grid-cols-2 gap-3 w-full px-8 auto-rows-auto max-[1200px]:grid-cols-1 max-[768px]:grid-cols-1"
@@ -17,7 +17,7 @@
           />
         </div>
 
-        <div class="flex-[1] flex mt-6 flex-col overflow-hidden">
+        <div class="flex-[1] flex mb-6 flex-col overflow-hidden">
           <ClientsStatsCard
             :invoices="invoiceStore.invoices"
             :clients="clientStore.clients"

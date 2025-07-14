@@ -11,7 +11,7 @@
         :src="item.previewUrl"
         height="180"
         cover
-        class="rounded-t-2xl"
+        class="rounded-t-2xl mt-2 mb-2 ml-2 mr-2"
       />
 
       <div class="absolute top-2 right-2 z-10">

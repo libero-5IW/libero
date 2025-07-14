@@ -7,9 +7,14 @@
     <v-row dense class="w-full" style="max-width: 800px;">
       <v-col cols="12">
         <v-card flat class="pa-4 mb-4" aria-label="Formulaire client">
-          <h2 class="text-lg font-semibold mb-4" role="heading" aria-level="2">
-            {{ isEdit ? 'Modifier un client' : 'Créer un client' }}
-          </h2>
+          <div class="flex items-center justify-between mb-8">
+              <ButtonBack />
+              <h2 class="text-lg font-semibold mb-4" role="heading" aria-level="2">
+                {{ isEdit ? 'Modifier un client' : 'Créer un client' }}
+              </h2>
+              <div />
+          </div>
+
 
           <v-form ref="formRef" @submit.prevent="onSubmit" aria-label="Formulaire de création ou modification de client">
             <v-text-field
@@ -133,7 +138,7 @@ import { useClientStore } from '@/stores/client'
 import { useToastHandler } from '@/composables/useToastHandler'
 import { phoneNumberRules } from '@/utils/validationRules'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
-import Heading from '@/components/Header/Heading.vue';
+import ButtonBack from '@/components/Buttons/ButtonBack.vue'
 import { 
     addressLineRules, 
     cityRules,  

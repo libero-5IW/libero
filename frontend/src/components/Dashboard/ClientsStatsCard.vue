@@ -3,12 +3,12 @@
     <h2 class="text-lg font-semibold mb-4 text-center">Top clients par chiffre d'affaires</h2>
 
     <div v-if="topClients.length > 0" class="overflow-y-auto max-h-[200px]">
-      <table class="table-auto w-full text-sm text-left">
+      <table class="table-auto w-full  text-sm text-left">
         <thead>
           <tr class="text-gray-600 font-medium">
-            <th class="pb-2">Client</th>
-            <th class="pb-2">Total facturé</th>
-            <th class="pb-2">Nombre de factures</th>
+            <th class="pb-2 pl-4">Client</th>
+            <th class="pb-2 pl-4">Total facturé</th>
+            <th class="pb-2 pl-4">Nombre de factures</th>
           </tr>
         </thead>
         <tbody>
@@ -18,9 +18,9 @@
             class="hover:bg-gray-100 cursor-pointer"
             @click="onEdit(client.clientId)"
           >
-            <td class="py-1">{{ client.clientName }}</td>
-            <td class="py-1">{{ formatCurrency(client.totalAmount) }}</td>
-            <td class="py-1">{{ client.invoiceCount }}</td>
+            <td class="py-1 pl-4">{{ client.clientName }}</td>
+            <td class="py-1 pl-4">{{ formatCurrency(client.totalAmount) }}</td>
+            <td class="py-1 pl-4">{{ client.invoiceCount }}</td>
           </tr>
         </tbody>
       </table>

@@ -67,7 +67,7 @@
       <div class="flex w-full flex-col lg:w-auto lg:flex-row gap-2">
         <v-btn color="primary" @click="showTemplateModal = true">
           <v-icon start>mdi-plus</v-icon>
-          Nouveau facture
+          Nouvelle facture
         </v-btn>
         <v-btn color="primary" @click="exportInvoicesAsCSV">
           <v-icon start>mdi-download</v-icon>
