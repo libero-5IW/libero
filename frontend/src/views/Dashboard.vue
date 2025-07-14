@@ -1,9 +1,9 @@
 <template>
   <div
    class="flex flex-col"
-  >
+  >    
     <div
-        class="flex-grow grid grid-cols-2 gap-3 w-full px-8 auto-rows-auto max-[1200px]:grid-cols-1 max-[768px]:grid-cols-1"
+      class="flex-grow grid grid-cols-2 gap-3 w-full px-8 auto-rows-auto max-[1200px]:grid-cols-1 max-[768px]:grid-cols-1"
     >
       <div
         class="flex flex-col h-full p-3 gap-y-4 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg"
@@ -79,6 +79,9 @@ const router = useRouter();
 const user = computed(() => userStore.user);
 
 onMounted(async () => {
+  //Force une erreur JS pour test Sentry
+  throw new Error('Sentry frontend test error: dashboard mount')
+
   await userStore.fetchCurrentUser();
   if (invoiceStore.invoices.length === 0) {
     await invoiceStore.fetchAllInvoices();
