@@ -4,6 +4,9 @@ import * as request from 'supertest';
 import * as bcrypt from 'bcryptjs';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/database/prisma/prisma.service';
+import { getAuthToken } from '../utils/get-auth-token';
+import * as dotenv from 'dotenv';
+dotenv.config(); 
 
 describe('AuthController (functional)', () => {
   let app: INestApplication;
@@ -21,25 +24,12 @@ describe('AuthController (functional)', () => {
     await app.init();
 
     prisma = app.get(PrismaService);
-    await prisma.user.deleteMany({});
-
-    const hashedPassword = await bcrypt.hash('Password123!', 10);
-
-    const user = await prisma.user.create({
-      data: {
-        firstName: 'Sarah',
-        lastName: 'Salamani',
-        email: 'sarah@example.com',
-        password: hashedPassword,
-        addressLine: '123 rue de Paris',
-        postalCode: '75000',
-        city: 'Paris',
-        legalStatus: 'auto-entrepreneur',
-        siret: '12345678900011',
-      },
-    });
-
-    userId = user.id;
+    
+    const loginRes = await request(app.getHttpServer())
+    .post('/auth/login')
+    .send({ email: 'sarah@libero.com', password: 'Password123!' });
+  
+    token = loginRes.body.token;
   });
 
   afterAll(async () => {
@@ -49,12 +39,13 @@ describe('AuthController (functional)', () => {
   it('POST /auth/login', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'sarah@example.com', password: 'Password123!' })
+      .send({ email: 'sarah@libero.com', password: 'Password123!' })
       .expect(201);
 
-    expect(res.body).toHaveProperty('access_token');
-    token = res.body.access_token;
-  });
+      expect(res.body).toHaveProperty('token');
+      token = res.body.token;
+          
+    });
 
   it('POST /auth/register', async () => {
     await request(app.getHttpServer())

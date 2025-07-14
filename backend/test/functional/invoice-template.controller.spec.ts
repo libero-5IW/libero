@@ -45,6 +45,7 @@ describe('InvoiceTemplateController (functional)', () => {
     const res = await request(app.getHttpServer())
       .post('/auth/login')
       .send({ email: 'invoice-template@example.com', password: 'Password123!' });
+      console.log('LOGIN RESPONSE:', res.body); 
 
     token = res.body.access_token;
   });

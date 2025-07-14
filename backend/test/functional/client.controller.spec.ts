@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import * as bcrypt from 'bcryptjs';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/database/prisma/prisma.service';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 describe('ClientController (functional)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let token: string;
-  let userId: string;
   let clientId: string;
 
   beforeAll(async () => {
@@ -23,30 +23,13 @@ describe('ClientController (functional)', () => {
 
     prisma = app.get(PrismaService);
     await prisma.client.deleteMany({});
-    await prisma.user.deleteMany({});
 
-    const password = await bcrypt.hash('Password123!', 10);
-    const user = await prisma.user.create({
-      data: {
-        firstName: 'Test',
-        lastName: 'User',
-        email: 'clienttest@example.com',
-        password,
-        addressLine: '1 rue test',
-        postalCode: '75001',
-        city: 'Paris',
-        legalStatus: 'EI',
-        siret: '11111111100011'
-      }
-    });
-
-    userId = user.id;
-
-    const res = await request(app.getHttpServer())
+    // 🔐 Login avec un utilisateur existant
+    const loginRes = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email: 'clienttest@example.com', password: 'Password123!' });
+      .send({ email: 'sarah@libero.com', password: 'Password123!' });
 
-    token = res.body.access_token;
+    token = loginRes.body.token;
   });
 
   afterAll(async () => {
