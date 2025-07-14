@@ -49,7 +49,7 @@ jobs:
           host: ${{ secrets.OVH_HOST }}
           username: ${{ secrets.OVH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "docker-stack.yml"
+          source: "../manifests/docker-stack.yml"
           target: "/home/ubuntu/libero/"
 
       - name: Upload monitoring prometheus.yml to VPS
@@ -58,7 +58,7 @@ jobs:
           host: ${{ secrets.OVH_HOST }}
           username: ${{ secrets.OVH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "prometheus.yml"
+          source: "../manifests/prometheus.yml"
           target: "/home/ubuntu/libero/"
           
       - name: Upload filebeat.yml to VPS
@@ -67,7 +67,7 @@ jobs:
           host: ${{ secrets.OVH_HOST }}
           username: ${{ secrets.OVH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "filebeat.yml"
+          source: "../manifests/filebeat.yml"
           target: "/home/ubuntu/libero/"
 
       - name: Deploy to OVH Swarm
