@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import * as Sentry from '@sentry/node';
+import { Public } from 'src/resources/auth/decorators/public.decorator';
 
 @Controller('users')
 export class UserController {
@@ -36,9 +36,9 @@ export class UserController {
     return this.userService.remove(user.userId);
   }
 
-  //Route de test pour Sentry
+  @Public()
   @Get('sentry-test')
   triggerError() {
-    throw new Error('Sentry backend test error triggered via /users/sentry-test');
+    throw new Error('Erreur de test backend envoyée à Sentry');
   }
 }
