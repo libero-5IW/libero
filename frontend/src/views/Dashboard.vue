@@ -1,7 +1,7 @@
 <template>
   <div
-   class="flex flex-col"
-  >    
+   class="flex flex-col mt-8"
+  >
     <div
       class="flex-grow grid grid-cols-2 gap-3 w-full px-8 auto-rows-auto max-[1200px]:grid-cols-1 max-[768px]:grid-cols-1"
     >
@@ -17,7 +17,7 @@
           />
         </div>
 
-        <div class="flex-[1] flex mt-6 flex-col overflow-hidden">
+        <div class="flex-[1] flex mb-6 flex-col overflow-hidden">
           <ClientsStatsCard
             :invoices="invoiceStore.invoices"
             :clients="clientStore.clients"
@@ -34,7 +34,7 @@
 
       <router-link :to="{ name: 'InvoiceList' }" class="no-underline text-inherit">
         <div
-          class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+          class="flex flex-col h-full p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
         >
           <InvoiceStatsCard :invoices="invoiceStore.invoices" :onEdit="editInvoice" />
         </div>
@@ -42,7 +42,7 @@
 
       <router-link :to="{ name: 'QuoteList' }" class="no-underline text-inherit">
         <div
-          class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+          class="flex flex-col h-full p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
         >
           <QuoteStatsCard :quotes="quoteStore.quotes" :onEdit="editQuote" />
         </div>
@@ -79,9 +79,6 @@ const router = useRouter();
 const user = computed(() => userStore.user);
 
 onMounted(async () => {
-  //Force une erreur JS pour test Sentry
-  throw new Error('Sentry frontend test error: dashboard mount')
-
   await userStore.fetchCurrentUser();
   if (invoiceStore.invoices.length === 0) {
     await invoiceStore.fetchAllInvoices();

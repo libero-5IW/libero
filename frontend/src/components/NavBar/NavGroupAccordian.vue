@@ -4,19 +4,18 @@
       <v-list-item
         v-bind="props"
         :class="{
-          'bg-secondary-light': isOpen,
+          'bg-secondary': isOpen,
           'border-r-4 border-primary': isOpen,
-          'text-primary': isOpen
+          'text-surface': isOpen,
+          'text-primary': !isOpen
         }"
       >
         <template v-slot:prepend>
           <v-icon
             :icon="mainIcon"
-            color="primary"
-            :class="{ 'text-primary': isActive }"
           />
         </template>
-        <v-list-item-title class="text-primary">{{ mainTitle }}</v-list-item-title>
+        <v-list-item-title :class="isOpen ? 'text-surface': 'text-primary'">{{ mainTitle }}</v-list-item-title>
       </v-list-item>
     </template>
 

@@ -12,6 +12,7 @@ import vuetify from './plugins/vuetify'
 import Vue3Toastify, { type ToastContainerOptions } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css'
 import '@mdi/font/css/materialdesignicons.css'
+import { MotionPlugin } from '@vueuse/motion'
 
 import * as Sentry from '@sentry/vue'
 import { browserTracingIntegration } from '@sentry/vue'
@@ -40,6 +41,8 @@ app.use(Vue3Toastify, {
     position: "bottom-right",
     theme: "dark",
 });
+
+app.use(MotionPlugin)
 
 app.use(createPinia())
 app.use(router)

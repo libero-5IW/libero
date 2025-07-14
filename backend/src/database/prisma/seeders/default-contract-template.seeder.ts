@@ -6,7 +6,7 @@ export async function seedDefaultContractTemplate(prisma: PrismaClient) {
     name: 'Modèle de base - Contrat',
     userId: null,
     contentHtml: `
-        <h1>Contrat de prestation</h1>
+        <h1>Contrat de prestation n°{{contract_number}}</h1>
         <p><strong>Freelance :</strong> {{freelancer_name}}, {{freelancer_address}}</p>
         <p><strong>Client :</strong> {{client_name}}, {{client_address}}</p>
         <p><strong>Prestation :</strong> {{prestation_description}}</p>
@@ -22,6 +22,12 @@ export async function seedDefaultContractTemplate(prisma: PrismaClient) {
         <p><strong>Signature Client signature:</strong> {{client_signature}}</p>
       `,
     variables: [
+      {
+        variableName: 'contract_number',
+        label: 'Numéro du contrat',
+        type: VariableType.number,
+        required: true,
+      },
       {
         variableName: 'freelancer_name',
         label: 'Nom du freelance',

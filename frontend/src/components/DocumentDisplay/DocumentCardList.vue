@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-15">
     <v-card
       v-for="item in items"
       :key="item.id"
@@ -11,7 +11,7 @@
         :src="item.previewUrl"
         height="180"
         cover
-        class="rounded-t-2xl"
+        class="rounded-t-2xl mt-2 mb-2 ml-2 mr-2"
       />
 
       <div class="absolute top-2 right-2 z-10">

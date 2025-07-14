@@ -31,6 +31,7 @@
     "@tiptap/extension-underline": "^2.11.7",
     "@tiptap/starter-kit": "^2.24.2",
     "@tiptap/vue-3": "^2.24.2",
+    "@vueuse/motion": "^3.0.3",
     "axios": "^1.8.4",
     "chart.js": "^3.9.1",
     "date-fns": "^4.1.0",

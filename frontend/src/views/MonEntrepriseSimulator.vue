@@ -1,9 +1,9 @@
 <template>
-  <div>
+  <div class="ml-4">
+    <Heading>Simulateur Urssaf</Heading>    
     <v-progress-circular v-if="loading" indeterminate color="primary" class="my-4" />
     <template v-else>
       <div v-if="getModuleName(legalStatus)" id="widget-container">
-        <!-- Widget injecté ici -->
       </div>
       <template v-else>
         <v-alert type="info">
@@ -29,6 +29,7 @@
 import { ref, onMounted, watch, nextTick, computed } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { legalStatus as legalStatusList } from '@/constants/legal-status';
+import Heading from '@/components/Header/Heading.vue'
 
 const userStore = useUserStore();
 const legalStatus = ref('');
