@@ -70,6 +70,7 @@ services:
       DOCUSIGN_BASE_URL_FILE: /run/secrets/docusign_base_url
       DOCUSIGN_ACCOUNT_ID_FILE: /run/secrets/docusign_account_id
       DOCUSIGN_USER_ID_FILE: /run/secrets/docusign_user_id
+      SENTRY_DSN_FILE: /run/secrets/sentry_dsn
     secrets:
       - docusign_private_key
       - jwt_secret
@@ -86,6 +87,7 @@ services:
       - docusign_base_url
       - docusign_account_id
       - docusign_user_id
+      - sentry_dsn
     depends_on:
       - postgres
     networks:
@@ -282,6 +284,8 @@ secrets:
   docusign_account_id:
     external: true
   docusign_user_id:
+    external: true
+  sentry_dsn:
     external: true
 
 networks:

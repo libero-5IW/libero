@@ -12,6 +12,7 @@ jobs:
       REGISTRY: docker.io
       IMAGE_BACKEND: docker.io/projetlibero/libero-backend:latest
       IMAGE_FRONTEND: docker.io/projetlibero/libero-frontend:latest
+      VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
 
     steps:
       - name: Checkout code
@@ -39,6 +40,8 @@ jobs:
           context: ./frontend
           push: true
           tags: ${{ env.IMAGE_FRONTEND }}
+          build-args: |
+            VITE_SENTRY_DSN=${{ env.VITE_SENTRY_DSN }}
 
       - name: Upload docker-stack.yml to VPS
         uses: appleboy/scp-action@v0.1.7
