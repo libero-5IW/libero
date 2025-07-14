@@ -160,7 +160,7 @@ const documentCards = computed<TemplateDocumentCard[]>(() =>
 const templates = computed(() => contractTemplate.templates)
 
 const fetchAllTemplates = async () => {
-  contractTemplate.fetchAllTemplates(false)
+  await contractTemplate.searchTemplates('', null, null, 1)
 }
 
 const createTemplate = () => {
@@ -176,7 +176,7 @@ const duplicateTemplate = async (id: string) => {
 
   if (duplicated) {
     showToast('success', `Duplication effectuée, ${duplicated.name} a été crée.`)
-    fetchAllTemplates()
+    await contractTemplate.searchTemplates('', null, null, 1)
   }
 }
 
@@ -197,14 +197,14 @@ async function handlePageChange(page: number) {
 async function confirmDeleteTemplate() {
   if (!selectedTemplateId.value) return
   await contractTemplate.deleteTemplate(selectedTemplateId.value)
-  await fetchAllTemplates()
+  await contractTemplate.searchTemplates('', null, null, 1)
   showToast('success', 'Le template a été bien supprimé !')
   selectedTemplateId.value = null
 }
 
 async function handleSearch(term: string) {
   if (term.trim() === '' && !startDate.value && !endDate.value) {
-    await contractTemplate.fetchAllTemplates(false)
+    await contractTemplate.searchTemplates('', null, null, 1)
   } else {
     await contractTemplate.searchTemplates(term, startDate.value, endDate.value)
   }

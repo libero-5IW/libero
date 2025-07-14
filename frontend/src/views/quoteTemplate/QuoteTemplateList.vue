@@ -160,7 +160,7 @@
   const templates =  computed(() => quoteTemplate.templates)
 
   const fetchAllTemplates = async () => {
-    quoteTemplate.fetchAllTemplates(false)
+  await quoteTemplate.searchTemplates('', null, null, 1)
   }
 
   const createTemplate = () => {
@@ -176,7 +176,7 @@
 
     if(duplicated) {
       showToast('success', `Duplication effectuée, ${duplicated.name} a été crée.`)
-      fetchAllTemplates()
+      await quoteTemplate.searchTemplates('', null, null, 1)
     }
   }
 
@@ -188,7 +188,7 @@
   async function confirmDeleteTemplate() {
     if (!selectedTemplateId.value) return;
     await quoteTemplate.deleteTemplate(selectedTemplateId.value);
-    await fetchAllTemplates();
+    await quoteTemplate.searchTemplates('', null, null, 1);
     showToast('success', 'Le template a été bien supprimé !');
     selectedTemplateId.value = null;
   }

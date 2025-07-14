@@ -160,7 +160,7 @@ const documentCards = computed<TemplateDocumentCard[]>(() =>
 const templates = computed(() => invoiceTemplate.templates)
 
 const fetchAllTemplates = async () => {
-  invoiceTemplate.fetchAllTemplates(false)
+  await invoiceTemplate.searchTemplates('', null, null, 1)
 }
 
 const createTemplate = () => {
@@ -176,7 +176,7 @@ const duplicateTemplate = async (id: string) => {
 
   if (duplicated) {
     showToast('success', `Duplication effectuée, ${duplicated.name} a été crée.`)
-    fetchAllTemplates()
+    await invoiceTemplate.searchTemplates('', null, null, 1)
   }
 }
 
@@ -188,7 +188,7 @@ function openDeleteConfirmation(id: string) {
 async function confirmDeleteTemplate() {
   if (!selectedTemplateId.value) return
   await invoiceTemplate.deleteTemplate(selectedTemplateId.value)
-  await fetchAllTemplates()
+  await invoiceTemplate.searchTemplates('', null, null, 1)
   showToast('success', 'Le template a été bien supprimé !')
   selectedTemplateId.value = null
 }
