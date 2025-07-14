@@ -6,7 +6,7 @@
       density="compact"
       clearable
       variant="outlined"
-      class="w-full max-w-md"
+      class="w-full "
     />
   </template>
   

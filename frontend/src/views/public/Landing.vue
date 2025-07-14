@@ -191,7 +191,7 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-6 text-sm text-gray-300">
-        <RouterLink to="/privacy-policy" class="hover:underline">Politique de confidentialité</RouterLink>
+        <RouterLink to="/privacy-policy">Politique de confidentialité</RouterLink>
         <a href="mailto:contact@libero.app" class="hover:underline">Contact</a>
         <RouterLink to="/help" class="hover:underline">Aide</RouterLink>
       </div>

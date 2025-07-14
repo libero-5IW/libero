@@ -1,14 +1,26 @@
 <template>
   <div
-    class="ml-4 mt-8 focus:outline-none"
+    class="ml-4 focus:outline-none"
     role="main"
     aria-labelledby="client-page-title"
     tabindex="-1"
     ref="mainContent"
   >
-    <div class="flex items-center justify-between mb-6">
-      <span class="text-xl font-semibold">Liste des clients</span>
-      <div class="flex gap-2">
+  <Heading>Liste des clients</Heading>  
+
+    <div class="flex flex-col lg:flex-row flex-wrap w-full items-start justify-between gap-4 mb-6">
+      <div class="flex w-full flex-col lg:w-auto lg:flex-row gap-4">
+        <SearchInput
+          v-model="search"
+          placeholder="Rechercher un client"
+          @search="handleSearch"
+          class="w-full lg:w-80 text-base"
+          density="comfortable"
+          aria-label="Rechercher un client"
+        />
+      </div>
+
+      <div class="flex w-full flex-col lg:w-auto lg:flex-row gap-2">
         <v-btn color="primary" @click="createClient">
           <v-icon start>mdi-plus</v-icon>
           Nouveau client
@@ -19,13 +31,6 @@
         </v-btn>
       </div>
     </div>
-
-    <SearchInput
-      v-model="search"
-      placeholder="Rechercher un client"
-      @search="handleSearch"
-      aria-label="Rechercher un client"
-    />
 
     <DataTable
       :headers="headers"
@@ -88,6 +93,7 @@ import type { ToastStatus } from '@/types'
 import DataTable from '@/components/DocumentDisplay/DataTable.vue'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
 import SearchInput from '@/components/SearchInput.vue'
+import Heading from '@/components/Header/Heading.vue'
 
 const clientStore = useClientStore()
 const router = useRouter()

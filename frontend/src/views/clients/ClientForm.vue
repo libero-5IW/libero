@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="d-flex justify-center" role="main" aria-labelledby="client-form-title" tabindex="-1" ref="mainContent">
+  <v-container fluid class="d-flex justify-center mt-8" role="main" aria-labelledby="client-form-title" tabindex="-1" ref="mainContent">
     <h1 id="client-form-title" class="sr-only">
       {{ isEdit ? 'Modifier un client' : 'Créer un client' }}
     </h1>
@@ -133,6 +133,7 @@ import { useClientStore } from '@/stores/client'
 import { useToastHandler } from '@/composables/useToastHandler'
 import { phoneNumberRules } from '@/utils/validationRules'
 import ConfirmationModal from '@/components/Modals/ConfirmationModal.vue'
+import Heading from '@/components/Header/Heading.vue';
 import { 
     addressLineRules, 
     cityRules,  

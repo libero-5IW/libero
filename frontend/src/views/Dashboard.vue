@@ -34,7 +34,7 @@
 
       <router-link :to="{ name: 'InvoiceList' }" class="no-underline text-inherit">
         <div
-          class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+          class="flex flex-col h-full p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
         >
           <InvoiceStatsCard :invoices="invoiceStore.invoices" :onEdit="editInvoice" />
         </div>
@@ -42,7 +42,7 @@
 
       <router-link :to="{ name: 'QuoteList' }" class="no-underline text-inherit">
         <div
-          class="flex flex-col p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
+          class="flex flex-col h-full p-3 w-full bg-white rounded-md shadow transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
         >
           <QuoteStatsCard :quotes="quoteStore.quotes" :onEdit="editQuote" />
         </div>

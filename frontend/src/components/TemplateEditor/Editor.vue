@@ -97,7 +97,7 @@
       </div>
       <EditorToolbar v-if="editor" :editor="editor" class="mb-0" />
       <div class="editor-wrapper relative">
-        <EditorContent :editor="editor" class="p-4" />
+        <EditorContent :editor="editor" class="p-4 bg-gray-50" />
       </div>
     </div>
   </v-card>
