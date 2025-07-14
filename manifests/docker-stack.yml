@@ -243,8 +243,7 @@ services:
         constraints:
           - node.role == manager
   backup:
-    build:
-      image: libero_backup
+    image: libero_backup
     environment:
       - PGPASSWORD=admin
     volumes:
