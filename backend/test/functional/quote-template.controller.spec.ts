@@ -1,184 +1,163 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { QuoteTemplateController } from '../../src/resources/quote-template/quote-template.controller';
-import { QuoteTemplateService } from '../../src/resources/quote-template/quote-template.service';
-import { DEFAULT_QUOTE_TEMPLATE } from '../../src/common/constants/system-templates/defaultQuoteTemplate';
+import * as bcrypt from 'bcryptjs';
+import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/database/prisma/prisma.service';
 
-describe('QuoteTemplateController (Functional)', () => {
+describe('QuoteTemplateController (functional)', () => {
   let app: INestApplication;
-
-  const requiredContentHtml = `
-  <p>Hello {{client_name}}, here is your quote for {{prestation}}.</p>
-  <p>Freelancer: {{freelancer_name}}</p>
-  <p>Date: {{quote_date}}</p>
-  <p>Quote Number: {{quote_number}}</p>
-  <p>Total (HT): {{total_amount}}</p>
-  <p>Valid Until: {{valid_until}}</p>
-`.trim();
-
-  const mockTemplate = {
-    id: '1',
-    name: 'Test Template',
-    contentHtml: requiredContentHtml,
-    userId: '123',
-    variables: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const mockQuoteTemplateService = {
-    create: jest.fn(async (dto) => ({
-      id: '2',
-      name: dto.name,
-      contentHtml: dto.contentHtml,
-      userId: dto.userId || '123',
-      variables: dto.variables || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })),
-    findAll: jest.fn().mockResolvedValue([mockTemplate]),
-    findOne: jest.fn().mockResolvedValue(mockTemplate),
-    update: jest.fn(async (id, dto) => ({
-      ...mockTemplate,
-      id,
-      name: dto.name || mockTemplate.name,
-      contentHtml: dto.contentHtml || mockTemplate.contentHtml,
-    })),
-    remove: jest.fn().mockResolvedValue({ deleted: true }),
-    duplicate: jest.fn().mockResolvedValue({
-      id: '3',
-      name: 'Test Template Copy',
-      contentHtml: requiredContentHtml,
-      userId: 'mock-user-id',
-      variables: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }),
-  };
+  let prisma: PrismaService;
+  let token: string;
+  let userId: string;
+  let templateId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [QuoteTemplateController],
-      providers: [
-        {
-          provide: QuoteTemplateService,
-          useValue: mockQuoteTemplateService,
-        },
-      ],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
     await app.init();
+
+    prisma = app.get(PrismaService);
+    await prisma.quoteTemplate.deleteMany({});
+    await prisma.user.deleteMany({});
+
+    const password = await bcrypt.hash('Password123!', 10);
+    const user = await prisma.user.create({
+      data: {
+        firstName: 'Quote',
+        lastName: 'TemplateTester',
+        email: 'quote-template@example.com',
+        password,
+        addressLine: '7 rue devis',
+        postalCode: '75007',
+        city: 'Paris',
+        legalStatus: 'EURL',
+        siret: '55555555500055'
+      }
+    });
+
+    userId = user.id;
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'quote-template@example.com', password: 'Password123!' });
+
+    token = res.body.access_token;
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('/GET quote-templates/default-template', () => {
-    return request(app.getHttpServer())
+  it('GET /quote-templates/default-template', async () => {
+    await request(app.getHttpServer())
       .get('/quote-templates/default-template')
-      .expect(200)
-      .expect(DEFAULT_QUOTE_TEMPLATE);
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
   });
 
-  it('/POST quote-templates', () => {
-    return request(app.getHttpServer())
+  it('POST /quote-templates', async () => {
+    const res = await request(app.getHttpServer())
       .post('/quote-templates')
+      .set('Authorization', `Bearer ${token}`)
       .send({
-        name: 'New Template',
-        contentHtml: requiredContentHtml,
-        userId: '123',
-        variables: [],
+        name: 'Test Quote Template',
+        contentHtml: '<p>Template</p>',
+        pdfKey: 'quote.pdf',
+        previewKey: 'preview.png',
+        variables: [
+          {
+            variableName: 'clientName',
+            label: 'Nom Client',
+            type: 'string',
+            required: true
+          }
+        ]
       })
-      .expect(201)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '2',
-          name: 'New Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+      .expect(201);
+
+    templateId = res.body.id;
   });
 
-  it('/GET quote-templates', () => {
-    return request(app.getHttpServer())
+  it('GET /quote-templates', async () => {
+    const res = await request(app.getHttpServer())
       .get('/quote-templates')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body[0]).toMatchObject({
-          id: '1',
-          name: 'Test Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body[0].createdAt).toBe('string');
-        expect(typeof res.body[0].updatedAt).toBe('string');
-      });
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('/GET quote-templates/:id', () => {
-    return request(app.getHttpServer())
-      .get('/quote-templates/1')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '1',
-          name: 'Test Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('GET /quote-templates/:id', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/quote-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body).toHaveProperty('id', templateId);
   });
 
-  it('/PATCH quote-templates/:id', () => {
-    return request(app.getHttpServer())
-      .patch('/quote-templates/1')
-      .send({ name: 'Updated Template', contentHtml: requiredContentHtml })
-      .expect(200)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '1',
-          name: 'Updated Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('PATCH /quote-templates/:id', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/quote-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Updated Quote Template',
+        contentHtml: '<p>Updated</p>',
+        pdfKey: 'updated.pdf',
+        previewKey: 'updated.png',
+        variables: [
+          {
+            variableName: 'updated',
+            label: 'Modifié',
+            type: 'string',
+            required: false
+          }
+        ]
+      })
+      .expect(200);
+
+    expect(res.body.name).toBe('Updated Quote Template');
   });
 
-  it('/DELETE quote-templates/:id', () => {
-    return request(app.getHttpServer())
-      .delete('/quote-templates/1')
-      .expect(200)
-      .expect({ deleted: true });
+  it('GET /quote-templates/search', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/quote-templates/search')
+      .query({ term: 'Updated' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('/POST quote-templates/:id/duplicate', () => {
-    return request(app.getHttpServer())
-      .post('/quote-templates/1/duplicate')
-      .expect(201)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '3',
-          name: 'Test Template Copy',
-          contentHtml: requiredContentHtml,
-          userId: 'mock-user-id',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('GET /quote-templates/export', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/quote-templates/export')
+      .query({ term: '' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.headers['content-type']).toContain('text/csv');
+  });
+
+  it('POST /quote-templates/:id/duplicate', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/quote-templates/${templateId}/duplicate`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    expect(res.body).toHaveProperty('id');
+    expect(res.body.id).not.toBe(templateId);
+  });
+
+  it('DELETE /quote-templates/:id', async () => {
+    await request(app.getHttpServer())
+      .delete(`/quote-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
   });
 });

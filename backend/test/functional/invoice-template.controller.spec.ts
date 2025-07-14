@@ -1,189 +1,163 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { InvoiceTemplateController } from '../../src/resources/invoice-template/invoice-template.controller';
-import { InvoiceTemplateService } from '../../src/resources/invoice-template/invoice-template.service';
-import { DEFAULT_INVOICE_TEMPLATE } from '../../src/common/constants/system-templates/defaultInvoiceTemplate';
+import * as bcrypt from 'bcryptjs';
+import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/database/prisma/prisma.service';
 
-describe('InvoiceTemplateController (Functional)', () => {
+describe('InvoiceTemplateController (functional)', () => {
   let app: INestApplication;
-
-  const requiredContentHtml = `
-    <h1>Facture n°{{invoice_number}}</h1>
-    <p>Émise le : {{issue_date}}</p>
-    <p>Échéance : {{due_date}}</p>
-    <p>Freelance : {{freelancer_name}}, {{freelancer_address}}</p>
-    <p>SIRET : {{freelancer_siret}}</p>
-    <p>Client : {{client_name}}, {{client_address}}</p>
-    <p>Prestation : {{prestation_description}}</p>
-    <p>Montant HT : {{total_amount}}</p>
-    <p>Conditions de paiement : {{payment_terms}}</p>
-    <p>Pénalités de retard : {{late_penalty}}</p>
-    <p>Détail TVA : {{tva_detail}}</p>
-  `.trim();
-
-  const mockTemplate = {
-    id: '1',
-    name: 'Test Invoice Template',
-    contentHtml: requiredContentHtml,
-    userId: '123',
-    variables: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const mockInvoiceTemplateService = {
-    create: jest.fn(async (dto) => ({
-      id: '2',
-      name: dto.name,
-      contentHtml: dto.contentHtml,
-      userId: dto.userId || '123',
-      variables: dto.variables || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })),
-    findAll: jest.fn().mockResolvedValue([mockTemplate]),
-    findOne: jest.fn().mockResolvedValue(mockTemplate),
-    update: jest.fn(async (id, dto) => ({
-      ...mockTemplate,
-      id,
-      name: dto.name || mockTemplate.name,
-      contentHtml: dto.contentHtml || mockTemplate.contentHtml,
-    })),
-    remove: jest.fn().mockResolvedValue({ deleted: true }),
-    duplicate: jest.fn().mockResolvedValue({
-      id: '3',
-      name: 'Test Invoice Template Copy',
-      contentHtml: requiredContentHtml,
-      userId: 'mock-user-id',
-      variables: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }),
-  };
+  let prisma: PrismaService;
+  let token: string;
+  let userId: string;
+  let templateId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [InvoiceTemplateController],
-      providers: [
-        {
-          provide: InvoiceTemplateService,
-          useValue: mockInvoiceTemplateService,
-        },
-      ],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
     await app.init();
+
+    prisma = app.get(PrismaService);
+    await prisma.invoiceTemplate.deleteMany({});
+    await prisma.user.deleteMany({});
+
+    const password = await bcrypt.hash('Password123!', 10);
+    const user = await prisma.user.create({
+      data: {
+        firstName: 'Invoice',
+        lastName: 'TemplateTester',
+        email: 'invoice-template@example.com',
+        password,
+        addressLine: '6 rue template',
+        postalCode: '75006',
+        city: 'Paris',
+        legalStatus: 'SASU',
+        siret: '44444444400044'
+      }
+    });
+
+    userId = user.id;
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'invoice-template@example.com', password: 'Password123!' });
+
+    token = res.body.access_token;
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('/GET invoice-templates/default-template', () => {
-    return request(app.getHttpServer())
+  it('GET /invoice-templates/default-template', async () => {
+    await request(app.getHttpServer())
       .get('/invoice-templates/default-template')
-      .expect(200)
-      .expect(DEFAULT_INVOICE_TEMPLATE);
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
   });
 
-  it('/POST invoice-templates', () => {
-    return request(app.getHttpServer())
+  it('POST /invoice-templates', async () => {
+    const res = await request(app.getHttpServer())
       .post('/invoice-templates')
+      .set('Authorization', `Bearer ${token}`)
       .send({
-        name: 'New Invoice Template',
-        contentHtml: requiredContentHtml,
-        userId: '123',
-        variables: [],
+        name: 'Test Invoice Template',
+        contentHtml: '<p>Template</p>',
+        pdfKey: 'template.pdf',
+        previewKey: 'preview.png',
+        variables: [
+          {
+            variableName: 'total',
+            label: 'Total',
+            type: 'string',
+            required: true
+          }
+        ]
       })
-      .expect(201)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '2',
-          name: 'New Invoice Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+      .expect(201);
+
+    templateId = res.body.id;
   });
 
-  it('/GET invoice-templates', () => {
-    return request(app.getHttpServer())
+  it('GET /invoice-templates', async () => {
+    const res = await request(app.getHttpServer())
       .get('/invoice-templates')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body[0]).toMatchObject({
-          id: '1',
-          name: 'Test Invoice Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body[0].createdAt).toBe('string');
-        expect(typeof res.body[0].updatedAt).toBe('string');
-      });
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('/GET invoice-templates/:id', () => {
-    return request(app.getHttpServer())
-      .get('/invoice-templates/1')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '1',
-          name: 'Test Invoice Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('GET /invoice-templates/:id', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/invoice-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body).toHaveProperty('id', templateId);
   });
 
-  it('/PATCH invoice-templates/:id', () => {
-    return request(app.getHttpServer())
-      .patch('/invoice-templates/1')
-      .send({ name: 'Updated Invoice Template', contentHtml: requiredContentHtml })
-      .expect(200)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '1',
-          name: 'Updated Invoice Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('PATCH /invoice-templates/:id', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/invoice-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Updated Invoice Template',
+        contentHtml: '<p>Updated</p>',
+        pdfKey: 'updated.pdf',
+        previewKey: 'updated.png',
+        variables: [
+          {
+            variableName: 'updated',
+            label: 'Modifié',
+            type: 'string',
+            required: false
+          }
+        ]
+      })
+      .expect(200);
+
+    expect(res.body.name).toBe('Updated Invoice Template');
   });
 
-  it('/DELETE invoice-templates/:id', () => {
-    return request(app.getHttpServer())
-      .delete('/invoice-templates/1')
-      .expect(200)
-      .expect({ deleted: true });
+  it('GET /invoice-templates/search', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/invoice-templates/search')
+      .query({ term: 'Updated' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('/POST invoice-templates/:id/duplicate', () => {
-    return request(app.getHttpServer())
-      .post('/invoice-templates/1/duplicate')
-      .expect(201)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '3',
-          name: 'Test Invoice Template Copy',
-          contentHtml: requiredContentHtml,
-          userId: 'mock-user-id',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('GET /invoice-templates/export', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/invoice-templates/export')
+      .query({ term: '' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.headers['content-type']).toContain('text/csv');
+  });
+
+  it('POST /invoice-templates/:id/duplicate', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/invoice-templates/${templateId}/duplicate`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    expect(res.body).toHaveProperty('id');
+    expect(res.body.id).not.toBe(templateId);
+  });
+
+  it('DELETE /invoice-templates/:id', async () => {
+    await request(app.getHttpServer())
+      .delete(`/invoice-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
   });
 });

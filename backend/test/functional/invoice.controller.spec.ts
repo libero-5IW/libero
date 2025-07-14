@@ -1,111 +1,179 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { InvoiceController } from '../../src/resources/invoice/invoice.controller';
-import { InvoiceService } from '../../src/resources/invoice/invoice.service';
+import * as bcrypt from 'bcryptjs';
+import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/database/prisma/prisma.service';
+import { InvoiceStatus } from '@prisma/client';
 
-describe('InvoiceController (Functional)', () => {
+describe('InvoiceController (functional)', () => {
   let app: INestApplication;
-
-  const mockInvoice = {
-    id: '1',
-    number: 12,
-    clientId: 'client-123',
-    userId: 'user-123',
-    variables: {},
-    issuedAt: new Date().toISOString(),
-    dueDate: new Date().toISOString(),
-    generatedHtml: '<p>Facture HTML</p>',
-    status: 'draft',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const mockInvoiceService = {
-    createInvoiceFromTemplate: jest.fn(async (dto) => ({
-      ...mockInvoice,
-      ...dto,
-      id: '2',
-      number: 13
-    })),
-    getNextInvoiceNumber: jest.fn().mockResolvedValue({ nextNumber: 13 }),
-    findById: jest.fn(async (id) => (id === '1' ? mockInvoice : null)),
-    findAll: jest.fn().mockResolvedValue([mockInvoice]),
-  };
+  let prisma: PrismaService;
+  let token: string;
+  let userId: string;
+  let invoiceId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [InvoiceController],
-      providers: [
-        {
-          provide: InvoiceService,
-          useValue: mockInvoiceService,
-        },
-      ],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
     await app.init();
+
+    prisma = app.get(PrismaService);
+    await prisma.invoice.deleteMany({});
+    await prisma.user.deleteMany({});
+
+    const password = await bcrypt.hash('Password123!', 10);
+    const user = await prisma.user.create({
+      data: {
+        firstName: 'Invoice',
+        lastName: 'Tester',
+        email: 'invoiceuser@example.com',
+        password,
+        addressLine: '10 rue invoice',
+        postalCode: '75010',
+        city: 'Paris',
+        legalStatus: 'SAS',
+        siret: '33333333300033',
+      },
+    });
+
+    userId = user.id;
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'invoiceuser@example.com', password: 'Password123!' });
+
+    token = res.body.access_token;
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('/POST invoices - Créer une facture', () => {
-    return request(app.getHttpServer())
+  it('POST /invoices', async () => {
+    const res = await request(app.getHttpServer())
       .post('/invoices')
+      .set('Authorization', `Bearer ${token}`)
       .send({
-        templateId: 'template-123',
-        clientId: 'client-123',
-        userId: 'user-123',
-        variables: { total_amount: 1000 },
-        issuedAt: new Date().toISOString(),
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        generatedHtml: '<p>Facture HTML</p>',
-        status: 'draft'
+        number: 1,
+        contentHtml: '<p>Facture</p>',
+        pdfKey: 'invoice.pdf',
+        previewKey: 'preview.png',
+        validUntil: new Date(Date.now() + 7 * 86400000).toISOString(),
+        dueDate: new Date(Date.now() + 7 * 86400000).toISOString(),
+        variableValues: [
+          {
+            variableName: 'montant',
+            label: 'Montant',
+            type: 'string',
+            required: true,
+            value: '1000€'
+          }
+        ]
       })
-      .expect(201)
-      .expect((res) => {
-        expect(res.body.id).toBeDefined();
-        expect(res.body.number).toBe(13);
-        expect(res.body.status).toBe('draft');
-      });
+      .expect(201);
+
+    invoiceId = res.body.id;
   });
 
-  it('/GET invoices/next-number - Prochain numéro de facture', () => {
-    return request(app.getHttpServer())
-      .get('/invoices/next-number')
-      .expect(200)
-      .expect({ nextNumber: 13 });
-  });
-
-  it('/GET invoices/:id - Récupérer une facture existante', () => {
-    return request(app.getHttpServer())
-      .get('/invoices/1')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body.id).toBe('1');
-        expect(res.body.number).toBe(12);
-      });
-  });
-
-  it('/GET invoices/:id - Facture non trouvée', () => {
-    return request(app.getHttpServer())
-      .get('/invoices/999')
-      .expect(404)
-      .expect((res) => {
-        expect(res.body.message).toBe('Facture non trouvée');
-      });
-  });
-
-  it('/GET invoices - Lister toutes les factures', () => {
-    return request(app.getHttpServer())
+  it('GET /invoices', async () => {
+    const res = await request(app.getHttpServer())
       .get('/invoices')
-      .expect(200)
-      .expect((res) => {
-        expect(Array.isArray(res.body)).toBe(true);
-        expect(res.body.length).toBeGreaterThan(0);
-      });
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it('GET /invoices/next-number', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/invoices/next-number')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(typeof res.body).toBe('number');
+  });
+
+  it('GET /invoices/search', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/invoices/search')
+      .query({ term: '' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  it('GET /invoices/export', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/invoices/export')
+      .query({ term: '' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.headers['content-type']).toContain('text/csv');
+  });
+
+  it('GET /invoices/:id', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/invoices/${invoiceId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body).toHaveProperty('id', invoiceId);
+  });
+
+  it('PUT /invoices/:id', async () => {
+    const res = await request(app.getHttpServer())
+      .put(`/invoices/${invoiceId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        dueDate: new Date(Date.now() + 14 * 86400000).toISOString(),
+        variableValues: [
+          {
+            variableName: 'montant',
+            label: 'Montant',
+            type: 'string',
+            required: true,
+            value: '2000€'
+          }
+        ]
+      })
+      .expect(200);
+
+    expect(res.body.variableValues[0].value).toBe('2000€');
+  });
+
+  it('PATCH /invoices/:id/change-status', async () => {
+    await request(app.getHttpServer())
+      .patch(`/invoices/${invoiceId}/change-status`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ newStatus: InvoiceStatus.paid })
+      .expect(200);
+  });
+
+  it('PATCH /invoices/:id/send', async () => {
+    await request(app.getHttpServer())
+      .patch(`/invoices/${invoiceId}/send`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+  });
+
+  it('PATCH /invoices/:id/send-paid', async () => {
+    await request(app.getHttpServer())
+      .patch(`/invoices/${invoiceId}/send-paid`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+  });
+
+  it('DELETE /invoices/:id', async () => {
+    await request(app.getHttpServer())
+      .delete(`/invoices/${invoiceId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
   });
 });

@@ -1,186 +1,163 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { ContractTemplateController } from '../../src/resources/contract-template/contract-template.controller';
-import { ContractTemplateService } from '../../src/resources/contract-template/contract-template.service';
-import { DEFAULT_CONTRACT_TEMPLATE } from '../../src/common/constants/system-templates/defaultContractTemplate';
+import * as bcrypt from 'bcryptjs';
+import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/database/prisma/prisma.service';
 
-describe('ContractTemplateController (Functional)', () => {
+describe('ContractTemplateController (functional)', () => {
   let app: INestApplication;
-
-  const requiredContentHtml = `
-    <h1>Contrat de prestation</h1>
-    <p><strong>Freelance :</strong> {{freelancer_name}}, {{freelancer_address}}</p>
-    <p><strong>Client :</strong> {{client_name}}, {{client_address}}</p>
-    <p><strong>Prestation :</strong> {{prestation_description}}</p>
-    <p><strong>Montant :</strong> {{total_amount}} € HT</p>
-    <p><strong>Modalités de paiement :</strong> {{payment_terms}}</p>
-    <p><strong>Signature Freelance :</strong> {{freelancer_signature}}</p>
-    <p><strong>Signature Client :</strong> {{client_signature}}</p>
-  `.trim();
-
-  const mockTemplate = {
-    id: '1',
-    name: 'Test Contract Template',
-    contentHtml: requiredContentHtml,
-    userId: '123',
-    variables: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const mockContractTemplateService = {
-    create: jest.fn(async (dto) => ({
-      id: '2',
-      name: dto.name,
-      contentHtml: dto.contentHtml,
-      userId: dto.userId || '123',
-      variables: dto.variables || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })),
-    findAll: jest.fn().mockResolvedValue([mockTemplate]),
-    findOne: jest.fn().mockResolvedValue(mockTemplate),
-    update: jest.fn(async (id, dto) => ({
-      ...mockTemplate,
-      id,
-      name: dto.name || mockTemplate.name,
-      contentHtml: dto.contentHtml || mockTemplate.contentHtml,
-    })),
-    remove: jest.fn().mockResolvedValue({ deleted: true }),
-    duplicate: jest.fn().mockResolvedValue({
-      id: '3',
-      name: 'Test Contract Template Copy',
-      contentHtml: requiredContentHtml,
-      userId: 'mock-user-id',
-      variables: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }),
-  };
+  let prisma: PrismaService;
+  let token: string;
+  let userId: string;
+  let templateId: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      controllers: [ContractTemplateController],
-      providers: [
-        {
-          provide: ContractTemplateService,
-          useValue: mockContractTemplateService,
-        },
-      ],
+      imports: [AppModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
     await app.init();
+
+    prisma = app.get(PrismaService);
+    await prisma.contractTemplate.deleteMany({});
+    await prisma.user.deleteMany({});
+
+    const password = await bcrypt.hash('Password123!', 10);
+    const user = await prisma.user.create({
+      data: {
+        firstName: 'Contract',
+        lastName: 'Tester',
+        email: 'contract@example.com',
+        password,
+        addressLine: '4 rue contrat',
+        postalCode: '75004',
+        city: 'Paris',
+        legalStatus: 'SAS',
+        siret: '12345678900033'
+      }
+    });
+
+    userId = user.id;
+
+    const res = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ email: 'contract@example.com', password: 'Password123!' });
+
+    token = res.body.access_token;
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('/GET contract-templates/default-template', () => {
-    return request(app.getHttpServer())
+  it('GET /contract-templates/default-template', async () => {
+    await request(app.getHttpServer())
       .get('/contract-templates/default-template')
-      .expect(200)
-      .expect(DEFAULT_CONTRACT_TEMPLATE);
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
   });
 
-  it('/POST contract-templates', () => {
-    return request(app.getHttpServer())
+  it('POST /contract-templates', async () => {
+    const res = await request(app.getHttpServer())
       .post('/contract-templates')
+      .set('Authorization', `Bearer ${token}`)
       .send({
-        name: 'New Contract Template',
-        contentHtml: requiredContentHtml,
-        userId: '123',
-        variables: [],
+        name: 'Test Contract',
+        contentHtml: '<p>Hello Contract</p>',
+        pdfKey: 'contract.pdf',
+        previewKey: 'preview.png',
+        variables: [
+          {
+            variableName: 'name',
+            label: 'Nom',
+            type: 'string',
+            required: true
+          }
+        ]
       })
-      .expect(201)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '2',
-          name: 'New Contract Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+      .expect(201);
+
+    templateId = res.body.id;
   });
 
-  it('/GET contract-templates', () => {
-    return request(app.getHttpServer())
+  it('GET /contract-templates', async () => {
+    const res = await request(app.getHttpServer())
       .get('/contract-templates')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body[0]).toMatchObject({
-          id: '1',
-          name: 'Test Contract Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body[0].createdAt).toBe('string');
-        expect(typeof res.body[0].updatedAt).toBe('string');
-      });
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('/GET contract-templates/:id', () => {
-    return request(app.getHttpServer())
-      .get('/contract-templates/1')
-      .expect(200)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '1',
-          name: 'Test Contract Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('GET /contract-templates/:id', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/contract-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body).toHaveProperty('id', templateId);
   });
 
-  it('/PATCH contract-templates/:id', () => {
-    return request(app.getHttpServer())
-      .patch('/contract-templates/1')
-      .send({ name: 'Updated Contract Template', contentHtml: requiredContentHtml })
-      .expect(200)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '1',
-          name: 'Updated Contract Template',
-          contentHtml: requiredContentHtml,
-          userId: '123',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('PATCH /contract-templates/:id', async () => {
+    const res = await request(app.getHttpServer())
+      .patch(`/contract-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        name: 'Updated Contract',
+        contentHtml: '<p>Updated Content</p>',
+        pdfKey: 'updated.pdf',
+        previewKey: 'updated.png',
+        variables: [
+          {
+            variableName: 'updated',
+            label: 'Modifié',
+            type: 'string',
+            required: false
+          }
+        ]
+      })
+      .expect(200);
+
+    expect(res.body.name).toBe('Updated Contract');
   });
 
-  it('/DELETE contract-templates/:id', () => {
-    return request(app.getHttpServer())
-      .delete('/contract-templates/1')
-      .expect(200)
-      .expect({ deleted: true });
+  it('GET /contract-templates/search', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/contract-templates/search')
+      .query({ term: 'Updated' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(Array.isArray(res.body)).toBe(true);
   });
 
-  it('/POST contract-templates/:id/duplicate', () => {
-    return request(app.getHttpServer())
-      .post('/contract-templates/1/duplicate')
-      .expect(201)
-      .expect((res) => {
-        expect(res.body).toMatchObject({
-          id: '3',
-          name: 'Test Contract Template Copy',
-          contentHtml: requiredContentHtml,
-          userId: 'mock-user-id',
-          variables: [],
-        });
-        expect(typeof res.body.createdAt).toBe('string');
-        expect(typeof res.body.updatedAt).toBe('string');
-      });
+  it('GET /contract-templates/export', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/contract-templates/export')
+      .query({ term: '' })
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.headers['content-type']).toContain('text/csv');
+  });
+
+  it('POST /contract-templates/:id/duplicate', async () => {
+    const res = await request(app.getHttpServer())
+      .post(`/contract-templates/${templateId}/duplicate`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(201);
+
+    expect(res.body).toHaveProperty('id');
+    expect(res.body.id).not.toBe(templateId);
+  });
+
+  it('DELETE /contract-templates/:id', async () => {
+    await request(app.getHttpServer())
+      .delete(`/contract-templates/${templateId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
   });
 });
