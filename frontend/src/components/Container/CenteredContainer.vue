@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex justify-center items-center bg-gradient-to-br from-white via-indigo-200 to-white">
+  <div class="min-h-screen flex justify-center items-center">
     <div :class="containerClass">
       <div class="bg-white rounded-xl shadow-lg">
         <slot />

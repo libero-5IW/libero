@@ -38,7 +38,6 @@ services:
       - backend
     volumes:
       - ./frontend:/app/frontend
-      - node_modules:/app/frontend/node_modules
 
 
 volumes:

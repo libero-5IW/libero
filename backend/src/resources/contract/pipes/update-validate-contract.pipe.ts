@@ -17,6 +17,7 @@ export class ValidateContractOnUpdatePipe<
 
       if (
         required &&
+        variableName !== 'contract_number' &&
         (rawValue === undefined ||
           rawValue === null ||
           (rawValue === '' &&

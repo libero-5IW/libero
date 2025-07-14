@@ -19,23 +19,24 @@
       <v-row dense>
         <v-col cols="12" md="8">
           <h1 id="quote-form-title" class="sr-only">Création d’un devis</h1>
+          <v-card flat class="mb-4 pa-4">
+            <v-text-field
+              :model-value="currentTemplate?.name ?? 'Template inconnu'"
+              label="Template utilisé"
+              readonly
+              class="mb-6 pointer-events-none opacity-80"
+              aria-label="Template utilisé"
+            />
 
-          <v-text-field
-            :model-value="currentTemplate?.name ?? 'Template inconnu'"
-            label="Template utilisé"
-            readonly
-            class="mb-6"
-            aria-label="Template utilisé"
-          />
-
-          <v-text-field
-            v-if="quoteNumberVariable"
-            :model-value="quoteNumberVariable.value"
-            :label="quoteNumberVariable.label || 'Numéro du devis'"
-            readonly
-            class="mb-4 pointer-events-none opacity-60"
-            aria-label="Numéro du devis"
-          />
+            <v-text-field
+              v-if="quoteNumberVariable"
+              :model-value="quoteNumberVariable.value"
+              :label="quoteNumberVariable.label || 'Numéro du devis'"
+              readonly
+              class="mb-4 pointer-events-none opacity-80"
+              aria-label="Numéro du devis"
+            />
+          </v-card>
 
           <v-card flat class="mb-4 pa-4">
             <TemplateVariableSection

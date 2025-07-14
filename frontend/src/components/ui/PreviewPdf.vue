@@ -1,6 +1,6 @@
 <template>
     <v-card flat class="p-4 h-full">
-      <div class="flex  justify-between items-center mb-2 px-4 pt-4">
+      <div class="flex flex-wrap gap-2  sm:flex-nowrap justify-between items-center mb-2 px-4 pt-4">
         <h2 class="text-lg font-semibold">Prévisualisation PDF</h2>
         <v-btn color="primary" @click="downloadPdf" :loading="loading"  prepend-icon="mdi-download">
           Télécharger
