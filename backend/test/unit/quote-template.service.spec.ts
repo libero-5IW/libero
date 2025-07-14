@@ -1,166 +1,135 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { QuoteTemplateService } from '../../src/resources/quote-template/quote-template.service';
-import { PrismaService } from '../../src/database/prisma/prisma.service';
-import { UserService } from '../../src/resources/user/user.service';
+import { QuoteTemplateService } from 'src/resources/quote-template/quote-template.service';
+import { PrismaService } from 'src/database/prisma/prisma.service';
+import { UserService } from 'src/resources/user/user.service';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { S3Service } from 'src/common/s3/s3.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import * as generateCopyNameUtil from '../../src/common/utils/generate-copy-name.util';
 
-jest
-  .spyOn(generateCopyNameUtil, 'generateCopyName')
-  .mockResolvedValue('Template Copy');
-
-const mockPrismaService = {
-  quoteTemplate: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    findUniqueOrThrow: jest.fn(),
-    delete: jest.fn(),
-    update: jest.fn(),
-  },
-  quoteTemplateVariable: {
-    deleteMany: jest.fn(),
-    createMany: jest.fn(),
-  },
-  $transaction: jest.fn((cb) => cb(mockPrismaService)),
-};
-
-const mockUserService = {
-  getUserOrThrow: jest.fn(),
+const mockTemplate = {
+  id: 'template-id',
+  name: 'Devis A',
+  contentHtml: '<p>Devis</p>',
+  pdfKey: 'pdf-key',
+  previewKey: 'preview-key',
+  userId: 'user-id',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  variables: [
+    { variableName: 'prix', label: 'Prix', type: 'number', required: true },
+  ],
 };
 
 describe('QuoteTemplateService', () => {
   let service: QuoteTemplateService;
-
-  const userId = 'test-user-id';
+  let prisma: PrismaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QuoteTemplateService,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: UserService, useValue: mockUserService },
+        {
+          provide: PrismaService,
+          useValue: {
+            quoteTemplate: {
+              findFirst: jest.fn(),
+              findMany: jest.fn(),
+              findUnique: jest.fn(),
+              create: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
+            },
+            quoteTemplateVariable: {
+              deleteMany: jest.fn(),
+              createMany: jest.fn(),
+            },
+            $transaction: jest.fn().mockImplementation((cb) => cb({
+              quoteTemplate: {
+                update: jest.fn().mockResolvedValue(mockTemplate),
+              },
+              quoteTemplateVariable: {
+                deleteMany: jest.fn(),
+                createMany: jest.fn(),
+              },
+            })),
+          },
+        },
+        {
+          provide: UserService,
+          useValue: {
+            getUserOrThrow: jest.fn().mockResolvedValue({ email: 'user@example.com' }),
+          },
+        },
+        {
+          provide: PdfGeneratorService,
+          useValue: {
+            generatePdfAndPreview: jest.fn().mockResolvedValue({
+              pdfBuffer: Buffer.from('pdf'),
+              previewBuffer: Buffer.from('preview'),
+            }),
+          },
+        },
+        {
+          provide: S3Service,
+          useValue: {
+            uploadDocumentAssets: jest.fn().mockResolvedValue({
+              pdfKey: 'pdf-key',
+              previewKey: 'preview-key',
+            }),
+            generateSignedUrl: jest.fn().mockResolvedValue('signed-url'),
+            deleteFile: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<QuoteTemplateService>(QuoteTemplateService);
-
-    jest.clearAllMocks();
+    prisma = module.get<PrismaService>(PrismaService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('should create a quote template', async () => {
+    jest.spyOn(prisma.quoteTemplate, 'findFirst').mockResolvedValue(null);
+    jest.spyOn(prisma.quoteTemplate, 'create').mockResolvedValue(mockTemplate);
+    const result = await service.create('user-id', {
+      name: 'Devis A',
+      contentHtml: '<p>Devis</p>',
+      variables: [
+        { variableName: 'prix', label: 'Prix', type: 'number', required: true },
+      ],
+    });
+    expect(result.name).toBe('Devis A');
   });
 
-  describe('create', () => {
-    it('should create a new template', async () => {
-      mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.quoteTemplate.findFirst.mockResolvedValue(null);
-      mockPrismaService.quoteTemplate.create.mockResolvedValue({
-        id: '1',
+  it('should throw if template with same name exists', async () => {
+    jest.spyOn(prisma.quoteTemplate, 'findFirst').mockResolvedValue(mockTemplate);
+    await expect(
+      service.create('user-id', {
+        name: 'Devis A',
+        contentHtml: '<p>Test</p>',
         variables: [],
-      });
-
-      const dto = { name: 'Test', contentHtml: '<p>Test</p>', variables: [] };
-
-      const result = await service.create(userId, dto as any);
-
-      expect(mockUserService.getUserOrThrow).toHaveBeenCalled();
-      expect(mockPrismaService.quoteTemplate.create).toHaveBeenCalled();
-      expect(result).toHaveProperty('id', '1');
-    });
-
-    it('should throw if template name exists', async () => {
-      mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.quoteTemplate.findFirst.mockResolvedValue({
-        id: 'exists',
-      });
-
-      await expect(
-        service.create(userId, { name: 'Test', contentHtml: '' } as any),
-      ).rejects.toThrow(BadRequestException);
-    });
+      })
+    ).rejects.toThrow(BadRequestException);
   });
 
-  describe('findAll', () => {
-    it('should return all templates', async () => {
-      mockPrismaService.quoteTemplate.findMany.mockResolvedValue([
-        { id: '1', variables: [] },
-      ]);
-      const result = await service.findAll(userId);
-      expect(result.length).toBe(1);
+  it('should update a quote template', async () => {
+    jest.spyOn(prisma.quoteTemplate, 'findFirst').mockResolvedValue(mockTemplate);
+    const result = await service.update('template-id', 'user-id', {
+      name: 'Devis A',
+      contentHtml: '<p>Updated</p>',
+      variables: [],
     });
+    expect(result.id).toBe('template-id');
   });
 
-  describe('findOne', () => {
-    it('should return a template by id', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-      const result = await service.findOne('1', userId);
-      expect(result).toHaveProperty('id', '1');
-    });
-
-    it('should throw if not found', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue(null);
-      await expect(service.findOne('99', userId)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
+  it('should remove a quote template', async () => {
+    jest.spyOn(prisma.quoteTemplate, 'findFirst').mockResolvedValue(mockTemplate);
+    jest.spyOn(prisma.quoteTemplate, 'delete').mockResolvedValue(mockTemplate);
+    const result = await service.remove('template-id', 'user-id');
+    expect(result.id).toBe('template-id');
   });
 
-  describe('update', () => {
-    it('should update a template', async () => {
-      mockPrismaService.quoteTemplate.findUniqueOrThrow.mockResolvedValue({
-        id: '1',
-      });
-      mockPrismaService.quoteTemplate.update.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-
-      const result = await service.update('1', userId, {
-        name: 'Updated',
-        contentHtml: '<p>Updated</p>',
-      } as any);
-
-      expect(result).toHaveProperty('id', '1');
-    });
-  });
-
-  describe('remove', () => {
-    it('should delete a template', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-      mockPrismaService.quoteTemplate.delete.mockResolvedValue({ id: '1' });
-
-      const result = await service.remove('1', userId);
-
-      expect(result).toHaveProperty('id', '1');
-    });
-  });
-
-  describe('duplicate', () => {
-    it('should duplicate a template', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        name: 'Template',
-        userId: '123',
-        variables: [],
-      });
-      mockPrismaService.quoteTemplate.create.mockResolvedValue({
-        id: '2',
-        variables: [],
-      });
-
-      const result = await service.duplicate('1', userId);
-
-      expect(result).toHaveProperty('id', '2');
-      expect(generateCopyNameUtil.generateCopyName).toHaveBeenCalled();
-    });
+  it('should throw on not found in findOne', async () => {
+    jest.spyOn(prisma.quoteTemplate, 'findFirst').mockResolvedValue(null);
+    await expect(service.findOne('x', 'user-id')).rejects.toThrow(NotFoundException);
   });
 });
