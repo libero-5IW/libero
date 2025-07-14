@@ -53,40 +53,38 @@
   const pdfStyles = `
     <style>
       .pdf-wrapper {
-        font-family: 'Roboto Condensed', 'Roboto', 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
+        font-family: 'Roboto', 'Arial', 'Helvetica Neue', Helvetica, sans-serif;
         color: #212121;
         font-size: 13px;
         background: #fff;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        padding: 24px 16px;
+        padding: 32px 24px;
         margin: 0;
         max-width: 100%;
         box-sizing: border-box;
       }
       .pdf-header {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 2px solid #3F51B5;
-        padding-bottom: 12px;
-        margin-bottom: 32px;
-      }
-      .pdf-logo {
-        max-width: 120px;
-        height: auto;
+        align-items: flex-end;
+        justify-content: flex-start;
+        border-bottom: 2px solid #6366f1;
+        padding-bottom: 18px;
+        margin-bottom: 36px;
       }
       .pdf-title {
         font-size: 2.2em;
-        color: #3F51B5;
+        color: #6366f1;
         font-weight: bold;
         margin: 0;
+        letter-spacing: 1px;
+        text-transform: uppercase;
       }
       h1, h2, h3, h4, h5, h6 {
         font-weight: bold;
         margin-top: 1.5em;
         margin-bottom: 0.5em;
-        color: #3F51B5;
+        color: #6366f1;
       }
       h1 { font-size: 2em; }
       h2 { font-size: 1.5em; }
@@ -110,20 +108,22 @@
         font-size: 0.98em;
       }
       th, td {
-        border: 1px solid #bbb;
-        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        padding: 10px 14px;
         text-align: left;
       }
       th {
-        background: #E8EAF6;
-        color: #3F51B5;
+        background: #f0f4ff;
+        color: #6366f1;
+        font-weight: 600;
+        letter-spacing: 0.5px;
       }
       tr:nth-child(even) {
-        background: #fafbfc;
+        background: #f9fafb;
       }
       .section-card {
         background: #f7fafd;
-        border-left: 4px solid #3F51B5;
+        border-left: 4px solid #6366f1;
         padding: 16px 20px;
         margin: 24px 0;
         border-radius: 6px;

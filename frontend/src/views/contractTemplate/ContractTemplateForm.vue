@@ -138,8 +138,6 @@ const otherTemplates = ref([])
 
 const isLoading = computed(() => contractTemplate.isLoading)
 
-let logoUrl = `${window.location.origin}/logo.png`;
-
 onMounted(async () => {
   const idParam = route.params.id
   templateId.value = Array.isArray(idParam) ? idParam[0] : idParam || ''
@@ -222,7 +220,7 @@ async function saveTemplate() {
   try {
     const htmlForBackend = ensurePdfWrapper(
       replaceChipsWithBrackets(template.contentHtml ?? ''),
-      logoUrl
+      'Contrat'
     );
     const payload = {
       name: template.name,

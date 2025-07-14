@@ -43,12 +43,6 @@
           <h2 class="text-2xl font-bold text-gray-900 mb-2">Questions fréquentes</h2>
           <v-expansion-panels multiple>
             <v-expansion-panel>
-              <v-expansion-panel-title>Est-ce que Libero est vraiment gratuit ?</v-expansion-panel-title>
-              <v-expansion-panel-text>
-                Oui, Libero est gratuit à vie pour les freelances. Vous pouvez créer autant de documents que vous le souhaitez, sans frais cachés.
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-            <v-expansion-panel>
               <v-expansion-panel-title>Mes documents sont-ils sécurisés ?</v-expansion-panel-title>
               <v-expansion-panel-text>
                 Vos documents sont stockés de manière sécurisée et respectent les obligations légales en vigueur. Seul vous et vos clients y avez accès.
@@ -57,13 +51,19 @@
             <v-expansion-panel>
               <v-expansion-panel-title>Comment fonctionne la signature électronique ?</v-expansion-panel-title>
               <v-expansion-panel-text>
-                Une fois le contrat ou devis prêt, vous l’envoyez à votre client qui peut le signer en ligne depuis son e-mail. Vous recevez une notification dès que la signature est effectuée.
+                Lorsque vous envoyez un document à signer, vous (le freelance) le signez d'abord. Une fois votre signature apposée, le document est ensuite envoyé à votre client pour qu'il le signe à son tour. Vous recevez une notification à chaque étape.
               </v-expansion-panel-text>
             </v-expansion-panel>
             <v-expansion-panel>
               <v-expansion-panel-title>Puis-je modifier un document après l’avoir créé ?</v-expansion-panel-title>
               <v-expansion-panel-text>
-                Oui, tous vos documents sont modifiables tant qu’ils n’ont pas été signés ou envoyés. Vous pouvez également prévisualiser les modifications en temps réel.
+                Les documents sont modifiables uniquement lorsqu'ils sont en statut "brouillon". Une fois envoyés pour signature ou finalisés, ils ne peuvent plus être modifiés.
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+            <v-expansion-panel>
+              <v-expansion-panel-title>À quoi servent les statuts manuels ?</v-expansion-panel-title>
+              <v-expansion-panel-text>
+                Les statuts que vous modifiez manuellement (par exemple : payé, envoyé, etc.) sont uniquement à titre informatif pour votre suivi. Ils n'entraînent pas l'envoi d'e-mails ou de notifications à votre client.
               </v-expansion-panel-text>
             </v-expansion-panel>
             <v-expansion-panel>
