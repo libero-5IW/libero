@@ -78,7 +78,7 @@ const revenue = computed(() => {
       if (inv.status !== INVOICE_STATUS.PAID) return false;
       const date = new Date(inv.dueDate);
       return selectedPeriod.value === 'month'
-        ? date.getFullYear() === currentYear && date.getMonth() === currentMonth
+        ? date.getFullYear() === currentYear && (date.getMonth() - 1) === currentMonth
         : date.getFullYear() === currentYear;
     })
     .reduce((total, inv) => {
