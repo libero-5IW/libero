@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "android": "npx cap open android && ./android/gradlew installDebug",
     "dev": "vite --host 0.0.0.0",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
@@ -17,9 +18,12 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/core": "^7.4.2",
     "@mdi/font": "^7.4.47",
     "@tailwindcss/vite": "^4.0.15",
-    "@tiptap/extension-color": "^2.24.2",
+    "@tiptap/extension-color": "^2.26.1",
     "@tiptap/extension-text-align": "^2.23.0",
     "@tiptap/extension-text-style": "^2.24.2",
     "@tiptap/extension-underline": "^2.11.7",
