@@ -128,13 +128,6 @@
         margin: 24px 0;
         border-radius: 6px;
       }
-      .signature-area {
-        margin-top: 48px;
-        padding-top: 24px;
-        border-top: 1px dashed #bbb;
-        color: #888;
-        text-align: right;
-      }
       .text-left { text-align: left; }
       .text-center { text-align: center; }
       .text-right { text-align: right; }
@@ -142,14 +135,9 @@
     </style>
   `;
   return `${pdfStyles}
-    <div class="pdf-wrapper">
-      <div class="pdf-header">
-        <img src="/src/assets/logo.png" class="pdf-logo" />
-      </div>
+   
       ${html}
-      <div class="signature-area">Signature:</div>
-    </div>`
-  })
+`  })
   
   function downloadPdf() {
     if (!previewRef.value) return

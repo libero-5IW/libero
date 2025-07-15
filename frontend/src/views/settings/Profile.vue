@@ -87,6 +87,13 @@
             required
             aria-required="true"
           />
+          <v-text-field
+            v-if="profile.legalStatus === 'Autre'"
+            v-model="profile.customLegalStatus"
+            label="Précisez votre statut juridique"
+            required
+            :rules="[v => !!v || 'Veuillez préciser votre statut juridique.']"
+          />
 
           <v-text-field
             v-model="profile.siret"
@@ -207,6 +214,7 @@ const profile = reactive({
   city: '',
   country: '',
   legalStatus: '',
+  customLegalStatus: '',
   siret: '',
   tvaNumber: '',
 })
@@ -238,7 +246,8 @@ const updateProfileFromUser = (user: any) => {
     postalCode: user.postalCode,
     city: user.city,
     country: user.country,
-    legalStatus: user.legalStatus,
+    legalStatus: legalStatus.some(l => l.code === user.legalStatus) ? user.legalStatus : 'Autre',
+    customLegalStatus: legalStatus.some(l => l.code === user.legalStatus) ? '' : user.legalStatus,
     siret: user.siret,
     tvaNumber: user.tvaNumber || '',
   })
@@ -266,7 +275,10 @@ const saveProfile = async () => {
     showToast('error', 'Veuillez remplir correctement tous les champs obligatoires.')
     return
   }
-
+  if (profile.legalStatus === 'Autre' && !profile.customLegalStatus.trim()) {
+    showToast('error', 'Veuillez préciser votre statut juridique.')
+    return
+  }
   try {
     isLoading.value = true
     const updateData = {
@@ -278,7 +290,7 @@ const saveProfile = async () => {
       postalCode: profile.postalCode,
       city: profile.city,
       country: profile.country,
-      legalStatus: profile.legalStatus,
+      legalStatus: profile.legalStatus === 'Autre' ? profile.customLegalStatus.trim() : profile.legalStatus,
       siret: profile.siret,
       tvaNumber: profile.tvaNumber || undefined,
     }

@@ -59,8 +59,7 @@ const chartData = computed(() => {
     if (inv.status === INVOICE_STATUS.PAID) {
       const date = new Date(inv.dueDate);
       if (date.getFullYear() === selectedYear.value) {
-        const month = date.getMonth();
-
+        const month = date.getMonth() - 1;
         const amountVar = inv.variableValues.find(v =>
           ['amount', 'total_amount', 'montant', 'total_ht', 'total_ttc'].includes(
             v.variableName.toLowerCase()

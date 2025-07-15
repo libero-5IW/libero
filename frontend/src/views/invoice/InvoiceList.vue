@@ -31,6 +31,7 @@
         <v-text-field
           v-model="startDate"
           label="Date de début"
+          type="date"
           class="w-full lg:w-64 text-base"
           density="comfortable"
           hide-details
