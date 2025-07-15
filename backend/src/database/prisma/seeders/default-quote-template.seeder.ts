@@ -12,18 +12,31 @@ export async function seedDefaultQuoteTemplate(prisma: PrismaClient) {
     userId: null,
     name: 'Modèle de base - Devis',
     contentHtml: `
-        <h1>Devis n°{{quote_number}}</h1>
-        <br>
-        <p><strong>Freelance :</strong> {{freelancer_name}}, {{freelancer_address}}</p>
-        <p><strong>SIRET :</strong> {{freelancer_siret}}</p>
-        <br>
-        <p><strong>Client :</strong> {{client_name}}, {{client_address}}</p>
-        <p><strong>Prestation :</strong> {{prestation_description}}</p>
-        <p>Date : {{quote_date}}</p>
-        <p>Valide jusqu'au : {{valid_until}}</p>
-        <br>
-        <p><strong>Total HT : {{total_amount}} €</strong></p>
-      `,
+<div style="padding-right: 40px;">
+
+<b>Devis n°</b>{{quote_number}}
+
+<br /><br />
+<p>
+Je soussigné(e) {{freelancer_name}}, domicilié(e) à {{freelancer_address}}, 
+immatriculé(e) sous le numéro SIRET {{freelancer_siret}}, propose au client {{client_name}}, 
+domicilié(e) à {{client_address}}, la prestation suivante :
+</p>
+<br />
+<p>
+{{prestation_description}}
+</p>
+<br /><br />
+<p>
+Le présent devis est établi en date du {{quote_date}} et reste valable jusqu’au {{valid_until}}.
+</p>
+<br /><br />
+<p>
+<b>Montant total HT :</b> {{total_amount}} € 
+</p>
+<br /><br />
+</div>
+`,
     variables: [
       {
         variableName: 'freelancer_name',
