@@ -242,6 +242,7 @@ services:
       placement:
         constraints:
           - node.role == manager
+  
   backup:
     image: libero_backup
     environment:
