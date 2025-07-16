@@ -1,4 +1,3 @@
-import * as dotenv from 'dotenv';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
@@ -46,7 +45,7 @@ describe('ContractTemplateController (Functional)', () => {
     await app.close();
   });
 
-  it('GET /contract-templates/default-template - récupère le modèle par défaut', async () => {
+  it('GET /contract-templates/default-template', async () => {
     const res = await request(app.getHttpServer())
       .get('/contract-templates/default-template')
       .set('Authorization', `Bearer ${jwt}`);
@@ -56,7 +55,7 @@ describe('ContractTemplateController (Functional)', () => {
     }
   });
 
-  it('POST /contract-templates - crée un modèle de contrat', async () => {
+  it('POST /contract-templates', async () => {
     const templateData = {
       name: 'Modèle Test',
       content: '<p>Contenu</p>',
@@ -73,7 +72,7 @@ describe('ContractTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /contract-templates - récupère tous les modèles', async () => {
+  it('GET /contract-templates', async () => {
     const res = await request(app.getHttpServer())
       .get('/contract-templates')
       .set('Authorization', `Bearer ${jwt}`);
@@ -83,7 +82,7 @@ describe('ContractTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /contract-templates/search - recherche des modèles', async () => {
+  it('GET /contract-templates/search', async () => {
     const res = await request(app.getHttpServer())
       .get('/contract-templates/search?term=Modèle')
       .set('Authorization', `Bearer ${jwt}`);
@@ -96,7 +95,7 @@ describe('ContractTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /contract-templates/export - exporte les modèles en CSV', async () => {
+  it('GET /contract-templates/export', async () => {
     const res = await request(app.getHttpServer())
       .get('/contract-templates/export')
       .set('Authorization', `Bearer ${jwt}`);
@@ -107,7 +106,7 @@ describe('ContractTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /contract-templates/:id - récupère un modèle par id', async () => {
+  it('GET /contract-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .get(`/contract-templates/${createdTemplateId}`)
@@ -118,7 +117,7 @@ describe('ContractTemplateController (Functional)', () => {
     }
   });
 
-  it('PATCH /contract-templates/:id - met à jour un modèle', async () => {
+  it('PATCH /contract-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .patch(`/contract-templates/${createdTemplateId}`)
@@ -127,7 +126,7 @@ describe('ContractTemplateController (Functional)', () => {
     expect([200, 201, 400, 401, 403, 404].includes(res.status)).toBe(true);
   });
 
-  it('POST /contract-templates/:id/duplicate - duplique un modèle', async () => {
+  it('POST /contract-templates/:id/duplicate', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .post(`/contract-templates/${createdTemplateId}/duplicate`)
@@ -135,7 +134,7 @@ describe('ContractTemplateController (Functional)', () => {
     expect([201, 200, 400, 401, 403, 404].includes(res.status)).toBe(true);
   });
 
-  it('DELETE /contract-templates/:id - supprime un modèle', async () => {
+  it('DELETE /contract-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .delete(`/contract-templates/${createdTemplateId}`)

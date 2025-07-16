@@ -1,4 +1,3 @@
-import * as dotenv from 'dotenv';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
@@ -40,7 +39,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     await app.close();
   });
 
-  it('GET /invoice-templates/default-template - récupère le modèle par défaut', async () => {
+  it('GET /invoice-templates/default-template', async () => {
     const res = await request(app.getHttpServer())
       .get('/invoice-templates/default-template')
       .set('Authorization', `Bearer ${jwt}`);
@@ -50,7 +49,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     }
   });
 
-  it('POST /invoice-templates - crée un modèle de facture', async () => {
+  it('POST /invoice-templates', async () => {
     const templateData = {
       name: 'Modèle Facture Test',
       content: '<p>Contenu</p>',
@@ -67,7 +66,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /invoice-templates - récupère tous les modèles', async () => {
+  it('GET /invoice-templates', async () => {
     const res = await request(app.getHttpServer())
       .get('/invoice-templates')
       .set('Authorization', `Bearer ${jwt}`);
@@ -77,7 +76,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /invoice-templates/search - recherche des modèles', async () => {
+  it('GET /invoice-templates/search', async () => {
     const res = await request(app.getHttpServer())
       .get('/invoice-templates/search?term=Modèle')
       .set('Authorization', `Bearer ${jwt}`);
@@ -90,7 +89,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /invoice-templates/export - exporte les modèles en CSV', async () => {
+  it('GET /invoice-templates/export', async () => {
     const res = await request(app.getHttpServer())
       .get('/invoice-templates/export')
       .set('Authorization', `Bearer ${jwt}`);
@@ -101,7 +100,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /invoice-templates/:id - récupère un modèle par id', async () => {
+  it('GET /invoice-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .get(`/invoice-templates/${createdTemplateId}`)
@@ -112,7 +111,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     }
   });
 
-  it('PATCH /invoice-templates/:id - met à jour un modèle', async () => {
+  it('PATCH /invoice-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .patch(`/invoice-templates/${createdTemplateId}`)
@@ -121,7 +120,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     expect([200, 201, 400, 401, 403, 404].includes(res.status)).toBe(true);
   });
 
-  it('POST /invoice-templates/:id/duplicate - duplique un modèle', async () => {
+  it('POST /invoice-templates/:id/duplicate', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .post(`/invoice-templates/${createdTemplateId}/duplicate`)
@@ -129,7 +128,7 @@ describe('InvoiceTemplateController (Functional)', () => {
     expect([201, 200, 400, 401, 403, 404].includes(res.status)).toBe(true);
   });
 
-  it('DELETE /invoice-templates/:id - supprime un modèle', async () => {
+  it('DELETE /invoice-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .delete(`/invoice-templates/${createdTemplateId}`)

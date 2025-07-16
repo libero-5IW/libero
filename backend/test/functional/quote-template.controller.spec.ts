@@ -1,4 +1,3 @@
-import * as dotenv from 'dotenv';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
@@ -40,7 +39,7 @@ describe('QuoteTemplateController (Functional)', () => {
     await app.close();
   });
 
-  it('GET /quote-templates/default-template - récupère le modèle par défaut', async () => {
+  it('GET /quote-templates/default-template', async () => {
     const res = await request(app.getHttpServer())
       .get('/quote-templates/default-template')
       .set('Authorization', `Bearer ${jwt}`);
@@ -50,7 +49,7 @@ describe('QuoteTemplateController (Functional)', () => {
     }
   });
 
-  it('POST /quote-templates - crée un modèle de devis', async () => {
+  it('POST /quote-templates', async () => {
     const templateData = {
       name: 'Modèle Devis Test',
       content: '<p>Contenu</p>',
@@ -67,7 +66,7 @@ describe('QuoteTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /quote-templates - récupère tous les modèles', async () => {
+  it('GET /quote-templates', async () => {
     const res = await request(app.getHttpServer())
       .get('/quote-templates')
       .set('Authorization', `Bearer ${jwt}`);
@@ -77,7 +76,7 @@ describe('QuoteTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /quote-templates/search - recherche des modèles', async () => {
+  it('GET /quote-templates/search', async () => {
     const res = await request(app.getHttpServer())
       .get('/quote-templates/search?term=Modèle')
       .set('Authorization', `Bearer ${jwt}`);
@@ -90,7 +89,7 @@ describe('QuoteTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /quote-templates/export - exporte les modèles en CSV', async () => {
+  it('GET /quote-templates/export', async () => {
     const res = await request(app.getHttpServer())
       .get('/quote-templates/export')
       .set('Authorization', `Bearer ${jwt}`);
@@ -101,7 +100,7 @@ describe('QuoteTemplateController (Functional)', () => {
     }
   });
 
-  it('GET /quote-templates/:id - récupère un modèle par id', async () => {
+  it('GET /quote-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .get(`/quote-templates/${createdTemplateId}`)
@@ -112,7 +111,7 @@ describe('QuoteTemplateController (Functional)', () => {
     }
   });
 
-  it('PATCH /quote-templates/:id - met à jour un modèle', async () => {
+  it('PATCH /quote-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .patch(`/quote-templates/${createdTemplateId}`)
@@ -121,7 +120,7 @@ describe('QuoteTemplateController (Functional)', () => {
     expect([200, 201, 400, 401, 403, 404].includes(res.status)).toBe(true);
   });
 
-  it('POST /quote-templates/:id/duplicate - duplique un modèle', async () => {
+  it('POST /quote-templates/:id/duplicate', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .post(`/quote-templates/${createdTemplateId}/duplicate`)
@@ -129,7 +128,7 @@ describe('QuoteTemplateController (Functional)', () => {
     expect([201, 200, 400, 401, 403, 404].includes(res.status)).toBe(true);
   });
 
-  it('DELETE /quote-templates/:id - supprime un modèle', async () => {
+  it('DELETE /quote-templates/:id', async () => {
     if (!createdTemplateId) return;
     const res = await request(app.getHttpServer())
       .delete(`/quote-templates/${createdTemplateId}`)
