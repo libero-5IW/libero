@@ -238,11 +238,11 @@ services:
     depends_on:
       - elasticsearch
     deploy:
-      replicas: 1
+      mode: global
       placement:
         constraints:
           - node.role == manager
-  
+
   backup:
     image: libero_backup
     environment:
@@ -268,7 +268,6 @@ volumes:
   prometheus_data:
   es_data:
   backup_data:
-
 
 secrets:
   docusign_private_key:
