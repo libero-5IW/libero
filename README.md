@@ -17,3 +17,19 @@
 ## Lien de l’application en production
 
    [https://liberogestion.fr/home](https://liberogestion.fr/home)
+
+
+
+## ÉQUIPE (pseudo github)
+
+**BIRABOURAME Hemavathi** 
+hema-brm
+
+**RAMOUL Racha**
+RachaRamoul
+
+**SALAMANI SARAH LINA**
+Sarahlyna
+
+**BURY Jay**
+buryj97
