@@ -1,166 +1,190 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { QuoteTemplateService } from '../../src/resources/quote-template/quote-template.service';
-import { PrismaService } from '../../src/database/prisma/prisma.service';
-import { UserService } from '../../src/resources/user/user.service';
+import { QuoteTemplateService } from 'src/resources/quote-template/quote-template.service';
+import { PrismaService } from 'src/database/prisma/prisma.service';
+import { UserService } from 'src/resources/user/user.service';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { S3Service } from 'src/common/s3/s3.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import * as generateCopyNameUtil from '../../src/common/utils/generate-copy-name.util';
 
-jest
-  .spyOn(generateCopyNameUtil, 'generateCopyName')
-  .mockResolvedValue('Template Copy');
-
-const mockPrismaService = {
+const prismaMock = {
   quoteTemplate: {
-    findFirst: jest.fn(),
     create: jest.fn(),
     findMany: jest.fn(),
+    findFirst: jest.fn(),
     findUnique: jest.fn(),
-    findUniqueOrThrow: jest.fn(),
-    delete: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
+    count: jest.fn(),
   },
+  $transaction: jest.fn(),
   quoteTemplateVariable: {
     deleteMany: jest.fn(),
     createMany: jest.fn(),
   },
-  $transaction: jest.fn((cb) => cb(mockPrismaService)),
+};
+const userServiceMock = { getUserOrThrow: jest.fn() };
+const pdfGeneratorServiceMock = { generatePdfAndPreview: jest.fn() };
+const s3ServiceMock = {
+  uploadDocumentAssets: jest.fn(),
+  generateSignedUrl: jest.fn(),
+  deleteFile: jest.fn(),
 };
 
-const mockUserService = {
-  getUserOrThrow: jest.fn(),
+jest.mock('src/common/utils/generate-copy-name.util', () => ({
+  generateCopyName: jest.fn(async () => 'Template Copie'),
+}));
+jest.mock('src/common/utils/merge-system-variables.util', () => ({
+  mergeSystemVariables: jest.fn((template) => template),
+}));
+jest.mock('src/common/utils/buildTemplateSearchQuery', () => ({
+  buildTemplateSearchQuery: jest.fn(() => ({ userId: 'user1' })),
+}));
+jest.mock('src/common/utils/csv-export.util', () => ({
+  generateCSVExport: jest.fn(() => ({ filename: 'export.csv', content: 'csvdata' })),
+}));
+
+const user = { id: 'user1', email: 'test@mail.com' };
+const template = {
+  id: 'tpl1',
+  userId: 'user1',
+  name: 'Template 1',
+  contentHtml: '<html></html>',
+  pdfKey: 'pdfkey',
+  previewKey: 'previewkey',
+  variables: [],
+  createdAt: new Date(),
 };
 
 describe('QuoteTemplateService', () => {
   let service: QuoteTemplateService;
 
-  const userId = 'test-user-id';
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         QuoteTemplateService,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: UserService, useValue: mockUserService },
+        { provide: PrismaService, useValue: prismaMock },
+        { provide: UserService, useValue: userServiceMock },
+        { provide: PdfGeneratorService, useValue: pdfGeneratorServiceMock },
+        { provide: S3Service, useValue: s3ServiceMock },
       ],
     }).compile();
-
     service = module.get<QuoteTemplateService>(QuoteTemplateService);
-
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
   describe('create', () => {
-    it('should create a new template', async () => {
-      mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.quoteTemplate.findFirst.mockResolvedValue(null);
-      mockPrismaService.quoteTemplate.create.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-
-      const dto = { name: 'Test', contentHtml: '<p>Test</p>', variables: [] };
-
-      const result = await service.create(userId, dto as any);
-
-      expect(mockUserService.getUserOrThrow).toHaveBeenCalled();
-      expect(mockPrismaService.quoteTemplate.create).toHaveBeenCalled();
-      expect(result).toHaveProperty('id', '1');
+    it('crée un template avec succès', async () => {
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      prismaMock.quoteTemplate.findFirst.mockResolvedValue(null);
+      pdfGeneratorServiceMock.generatePdfAndPreview.mockResolvedValue({ pdfBuffer: Buffer.from('pdf'), previewBuffer: Buffer.from('preview') });
+      s3ServiceMock.uploadDocumentAssets.mockResolvedValue({ pdfKey: 'pdfkey', previewKey: 'previewkey' });
+      prismaMock.quoteTemplate.create.mockResolvedValue(template);
+      const dto = { name: 'Template 1', contentHtml: '<html></html>', variables: [] };
+      const result = await service.create('user1', dto as any);
+      expect(result.name).toBe('Template 1');
+      expect(prismaMock.quoteTemplate.create).toHaveBeenCalled();
     });
-
-    it('should throw if template name exists', async () => {
-      mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.quoteTemplate.findFirst.mockResolvedValue({
-        id: 'exists',
-      });
-
-      await expect(
-        service.create(userId, { name: 'Test', contentHtml: '' } as any),
-      ).rejects.toThrow(BadRequestException);
+    it('lève une erreur si nom déjà utilisé', async () => {
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      prismaMock.quoteTemplate.findFirst.mockResolvedValue(template);
+      const dto = { name: 'Template 1', contentHtml: '<html></html>', variables: [] };
+      await expect(service.create('user1', dto as any)).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('findAll', () => {
-    it('should return all templates', async () => {
-      mockPrismaService.quoteTemplate.findMany.mockResolvedValue([
-        { id: '1', variables: [] },
-      ]);
-      const result = await service.findAll(userId);
-      expect(result.length).toBe(1);
+    it('retourne tous les templates', async () => {
+      prismaMock.quoteTemplate.findMany.mockResolvedValue([template]);
+      s3ServiceMock.generateSignedUrl.mockResolvedValue('url');
+      const result = await service.findAll('user1', true);
+      expect(result[0].name).toBe('Template 1');
     });
   });
 
   describe('findOne', () => {
-    it('should return a template by id', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-      const result = await service.findOne('1', userId);
-      expect(result).toHaveProperty('id', '1');
+    it('retourne un template par id', async () => {
+      prismaMock.quoteTemplate.findFirst.mockResolvedValue(template);
+      s3ServiceMock.generateSignedUrl.mockResolvedValue('url');
+      const result = await service.findOne('tpl1', 'user1');
+      expect(result.id).toBe('tpl1');
     });
-
-    it('should throw if not found', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue(null);
-      await expect(service.findOne('99', userId)).rejects.toThrow(
-        NotFoundException,
-      );
+    it('lève une erreur si le template est absent', async () => {
+      prismaMock.quoteTemplate.findFirst.mockResolvedValue(null);
+      await expect(service.findOne('tpl2', 'user1')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('should update a template', async () => {
-      mockPrismaService.quoteTemplate.findUniqueOrThrow.mockResolvedValue({
-        id: '1',
-      });
-      mockPrismaService.quoteTemplate.update.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-
-      const result = await service.update('1', userId, {
-        name: 'Updated',
-        contentHtml: '<p>Updated</p>',
-      } as any);
-
-      expect(result).toHaveProperty('id', '1');
+    it('met à jour un template', async () => {
+      prismaMock.quoteTemplate.findFirst.mockResolvedValue(template);
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      s3ServiceMock.deleteFile.mockResolvedValue(undefined);
+      pdfGeneratorServiceMock.generatePdfAndPreview.mockResolvedValue({ pdfBuffer: Buffer.from('pdf'), previewBuffer: Buffer.from('preview') });
+      s3ServiceMock.uploadDocumentAssets.mockResolvedValue({ pdfKey: 'pdfkey', previewKey: 'previewkey' });
+      prismaMock.$transaction.mockImplementation(async (cb) => cb({ ...prismaMock }));
+      prismaMock.quoteTemplate.update.mockResolvedValue({ ...template, name: 'Modifié' });
+      prismaMock.quoteTemplateVariable.deleteMany.mockResolvedValue(undefined);
+      prismaMock.quoteTemplateVariable.createMany.mockResolvedValue(undefined);
+      const dto = { name: 'Modifié', contentHtml: '<html></html>', variables: [] };
+      const result = await service.update('tpl1', 'user1', dto as any);
+      expect(result.name).toBe('Modifié');
+    });
+    it('lève une erreur si le template est absent', async () => {
+      prismaMock.quoteTemplate.findFirst.mockResolvedValue(null);
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      const dto = { name: 'Modifié', contentHtml: '<html></html>', variables: [] };
+      await expect(service.update('tpl2', 'user1', dto as any)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
-    it('should delete a template', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-      mockPrismaService.quoteTemplate.delete.mockResolvedValue({ id: '1' });
-
-      const result = await service.remove('1', userId);
-
-      expect(result).toHaveProperty('id', '1');
+    it('supprime un template', async () => {
+      prismaMock.quoteTemplate.findFirst.mockResolvedValue(template);
+      s3ServiceMock.deleteFile.mockResolvedValue(undefined);
+      prismaMock.quoteTemplate.delete.mockResolvedValue(template);
+      const result = await service.remove('tpl1', 'user1');
+      expect(result.id).toBe('tpl1');
     });
   });
 
   describe('duplicate', () => {
-    it('should duplicate a template', async () => {
-      mockPrismaService.quoteTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        name: 'Template',
-        userId: '123',
-        variables: [],
-      });
-      mockPrismaService.quoteTemplate.create.mockResolvedValue({
-        id: '2',
-        variables: [],
-      });
+    it('duplique un template', async () => {
+      prismaMock.quoteTemplate.findFirst.mockResolvedValue(template);
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      pdfGeneratorServiceMock.generatePdfAndPreview.mockResolvedValue({ pdfBuffer: Buffer.from('pdf'), previewBuffer: Buffer.from('preview') });
+      s3ServiceMock.uploadDocumentAssets.mockResolvedValue({ pdfKey: 'pdfkey', previewKey: 'previewkey' });
+      prismaMock.quoteTemplate.create.mockResolvedValue({ ...template, name: 'Template Copie' });
+      const result = await service.duplicate('tpl1', 'user1');
+      expect(result.name).toBe('Template Copie');
+    });
+  });
 
-      const result = await service.duplicate('1', userId);
+  describe('getDefaultTemplate', () => {
+    it('retourne le template par défaut', async () => {
+      prismaMock.quoteTemplate.findUnique.mockResolvedValue(template);
+      const result = await service.getDefaultTemplate();
+      expect(result.id).toBe('tpl1');
+    });
+  });
 
-      expect(result).toHaveProperty('id', '2');
-      expect(generateCopyNameUtil.generateCopyName).toHaveBeenCalled();
+  describe('search', () => {
+    it('retourne les templates filtrés', async () => {
+      prismaMock.quoteTemplate.findMany.mockResolvedValue([template]);
+      prismaMock.quoteTemplate.count.mockResolvedValue(1);
+      s3ServiceMock.generateSignedUrl.mockResolvedValue('url');
+      prismaMock.$transaction.mockImplementation((arr) => Promise.all(arr.map((fn) => fn)));
+      const result = await service.search('user1', '', undefined, undefined);
+      expect(result.quoteTemplate.length).toBe(1);
+      expect(result.total).toBe(1);
+    });
+  });
+
+  describe('exportToCSV', () => {
+    it('exporte les templates en CSV', async () => {
+      jest.spyOn(service, 'search').mockResolvedValue({ quoteTemplate: [template], total: 1 } as any);
+      const result = await service.exportToCSV('user1', '');
+      expect(result.filename).toBe('export.csv');
+      expect(result.content).toBe('csvdata');
     });
   });
 });

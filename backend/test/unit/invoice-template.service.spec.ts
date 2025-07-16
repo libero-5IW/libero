@@ -1,170 +1,190 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InvoiceTemplateService } from '../../src/resources/invoice-template/invoice-template.service';
-import { PrismaService } from '../../src/database/prisma/prisma.service';
-import { UserService } from '../../src/resources/user/user.service';
+import { InvoiceTemplateService } from 'src/resources/invoice-template/invoice-template.service';
+import { PrismaService } from 'src/database/prisma/prisma.service';
+import { UserService } from 'src/resources/user/user.service';
+import { PdfGeneratorService } from 'src/common/pdf/pdf-generator.service';
+import { S3Service } from 'src/common/s3/s3.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import * as generateCopyNameUtil from '../../src/common/utils/generate-copy-name.util';
 
-jest
-  .spyOn(generateCopyNameUtil, 'generateCopyName')
-  .mockResolvedValue('Template Copy');
-
-const mockPrismaService = {
+const prismaMock = {
   invoiceTemplate: {
-    findFirst: jest.fn(),
     create: jest.fn(),
     findMany: jest.fn(),
+    findFirst: jest.fn(),
     findUnique: jest.fn(),
-    findUniqueOrThrow: jest.fn(),
-    delete: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
+    count: jest.fn(),
   },
+  $transaction: jest.fn(),
   invoiceTemplateVariable: {
     deleteMany: jest.fn(),
     createMany: jest.fn(),
   },
-  $transaction: jest.fn((cb) => cb(mockPrismaService)),
+};
+const userServiceMock = { getUserOrThrow: jest.fn() };
+const pdfGeneratorServiceMock = { generatePdfAndPreview: jest.fn() };
+const s3ServiceMock = {
+  uploadDocumentAssets: jest.fn(),
+  generateSignedUrl: jest.fn(),
+  deleteFile: jest.fn(),
 };
 
-const mockUserService = {
-  getUserOrThrow: jest.fn(),
+jest.mock('src/common/utils/generate-copy-name.util', () => ({
+  generateCopyName: jest.fn(async () => 'Template Copie'),
+}));
+jest.mock('src/common/utils/merge-system-variables.util', () => ({
+  mergeSystemVariables: jest.fn((template) => template),
+}));
+jest.mock('src/common/utils/buildTemplateSearchQuery', () => ({
+  buildTemplateSearchQuery: jest.fn(() => ({ userId: 'user1' })),
+}));
+jest.mock('src/common/utils/csv-export.util', () => ({
+  generateCSVExport: jest.fn(() => ({ filename: 'export.csv', content: 'csvdata' })),
+}));
+
+const user = { id: 'user1', email: 'test@mail.com' };
+const template = {
+  id: 'tpl1',
+  userId: 'user1',
+  name: 'Template 1',
+  contentHtml: '<html></html>',
+  pdfKey: 'pdfkey',
+  previewKey: 'previewkey',
+  variables: [],
+  createdAt: new Date(),
 };
 
 describe('InvoiceTemplateService', () => {
   let service: InvoiceTemplateService;
 
-  const userId = 'test-user-id';
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InvoiceTemplateService,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: UserService, useValue: mockUserService },
+        { provide: PrismaService, useValue: prismaMock },
+        { provide: UserService, useValue: userServiceMock },
+        { provide: PdfGeneratorService, useValue: pdfGeneratorServiceMock },
+        { provide: S3Service, useValue: s3ServiceMock },
       ],
     }).compile();
-
     service = module.get<InvoiceTemplateService>(InvoiceTemplateService);
-
     jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
   describe('create', () => {
-    it('should create a new invoice template', async () => {
-      mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.invoiceTemplate.findFirst.mockResolvedValue(null);
-      mockPrismaService.invoiceTemplate.create.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-
-      const dto = {
-        name: 'Test Invoice',
-        contentHtml: '<p>Invoice</p>',
-        variables: [],
-      };
-
-      const result = await service.create(userId, dto as any);
-
-      expect(mockUserService.getUserOrThrow).toHaveBeenCalled();
-      expect(mockPrismaService.invoiceTemplate.create).toHaveBeenCalled();
-      expect(result).toHaveProperty('id', '1');
+    it('crée un template avec succès', async () => {
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      prismaMock.invoiceTemplate.findFirst.mockResolvedValue(null);
+      pdfGeneratorServiceMock.generatePdfAndPreview.mockResolvedValue({ pdfBuffer: Buffer.from('pdf'), previewBuffer: Buffer.from('preview') });
+      s3ServiceMock.uploadDocumentAssets.mockResolvedValue({ pdfKey: 'pdfkey', previewKey: 'previewkey' });
+      prismaMock.invoiceTemplate.create.mockResolvedValue(template);
+      const dto = { name: 'Template 1', contentHtml: '<html></html>', variables: [] };
+      const result = await service.create('user1', dto as any);
+      expect(result.name).toBe('Template 1');
+      expect(prismaMock.invoiceTemplate.create).toHaveBeenCalled();
     });
-
-    it('should throw if invoice template name exists', async () => {
-      mockUserService.getUserOrThrow.mockResolvedValue(true);
-      mockPrismaService.invoiceTemplate.findFirst.mockResolvedValue({
-        id: 'exists',
-      });
-
-      await expect(
-        service.create(userId, { name: 'Duplicate', contentHtml: '' } as any),
-      ).rejects.toThrow(BadRequestException);
+    it('lève une erreur si nom déjà utilisé', async () => {
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      prismaMock.invoiceTemplate.findFirst.mockResolvedValue(template);
+      const dto = { name: 'Template 1', contentHtml: '<html></html>', variables: [] };
+      await expect(service.create('user1', dto as any)).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('findAll', () => {
-    it('should return all invoice templates', async () => {
-      mockPrismaService.invoiceTemplate.findMany.mockResolvedValue([
-        { id: '1', variables: [] },
-      ]);
-      const result = await service.findAll(userId);
-      expect(result.length).toBe(1);
+    it('retourne tous les templates', async () => {
+      prismaMock.invoiceTemplate.findMany.mockResolvedValue([template]);
+      s3ServiceMock.generateSignedUrl.mockResolvedValue('url');
+      const result = await service.findAll('user1', true);
+      expect(result[0].name).toBe('Template 1');
     });
   });
 
   describe('findOne', () => {
-    it('should return an invoice template by id', async () => {
-      mockPrismaService.invoiceTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-      const result = await service.findOne('1', userId);
-      expect(result).toHaveProperty('id', '1');
+    it('retourne un template par id', async () => {
+      prismaMock.invoiceTemplate.findFirst.mockResolvedValue(template);
+      s3ServiceMock.generateSignedUrl.mockResolvedValue('url');
+      const result = await service.findOne('tpl1', 'user1');
+      expect(result.id).toBe('tpl1');
     });
-
-    it('should throw if invoice template not found', async () => {
-      mockPrismaService.invoiceTemplate.findUnique.mockResolvedValue(null);
-      await expect(service.findOne('99', userId)).rejects.toThrow(
-        NotFoundException,
-      );
+    it('lève une erreur si le template est absent', async () => {
+      prismaMock.invoiceTemplate.findFirst.mockResolvedValue(null);
+      await expect(service.findOne('tpl2', 'user1')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('update', () => {
-    it('should update an invoice template', async () => {
-      mockPrismaService.invoiceTemplate.findUniqueOrThrow.mockResolvedValue({
-        id: '1',
-      });
-      mockPrismaService.invoiceTemplate.update.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-
-      const result = await service.update('1', userId, {
-        name: 'Updated Invoice',
-        contentHtml: '<p>Updated</p>',
-      } as any);
-
-      expect(result).toHaveProperty('id', '1');
+    it('met à jour un template', async () => {
+      prismaMock.invoiceTemplate.findFirst.mockResolvedValue(template);
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      s3ServiceMock.deleteFile.mockResolvedValue(undefined);
+      pdfGeneratorServiceMock.generatePdfAndPreview.mockResolvedValue({ pdfBuffer: Buffer.from('pdf'), previewBuffer: Buffer.from('preview') });
+      s3ServiceMock.uploadDocumentAssets.mockResolvedValue({ pdfKey: 'pdfkey', previewKey: 'previewkey' });
+      prismaMock.$transaction.mockImplementation(async (cb) => cb({ ...prismaMock }));
+      prismaMock.invoiceTemplate.update.mockResolvedValue({ ...template, name: 'Modifié' });
+      prismaMock.invoiceTemplateVariable.deleteMany.mockResolvedValue(undefined);
+      prismaMock.invoiceTemplateVariable.createMany.mockResolvedValue(undefined);
+      const dto = { name: 'Modifié', contentHtml: '<html></html>', variables: [] };
+      const result = await service.update('tpl1', 'user1', dto as any);
+      expect(result.name).toBe('Modifié');
+    });
+    it('lève une erreur si le template est absent', async () => {
+      prismaMock.invoiceTemplate.findFirst.mockResolvedValue(null);
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      const dto = { name: 'Modifié', contentHtml: '<html></html>', variables: [] };
+      await expect(service.update('tpl2', 'user1', dto as any)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('remove', () => {
-    it('should delete an invoice template', async () => {
-      mockPrismaService.invoiceTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        variables: [],
-      });
-      mockPrismaService.invoiceTemplate.delete.mockResolvedValue({ id: '1' });
-
-      const result = await service.remove('1', userId);
-
-      expect(result).toHaveProperty('id', '1');
+    it('supprime un template', async () => {
+      prismaMock.invoiceTemplate.findFirst.mockResolvedValue(template);
+      s3ServiceMock.deleteFile.mockResolvedValue(undefined);
+      prismaMock.invoiceTemplate.delete.mockResolvedValue(template);
+      const result = await service.remove('tpl1', 'user1');
+      expect(result.id).toBe('tpl1');
     });
   });
 
   describe('duplicate', () => {
-    it('should duplicate an invoice template', async () => {
-      mockPrismaService.invoiceTemplate.findUnique.mockResolvedValue({
-        id: '1',
-        name: 'Template',
-        userId: '123',
-        variables: [],
-      });
-      mockPrismaService.invoiceTemplate.create.mockResolvedValue({
-        id: '2',
-        variables: [],
-      });
+    it('duplique un template', async () => {
+      prismaMock.invoiceTemplate.findFirst.mockResolvedValue(template);
+      userServiceMock.getUserOrThrow.mockResolvedValue(user);
+      pdfGeneratorServiceMock.generatePdfAndPreview.mockResolvedValue({ pdfBuffer: Buffer.from('pdf'), previewBuffer: Buffer.from('preview') });
+      s3ServiceMock.uploadDocumentAssets.mockResolvedValue({ pdfKey: 'pdfkey', previewKey: 'previewkey' });
+      prismaMock.invoiceTemplate.create.mockResolvedValue({ ...template, name: 'Template Copie' });
+      const result = await service.duplicate('tpl1', 'user1');
+      expect(result.name).toBe('Template Copie');
+    });
+  });
 
-      const result = await service.duplicate('1', userId);
+  describe('getDefaultTemplate', () => {
+    it('retourne le template par défaut', async () => {
+      prismaMock.invoiceTemplate.findUnique.mockResolvedValue(template);
+      const result = await service.getDefaultTemplate();
+      expect(result.id).toBe('tpl1');
+    });
+  });
 
-      expect(result).toHaveProperty('id', '2');
-      expect(generateCopyNameUtil.generateCopyName).toHaveBeenCalled();
+  describe('search', () => {
+    it('retourne les templates filtrés', async () => {
+      prismaMock.invoiceTemplate.findMany.mockResolvedValue([template]);
+      prismaMock.invoiceTemplate.count.mockResolvedValue(1);
+      s3ServiceMock.generateSignedUrl.mockResolvedValue('url');
+      prismaMock.$transaction.mockImplementation((arr) => Promise.all(arr.map((fn) => fn)));
+      const result = await service.search('user1', '', undefined, undefined);
+      expect(result.invoiceTemplate.length).toBe(1);
+      expect(result.total).toBe(1);
+    });
+  });
+
+  describe('exportToCSV', () => {
+    it('exporte les templates en CSV', async () => {
+      jest.spyOn(service, 'search').mockResolvedValue({ invoiceTemplate: [template], total: 1 } as any);
+      const result = await service.exportToCSV('user1', '');
+      expect(result.filename).toBe('export.csv');
+      expect(result.content).toBe('csvdata');
     });
   });
 });

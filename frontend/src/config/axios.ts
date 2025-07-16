@@ -24,6 +24,7 @@ apiClient.interceptors.response.use(
       const status = error.response?.status
       const authStore = useAuthStore()
       await authStore.isUserAuthenticated()
+      await authStore.verifyAuth()
       const currentRoute = router.currentRoute.value;
       const isProtectedRoute = currentRoute.matched.some(r => r.meta.requiresAuth === true);
 

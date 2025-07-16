@@ -6,24 +6,43 @@ export async function seedDefaultInvoiceTemplate(prisma: PrismaClient) {
     name: 'Modèle de base - Facture',
     userId: null,
     contentHtml: `
-        <h1>Facture n°{{invoice_number}}</h1>
-        <br>
-        <p><strong>Émise le :</strong> {{issue_date}}</p>
-        <p><strong>Échéance :</strong> {{due_date}}</p>
-        <br>
-        <p><strong>Freelance :</strong> {{freelancer_name}}, {{freelancer_address}}</p>
-        <p><strong>SIRET :</strong> {{freelancer_siret}}</p>
-        <br>
-        <p><strong>Client :</strong> {{client_name}}, {{client_address}}</p>
-        <br>
-        <p><strong>Prestation :</strong> {{prestation_description}}</p>
-        <p><strong>Montant HT :</strong> {{total_amount}} €</p>
-        <br>
-        <p><strong>Conditions de paiement :</strong> {{payment_terms}}</p>
-        <p><strong>Pénalités de retard :</strong> {{late_penalty}}</p>
-        <br>
-        <p><strong>Détail TVA :</strong> {{tva_detail}}</p>
+        <div style="padding-right: 40px;">
+
+        <b>Facture n°</b>{{invoice_number}}
+
+        <br /><br />
+        <p>
+        Émise le : {{issue_date}}<br />
+        Échéance : {{due_date}}
+        </p>
+        <br />
+        <p>
+        Établie par : {{freelancer_name}}, {{freelancer_address}}<br />
+        SIRET : {{freelancer_siret}}
+        </p>
+        <br />
+        <p>
+        Destinataire : {{client_name}}, {{client_address}}
+        </p>
+        <br />
+        <p>
+        <b>Prestation réalisée :</b><br />
+        {{prestation_description}}
+        </p>
+        <br /><br />
+        <p>
+        <b>Montant HT :</b> {{total_amount}} €
+        </p>
+        <br /><br />
+        <p>
+        Conditions de paiement : {{payment_terms}}<br />
+        Pénalités de retard : {{late_penalty}}<br />
+        Détail TVA : {{tva_detail}}
+        </p>
+        <br /><br />
+        </div>
       `,
+
     variables: [
       {
         variableName: 'invoice_number',

@@ -6,21 +6,56 @@ export async function seedDefaultContractTemplate(prisma: PrismaClient) {
     name: 'Modèle de base - Contrat',
     userId: null,
     contentHtml: `
-        <h1>Contrat de prestation n°{{contract_number}}</h1>
-        <p><strong>Freelance :</strong> {{freelancer_name}}, {{freelancer_address}}</p>
-        <p><strong>Client :</strong> {{client_name}}, {{client_address}}</p>
-        <p><strong>Prestation :</strong> {{prestation_description}}</p>
-        <p><strong>Date d’émission :</strong> {{issue_date}}</p>
-        <p><strong>Date de fin :</strong> {{end_date}}</p>
-        <p><strong>Montant :</strong> {{total_amount}} € HT</p>
-        <p><strong>Modalités de paiement :</strong> {{payment_terms}}</p>
-        <p><strong>Signature Freelance nom signature:</strong> {{freelancer_fullname_signed}}</p>
-        <p><strong>Signature Freelance date signature:</strong> {{freelancer_date_signed}}</p>
-        <p><strong>Signature Freelance signature:</strong> {{freelancer_signature}}</p>
-        <p><strong>Signature Client nom signature:</strong> {{client_fullname_signed}}</p>
-        <p><strong>Signature Client date signature:</strong> {{client_date_signed}}</p>
-        <p><strong>Signature Client signature:</strong> {{client_signature}}</p>
-      `,
+<div style="padding-right: 40px;">
+
+<b>Contrat de prestation n°</b>{{contract_number}}
+
+<br /><br />
+<p>
+Entre les soussignés :<br />
+{{freelancer_name}}, domicilié(e) à {{freelancer_address}}, ci-après désigné(e) "le Freelance",<br />
+et {{client_name}}, situé(e) à {{client_address}}, ci-après désigné(e) "le Client".
+</p>
+<br />
+<p>
+Il a été convenu ce qui suit :
+
+<br />
+
+Le Freelance s’engage à réaliser pour le Client la prestation suivante :<br />
+{{prestation_description}}
+</p>
+<br /><br />
+<p>
+Le présent contrat prend effet à compter du {{issue_date}} et prendra fin le {{end_date}}.
+</p>
+<br /><br />
+<p>
+Le montant total de la prestation est de {{total_amount}} € HT, selon les modalités de paiement suivantes :<br />
+{{payment_terms}}
+</p>
+<br />
+<p>
+Fait en deux exemplaires, à {{client_address}}, le {{issue_date}}.
+</p>
+<br /><br />
+<p>
+<b>Freelance</b><br />
+{{freelancer_fullname_signed}}<br />
+{{freelancer_date_signed}}<br />
+{{freelancer_signature}}
+</p>
+<br /><br />
+<p>
+<b>Client</b><br />
+{{client_fullname_signed}}<br />
+{{client_date_signed}}<br />
+{{client_signature}}
+</p>
+<br /><br />
+
+</div>
+`,
     variables: [
       {
         variableName: 'contract_number',

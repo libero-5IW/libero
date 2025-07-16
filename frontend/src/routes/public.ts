@@ -7,6 +7,7 @@ import ResetPassword from '@/views/public/ResetPassword.vue';
 import Landing from '@/views/public/Landing.vue';
 import PrivacyPolicy from '@/views/legal/PolitiqueConfidentialite.vue';
 import PublicContainer from '@/components/Container/PublicContainer.vue';
+import Help from '@/views/public/Help.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -30,6 +31,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'Register',
         component: Register,
         meta: { requiresAuth: false, publicOnly: true }
+      },
+      {
+        path: 'help',
+        name: 'Help',
+        component: Help,
+        meta: { requiresAuth: false, publicOnly: false }
       },
       {
         path: 'email-reset-password',
