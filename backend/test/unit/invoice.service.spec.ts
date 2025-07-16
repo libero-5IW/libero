@@ -10,7 +10,6 @@ import { MailerService } from 'src/common/mailer/mailer.service';
 import { InvoiceStatus } from '@prisma/client';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
-// Mocks
 const prismaMock = {
   invoice: {
     create: jest.fn(),
