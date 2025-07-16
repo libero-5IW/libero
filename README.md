@@ -23,13 +23,13 @@
 ## ÉQUIPE (pseudo github)
 
 **BIRABOURAME Hemavathi** 
-hema-brm
+- hema-brm
 
 **RAMOUL Racha**
-RachaRamoul
+- RachaRamoul
 
 **SALAMANI SARAH LINA**
-Sarahlyna
+- Sarahlyna
 
 **BURY Jay**
-buryj97
+- buryj97
