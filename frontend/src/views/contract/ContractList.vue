@@ -276,7 +276,7 @@ async function updateContractStatus(newStatus: string) {
   isStatusModalOpen.value = false;
   if (contract) {
     await fetchAllContracts();
-    showToast('success', `Statut mis à jour avec succès pour le devis ${contract?.number} !`);
+    showToast('success', `Statut mis à jour avec succès pour le contrat ${contract?.number} !`);
   }
   selectedContractId.value = null;
 }
