@@ -1,6 +1,6 @@
 <template>
   <v-card class="pa-4 d-flex flex-column fill-height">
-    <v-card-title class="text-h6">Chiffre d'affaires mensuel</v-card-title>
+    <v-card-title class="text-h6 d-flex justify-center">Chiffre d'affaires mensuel</v-card-title>
     <v-divider class="my-2" />
 
     <v-row class="mb-4">

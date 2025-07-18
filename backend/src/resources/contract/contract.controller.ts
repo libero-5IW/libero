@@ -21,6 +21,7 @@ import { ValidateContractOnUpdatePipe } from './pipes/update-validate-contract.p
 import { PrismaService } from 'src/database/prisma/prisma.service';
 import { SearchContractDto } from './dto/search-contract.dto';
 import { Response } from 'express';
+import { ContractStatus } from '@prisma/client';
 
 @ApiBearerAuth()
 @ApiTags('Contracts')
@@ -114,6 +115,15 @@ export class ContractController {
   @Delete(':id')
   remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.contractService.remove(id, user.userId);
+  }
+
+  @Patch(':id/change-status')
+  changeStatus(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() body: { newStatus: ContractStatus },
+  ) {
+    return this.contractService.changeStatus(id, user.userId, body.newStatus);
   }
 
   @Patch(':id/signature')
